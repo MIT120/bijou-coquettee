@@ -1,11 +1,12 @@
 import { MedusaService } from "@medusajs/framework/utils"
-import { SizeGuide, MeasurementGuide } from "../models/size-guide"
+import SizeGuide from "./models/size-guide"
+import MeasurementGuide from "./models/measurement-guide"
 
 /**
- * Size Guide Service
+ * Size Guide Module Service
  * Handles size chart and measurement guide operations
  */
-class SizeGuideService extends MedusaService({
+class SizeGuideModuleService extends MedusaService({
     SizeGuide,
     MeasurementGuide,
 }) {
@@ -83,5 +84,5 @@ class SizeGuideService extends MedusaService({
     }
 }
 
-export default SizeGuideService
+export default SizeGuideModuleService
 

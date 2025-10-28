@@ -1,155 +1,197 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { X, Ruler, Download, Search } from "lucide-react"
-import { getSizeGuideByCategory, type CategoryData } from "@lib/data/size-guide"
+import { Dialog, Transition, Tab } from "@headlessui/react"
+import { XMarkMini, Ruler } from "@medusajs/icons"
+import { Fragment } from "react"
 import SizeChart from "./size-chart"
 import MeasurementGuide from "./measurement-guide"
 import SizeFinder from "./size-finder"
+import { getCategoryData } from "@lib/data/size-guide"
 
-interface SizeGuideModalProps {
+type SizeGuideProps = {
     category: "ring" | "necklace" | "bracelet" | "chain"
-    isOpen: boolean
-    onClose: () => void
 }
 
-export default function SizeGuideModal({
-    category,
-    isOpen,
-    onClose,
-}: SizeGuideModalProps) {
-    const [data, setData] = useState<CategoryData | null>(null)
-    const [loading, setLoading] = useState(true)
-    const [activeTab, setActiveTab] = useState<"chart" | "measure" | "finder">("chart")
+/**
+ * Size Guide Modal Component
+ * Displays size charts, measurement instructions, and size finder tool
+ */
+export default function SizeGuide({ category }: SizeGuideProps) {
+    const [isOpen, setIsOpen] = useState(false)
+    const [data, setData] = useState<any>(null)
+    const [loading, setLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
 
+    // Fetch data when modal opens
     useEffect(() => {
-        if (isOpen) {
-            fetchSizeGuide()
+        if (isOpen && !data) {
+            loadData()
         }
-    }, [isOpen, category])
+    }, [isOpen])
 
-    const fetchSizeGuide = async () => {
-        setLoading(true)
-        const result = await getSizeGuideByCategory(category)
-        setData(result)
-        setLoading(false)
+    const loadData = async () => {
+        try {
+            setLoading(true)
+            setError(null)
+            const categoryData = await getCategoryData(category)
+            setData(categoryData)
+        } catch (err) {
+            console.error("Failed to load size guide data:", err)
+            setError("Failed to load size guide. Please try again.")
+        } finally {
+            setLoading(false)
+        }
     }
 
-    if (!isOpen) return null
+    const closeModal = () => setIsOpen(false)
+    const openModal = () => setIsOpen(true)
 
-    const categoryNames = {
-        ring: "Ring",
-        necklace: "Necklace",
-        bracelet: "Bracelet",
-        chain: "Chain",
+    const getCategoryTitle = () => {
+        switch (category) {
+            case "ring":
+                return "Ring Size Guide"
+            case "necklace":
+                return "Necklace Length Guide"
+            case "bracelet":
+                return "Bracelet Size Guide"
+            case "chain":
+                return "Chain Length Guide"
+            default:
+                return "Size Guide"
+        }
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-            {/* Overlay */}
-            <div
-                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-                onClick={onClose}
-            />
+        <>
+            <button
+                type="button"
+                onClick={openModal}
+                className="flex items-center gap-2 text-ui-fg-interactive hover:text-ui-fg-interactive-hover text-small-regular underline"
+            >
+                <Ruler className="w-4 h-4" />
+                Size Guide
+            </button>
 
-            {/* Modal */}
-            <div className="relative z-10 w-full max-w-4xl mx-4 max-h-[90vh] overflow-hidden bg-white rounded-lg shadow-2xl">
-                {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-ui-border-base">
-                    <div>
-                        <h2 className="text-2xl font-semibold text-ui-fg-base">
-                            {categoryNames[category]} Size Guide
-                        </h2>
-                        <p className="text-sm text-ui-fg-subtle mt-1">
-                            Find your perfect fit with our comprehensive sizing guide
-                        </p>
+            <Transition appear show={isOpen} as={Fragment}>
+                <Dialog as="div" className="relative z-[75]" onClose={closeModal}>
+                    <Transition.Child
+                        as={Fragment}
+                        enter="ease-out duration-300"
+                        enterFrom="opacity-0"
+                        enterTo="opacity-100"
+                        leave="ease-in duration-200"
+                        leaveFrom="opacity-100"
+                        leaveTo="opacity-0"
+                    >
+                        <div className="fixed inset-0 bg-gray-700 bg-opacity-75 transition-opacity" />
+                    </Transition.Child>
+
+                    <div className="fixed inset-0 overflow-y-auto">
+                        <div className="flex min-h-full items-center justify-center p-4 text-center">
+                            <Transition.Child
+                                as={Fragment}
+                                enter="ease-out duration-300"
+                                enterFrom="opacity-0 scale-95"
+                                enterTo="opacity-100 scale-100"
+                                leave="ease-in duration-200"
+                                leaveFrom="opacity-100 scale-100"
+                                leaveTo="opacity-0 scale-95"
+                            >
+                                <Dialog.Panel className="w-full max-w-4xl transform overflow-hidden rounded-lg bg-white p-6 text-left align-middle shadow-xl transition-all">
+                                    <div className="flex justify-between items-center mb-6">
+                                        <Dialog.Title as="h3" className="text-xl-semi text-ui-fg-base">
+                                            {getCategoryTitle()}
+                                        </Dialog.Title>
+                                        <button
+                                            onClick={closeModal}
+                                            className="text-ui-fg-muted hover:text-ui-fg-base transition-colors"
+                                        >
+                                            <XMarkMini />
+                                        </button>
+                                    </div>
+
+                                    {loading && (
+                                        <div className="py-12 text-center">
+                                            <p className="text-ui-fg-muted">Loading size guide...</p>
+                                        </div>
+                                    )}
+
+                                    {error && (
+                                        <div className="py-12 text-center">
+                                            <p className="text-rose-500">{error}</p>
+                                            <button
+                                                onClick={loadData}
+                                                className="mt-4 text-ui-fg-interactive hover:text-ui-fg-interactive-hover underline"
+                                            >
+                                                Try again
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {!loading && !error && data && (
+                                        <Tab.Group>
+                                            <Tab.List className="flex space-x-1 rounded-xl bg-ui-bg-subtle p-1 mb-6">
+                                                <Tab
+                                                    className={({ selected }) =>
+                                                        `w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition-colors
+                            ${selected
+                                                            ? "bg-white text-ui-fg-base shadow"
+                                                            : "text-ui-fg-muted hover:bg-white/[0.12] hover:text-ui-fg-base"
+                                                        }`
+                                                    }
+                                                >
+                                                    Size Chart
+                                                </Tab>
+                                                <Tab
+                                                    className={({ selected }) =>
+                                                        `w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition-colors
+                            ${selected
+                                                            ? "bg-white text-ui-fg-base shadow"
+                                                            : "text-ui-fg-muted hover:bg-white/[0.12] hover:text-ui-fg-base"
+                                                        }`
+                                                    }
+                                                >
+                                                    How to Measure
+                                                </Tab>
+                                                {category === "ring" && (
+                                                    <Tab
+                                                        className={({ selected }) =>
+                                                            `w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition-colors
+                              ${selected
+                                                                ? "bg-white text-ui-fg-base shadow"
+                                                                : "text-ui-fg-muted hover:bg-white/[0.12] hover:text-ui-fg-base"
+                                                            }`
+                                                        }
+                                                    >
+                                                        Size Finder
+                                                    </Tab>
+                                                )}
+                                            </Tab.List>
+                                            <Tab.Panels>
+                                                <Tab.Panel>
+                                                    <SizeChart sizeChart={data.sizeChart} category={category} />
+                                                </Tab.Panel>
+                                                <Tab.Panel>
+                                                    <MeasurementGuide
+                                                        measurementGuide={data.measurementGuide}
+                                                        category={category}
+                                                    />
+                                                </Tab.Panel>
+                                                {category === "ring" && (
+                                                    <Tab.Panel>
+                                                        <SizeFinder />
+                                                    </Tab.Panel>
+                                                )}
+                                            </Tab.Panels>
+                                        </Tab.Group>
+                                    )}
+                                </Dialog.Panel>
+                            </Transition.Child>
+                        </div>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="p-2 rounded-full hover:bg-ui-bg-subtle transition-colors"
-                        aria-label="Close size guide"
-                    >
-                        <X className="w-5 h-5" />
-                    </button>
-                </div>
-
-                {/* Tabs */}
-                <div className="flex border-b border-ui-border-base bg-ui-bg-subtle">
-                    <button
-                        onClick={() => setActiveTab("chart")}
-                        className={`flex-1 px-6 py-3 text-sm font-medium transition-colors ${activeTab === "chart"
-                                ? "text-ui-fg-base border-b-2 border-ui-fg-base bg-white"
-                                : "text-ui-fg-subtle hover:text-ui-fg-base"
-                            }`}
-                    >
-                        <div className="flex items-center justify-center gap-2">
-                            <Ruler className="w-4 h-4" />
-                            Size Chart
-                        </div>
-                    </button>
-                    <button
-                        onClick={() => setActiveTab("measure")}
-                        className={`flex-1 px-6 py-3 text-sm font-medium transition-colors ${activeTab === "measure"
-                                ? "text-ui-fg-base border-b-2 border-ui-fg-base bg-white"
-                                : "text-ui-fg-subtle hover:text-ui-fg-base"
-                            }`}
-                    >
-                        <div className="flex items-center justify-center gap-2">
-                            <Download className="w-4 h-4" />
-                            How to Measure
-                        </div>
-                    </button>
-                    {category === "ring" && (
-                        <button
-                            onClick={() => setActiveTab("finder")}
-                            className={`flex-1 px-6 py-3 text-sm font-medium transition-colors ${activeTab === "finder"
-                                    ? "text-ui-fg-base border-b-2 border-ui-fg-base bg-white"
-                                    : "text-ui-fg-subtle hover:text-ui-fg-base"
-                                }`}
-                        >
-                            <div className="flex items-center justify-center gap-2">
-                                <Search className="w-4 h-4" />
-                                Size Finder
-                            </div>
-                        </button>
-                    )}
-                </div>
-
-                {/* Content */}
-                <div className="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
-                    {loading ? (
-                        <div className="flex items-center justify-center py-12">
-                            <div className="w-8 h-8 border-4 border-ui-border-base border-t-ui-fg-base rounded-full animate-spin" />
-                        </div>
-                    ) : (
-                        <>
-                            {activeTab === "chart" && data && (
-                                <SizeChart
-                                    category={category}
-                                    sizeChart={data.sizeChart}
-                                />
-                            )}
-                            {activeTab === "measure" && data?.measurementGuide && (
-                                <MeasurementGuide
-                                    category={category}
-                                    guide={data.measurementGuide}
-                                />
-                            )}
-                            {activeTab === "finder" && category === "ring" && (
-                                <SizeFinder category={category} />
-                            )}
-                        </>
-                    )}
-                </div>
-
-                {/* Footer */}
-                <div className="p-4 border-t border-ui-border-base bg-ui-bg-subtle">
-                    <p className="text-xs text-ui-fg-subtle text-center">
-                        💡 Tip: For the most accurate sizing, we recommend visiting a professional jeweler or ordering our free ring sizer kit
-                    </p>
-                </div>
-            </div>
-        </div>
+                </Dialog>
+            </Transition>
+        </>
     )
 }
-

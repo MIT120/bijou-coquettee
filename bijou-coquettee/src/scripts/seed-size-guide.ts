@@ -1,11 +1,12 @@
-import { InjectedContainer } from "@medusajs/types"
+import SizeGuideModuleService from "../modules/size-guide/service"
+import { SIZE_GUIDE_MODULE } from "../modules/size-guide"
 
 /**
  * Seed Size Guide Data
  * Run with: npx medusa exec ./src/scripts/seed-size-guide.ts
  */
-export default async function seedSizeGuide(container: InjectedContainer) {
-    const sizeGuideService = container.resolve("sizeGuideModule")
+export default async function seedSizeGuide({ container }: any) {
+    const sizeGuideModuleService: SizeGuideModuleService = container.resolve(SIZE_GUIDE_MODULE)
 
     console.log("🌱 Seeding size guide data...")
 
@@ -35,7 +36,7 @@ export default async function seedSizeGuide(container: InjectedContainer) {
     ]
 
     for (const size of ringSizes) {
-        await sizeGuideService.createSizeGuides({
+        await sizeGuideModuleService.createSizeGuides([{
             category: "ring",
             size_us: size.us,
             size_uk: size.uk,
@@ -44,7 +45,7 @@ export default async function seedSizeGuide(container: InjectedContainer) {
             circumference_mm: size.circumference,
             diameter_mm: size.diameter,
             sort_order: size.order,
-        })
+        }])
     }
 
     console.log(`✅ Created ${ringSizes.length} ring sizes`)
@@ -60,12 +61,12 @@ export default async function seedSizeGuide(container: InjectedContainer) {
     ]
 
     for (const length of necklaceLengths) {
-        await sizeGuideService.createSizeGuides({
+        await sizeGuideModuleService.createSizeGuides([{
             category: "necklace",
             length_cm: length.length,
             description: length.description,
             sort_order: length.order,
-        })
+        }])
     }
 
     console.log(`✅ Created ${necklaceLengths.length} necklace lengths`)
@@ -80,18 +81,18 @@ export default async function seedSizeGuide(container: InjectedContainer) {
     ]
 
     for (const length of braceletLengths) {
-        await sizeGuideService.createSizeGuides({
+        await sizeGuideModuleService.createSizeGuides([{
             category: "bracelet",
             length_cm: length.length,
             description: length.description,
             sort_order: length.order,
-        })
+        }])
     }
 
     console.log(`✅ Created ${braceletLengths.length} bracelet lengths`)
 
     // Create Measurement Guides
-    await sizeGuideService.createMeasurementGuides({
+    await sizeGuideModuleService.createMeasurementGuides([{
         category: "ring",
         title: "How to Measure Your Ring Size",
         instructions: `**Method 1: Use a Ring Sizer**
@@ -125,9 +126,9 @@ export default async function seedSizeGuide(container: InjectedContainer) {
             "Wide bands (over 8mm) may need a half size larger",
             "Consider having your size professionally measured at a jewelry store",
         ],
-    })
+    }])
 
-    await sizeGuideService.createMeasurementGuides({
+    await sizeGuideModuleService.createMeasurementGuides([{
         category: "necklace",
         title: "How to Choose Your Necklace Length",
         instructions: `**Finding Your Perfect Length:**
@@ -154,9 +155,9 @@ export default async function seedSizeGuide(container: InjectedContainer) {
             "Princess length (16-18\") is universally flattering",
             "Your height matters - petite frames suit shorter lengths",
         ],
-    })
+    }])
 
-    await sizeGuideService.createMeasurementGuides({
+    await sizeGuideModuleService.createMeasurementGuides([{
         category: "bracelet",
         title: "How to Measure Your Bracelet Size",
         instructions: `**Measuring Your Wrist:**
@@ -192,7 +193,7 @@ export default async function seedSizeGuide(container: InjectedContainer) {
             "Consider bracelet style when choosing size",
             "If unsure, adjustable bracelets are a great option",
         ],
-    })
+    }])
 
     console.log("✅ Created measurement guides for all categories")
     console.log("🎉 Size guide data seeding complete!")
