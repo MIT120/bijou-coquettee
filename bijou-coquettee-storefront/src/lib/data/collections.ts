@@ -2,7 +2,7 @@
 
 import { sdk } from "@lib/config"
 import { HttpTypes } from "@medusajs/types"
-import { getCacheOptions } from "./cookies"
+import { getCacheOptions } from "./cookies-server"
 
 export const retrieveCollection = async (id: string) => {
   const next = {

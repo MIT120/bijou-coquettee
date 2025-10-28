@@ -12,7 +12,7 @@ import {
   getCartId,
   removeCartId,
   setCartId,
-} from "./cookies"
+} from "./cookies-server"
 import { getRegion } from "./regions"
 
 /**

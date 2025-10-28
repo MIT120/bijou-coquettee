@@ -13,7 +13,7 @@ import {
   removeAuthToken,
   removeCartId,
   setAuthToken,
-} from "./cookies"
+} from "./cookies-server"
 
 export const retrieveCustomer =
   async (): Promise<HttpTypes.StoreCustomer | null> => {
