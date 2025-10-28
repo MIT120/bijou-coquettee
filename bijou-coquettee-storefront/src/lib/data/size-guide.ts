@@ -1,17 +1,14 @@
-import "server-only"
-
 const BACKEND_URL = process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL || "http://localhost:9000"
 
 /**
  * Get size guide data for a specific category
+ * Can be used in both server and client components
  */
 export async function getCategoryData(category: string) {
     const response = await fetch(
         `${BACKEND_URL}/store/size-guide/${category}`,
         {
-            next: {
-                tags: [`size-guide-${category}`],
-            },
+            cache: 'no-store', // Client-side compatible
         }
     )
 
@@ -25,14 +22,13 @@ export async function getCategoryData(category: string) {
 
 /**
  * Get all size guides
+ * Can be used in both server and client components
  */
 export async function getAllSizeGuides() {
     const response = await fetch(
         `${BACKEND_URL}/store/size-guide`,
         {
-            next: {
-                tags: ["size-guides"],
-            },
+            cache: 'no-store', // Client-side compatible
         }
     )
 

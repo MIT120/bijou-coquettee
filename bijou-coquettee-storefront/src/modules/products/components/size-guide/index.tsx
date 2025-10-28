@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { Dialog, Transition, Tab } from "@headlessui/react"
-import { XMarkMini, Ruler } from "@medusajs/icons"
+import { XMarkMini } from "@medusajs/icons"
+import { Ruler } from "lucide-react"
 import { Fragment } from "react"
 import SizeChart from "./size-chart"
 import MeasurementGuide from "./measurement-guide"
@@ -69,7 +70,7 @@ export default function SizeGuide({ category }: SizeGuideProps) {
                 onClick={openModal}
                 className="flex items-center gap-2 text-ui-fg-interactive hover:text-ui-fg-interactive-hover text-small-regular underline"
             >
-                <Ruler className="w-4 h-4" />
+                <Ruler size={16} />
                 Size Guide
             </button>
 
