@@ -6,6 +6,7 @@ import { HttpTypes } from "@medusajs/types"
 import { Button } from "@medusajs/ui"
 import Divider from "@modules/common/components/divider"
 import OptionSelect from "@modules/products/components/product-actions/option-select"
+import SizeGuideButton from "@modules/products/components/size-guide-button"
 import { isEqual } from "lodash"
 import { useParams } from "next/navigation"
 import { useEffect, useMemo, useRef, useState } from "react"
@@ -113,6 +114,38 @@ export default function ProductActions({
     setIsAdding(false)
   }
 
+  // Determine if product needs a size guide based on tags or categories
+  // You can customize this logic based on your product structure
+  const getSizeGuideCategory = (): "ring" | "necklace" | "bracelet" | "chain" | null => {
+    const tags = product.tags?.map((t) => t.value.toLowerCase()) || []
+    const categories = product.categories?.map((c) => c.name.toLowerCase()) || []
+    const title = product.title?.toLowerCase() || ""
+
+    // Check for ring
+    if (tags.includes("ring") || categories.includes("rings") || title.includes("ring")) {
+      return "ring"
+    }
+
+    // Check for necklace
+    if (tags.includes("necklace") || categories.includes("necklaces") || title.includes("necklace")) {
+      return "necklace"
+    }
+
+    // Check for bracelet
+    if (tags.includes("bracelet") || categories.includes("bracelets") || title.includes("bracelet")) {
+      return "bracelet"
+    }
+
+    // Check for chain
+    if (tags.includes("chain") || categories.includes("chains") || title.includes("chain")) {
+      return "chain"
+    }
+
+    return null
+  }
+
+  const sizeGuideCategory = getSizeGuideCategory()
+
   return (
     <>
       <div className="flex flex-col gap-y-2" ref={actionsRef}>
@@ -138,6 +171,13 @@ export default function ProductActions({
           )}
         </div>
 
+        {/* Size Guide Button */}
+        {sizeGuideCategory && (
+          <div className="mb-2">
+            <SizeGuideButton category={sizeGuideCategory} />
+          </div>
+        )}
+
         <ProductPrice product={product} variant={selectedVariant} />
 
         <Button
@@ -157,8 +197,8 @@ export default function ProductActions({
           {!selectedVariant && !options
             ? "Select variant"
             : !inStock || !isValidVariant
-            ? "Out of stock"
-            : "Add to cart"}
+              ? "Out of stock"
+              : "Add to cart"}
         </Button>
         <MobileActions
           product={product}
