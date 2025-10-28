@@ -18,5 +18,9 @@ module.exports = defineConfig({
       resolve: "./src/modules/size-guide",
       options: {},
     },
+    {
+      resolve: "./src/modules/wishlist",
+      options: {},
+    },
   ],
 })
