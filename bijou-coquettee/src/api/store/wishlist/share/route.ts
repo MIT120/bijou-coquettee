@@ -6,7 +6,7 @@ import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
  */
 export async function POST(req: MedusaRequest, res: MedusaResponse) {
     try {
-        const customerId = req.auth_context?.actor_id
+        const customerId = (req as any).auth_context?.actor_id
 
         if (!customerId) {
             return res.status(401).json({

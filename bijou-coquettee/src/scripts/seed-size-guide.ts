@@ -118,14 +118,16 @@ export default async function seedSizeGuide({ container }: any) {
 - Measure the finger you plan to wear the ring on
 - If between sizes, choose the larger size
 - Consider wider bands may require a half size larger`,
-        tips: [
-            "Fingers change size throughout the day - measure when they're at their largest",
-            "Temperature affects finger size - warm fingers are larger",
-            "Measure the exact finger you'll wear the ring on (they vary!)",
-            "If between sizes, size up for comfort",
-            "Wide bands (over 8mm) may need a half size larger",
-            "Consider having your size professionally measured at a jewelry store",
-        ],
+        tips: {
+            items: [
+                "Fingers change size throughout the day - measure when they're at their largest",
+                "Temperature affects finger size - warm fingers are larger",
+                "Measure the exact finger you'll wear the ring on (they vary!)",
+                "If between sizes, size up for comfort",
+                "Wide bands (over 8mm) may need a half size larger",
+                "Consider having your size professionally measured at a jewelry store",
+            ]
+        } as any,
     }])
 
     await sizeGuideModuleService.createMeasurementGuides([{
@@ -148,13 +150,15 @@ export default async function seedSizeGuide({ container }: any) {
 2. Wrap around your neck where you'd like the necklace to sit
 3. Add 2-5cm for comfort and pendant space
 4. Check our length descriptions to visualize the look`,
-        tips: [
-            "Consider your neckline - higher necklines pair well with longer necklaces",
-            "Pendant size affects length choice - larger pendants need longer chains",
-            "Layer different lengths for a trendy stacked look",
-            "Princess length (16-18\") is universally flattering",
-            "Your height matters - petite frames suit shorter lengths",
-        ],
+        tips: {
+            items: [
+                "Consider your neckline - higher necklines pair well with longer necklaces",
+                "Pendant size affects length choice - larger pendants need longer chains",
+                "Layer different lengths for a trendy stacked look",
+                "Princess length (16-18\") is universally flattering",
+                "Your height matters - petite frames suit shorter lengths",
+            ]
+        } as any,
     }])
 
     await sizeGuideModuleService.createMeasurementGuides([{
@@ -186,13 +190,15 @@ export default async function seedSizeGuide({ container }: any) {
 - **Chain bracelets**: Can be slightly looser for movement
 - **Cuffs**: Should have about 2.5cm gap for easy wearing
 - **Tennis bracelets**: Should fit snugly but not tight`,
-        tips: [
-            "Measure your dominant hand as it's typically slightly larger",
-            "Add 2cm to wrist measurement for comfort (1.5cm snug, 2.5cm loose)",
-            "Bangles need to fit over your hand - measure at knuckles",
-            "Consider bracelet style when choosing size",
-            "If unsure, adjustable bracelets are a great option",
-        ],
+        tips: {
+            items: [
+                "Measure your dominant hand as it's typically slightly larger",
+                "Add 2cm to wrist measurement for comfort (1.5cm snug, 2.5cm loose)",
+                "Bangles need to fit over your hand - measure at knuckles",
+                "Consider bracelet style when choosing size",
+                "If unsure, adjustable bracelets are a great option",
+            ]
+        } as any,
     }])
 
     console.log("✅ Created measurement guides for all categories")

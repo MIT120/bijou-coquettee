@@ -15,7 +15,7 @@ export async function POST(
     req: MedusaRequest,
     res: MedusaResponse
 ) {
-    const { category, measurement, measurementType } = req.body
+    const { category, measurement, measurementType } = req.body as any
 
     if (!category || !measurement || !measurementType) {
         res.status(400).json({

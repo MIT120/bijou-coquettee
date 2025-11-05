@@ -1,5 +1,3 @@
-import { getAuthHeaders } from "./cookies-client"
-
 const BACKEND_URL =
     process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL || "http://localhost:9000"
 
@@ -29,7 +27,7 @@ export type Wishlist = {
  */
 export async function getWishlist(): Promise<Wishlist | null> {
     const headers = {
-        ...getAuthHeaders(),
+        "Content-Type": "application/json",
         "x-publishable-api-key": process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY!,
     }
 
@@ -66,7 +64,6 @@ export async function addToWishlist(
     variantId?: string
 ): Promise<boolean> {
     const headers = {
-        ...getAuthHeaders(),
         "Content-Type": "application/json",
         "x-publishable-api-key": process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY!,
     }
@@ -94,7 +91,7 @@ export async function addToWishlist(
  */
 export async function removeFromWishlist(itemId: string): Promise<boolean> {
     const headers = {
-        ...getAuthHeaders(),
+        "Content-Type": "application/json",
         "x-publishable-api-key": process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY!,
     }
 
@@ -123,7 +120,6 @@ export async function isInWishlist(
     variantId?: string
 ): Promise<boolean> {
     const headers = {
-        ...getAuthHeaders(),
         "Content-Type": "application/json",
         "x-publishable-api-key": process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY!,
     }
@@ -156,7 +152,7 @@ export async function isInWishlist(
  */
 export async function clearWishlist(): Promise<boolean> {
     const headers = {
-        ...getAuthHeaders(),
+        "Content-Type": "application/json",
         "x-publishable-api-key": process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY!,
     }
 
@@ -179,7 +175,7 @@ export async function clearWishlist(): Promise<boolean> {
  */
 export async function generateShareLink(): Promise<string | null> {
     const headers = {
-        ...getAuthHeaders(),
+        "Content-Type": "application/json",
         "x-publishable-api-key": process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY!,
     }
 

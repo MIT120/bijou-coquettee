@@ -31,7 +31,7 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
         const query = req.scope.resolve("query")
         const productIds = items.map((item) => item.product_id)
 
-        let products = []
+        let products: any[] = []
         if (productIds.length > 0) {
             const { data } = await query.graph({
                 entity: "product",
@@ -53,9 +53,9 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
 
         // Merge items with product details
         const itemsWithProducts = items.map((item) => {
-            const product = products.find((p) => p.id === item.product_id)
+            const product = products.find((p: any) => p.id === item.product_id)
             const variant = item.variant_id
-                ? product?.variants?.find((v) => v.id === item.variant_id)
+                ? product?.variants?.find((v: any) => v.id === item.variant_id)
                 : null
 
             return {
