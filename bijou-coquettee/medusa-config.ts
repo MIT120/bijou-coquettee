@@ -74,20 +74,15 @@ if (databaseUrl) {
 
     // Supabase pooler (Supavisor) configuration for Railway
     if (isSupabasePooler) {
-      // Ensure SSL is enabled (required for Supabase)
-      if (!params.has('sslmode')) {
-        params.set('sslmode', 'require')
-      }
-
-      // Add connection timeout to prevent hanging
-      if (!params.has('connect_timeout')) {
-        params.set('connect_timeout', '10')
-      }
-
       // Session mode pooler parameters
       if (port === '5432') {
         // Session mode - supports prepared statements (required for Knex/Medusa)
         console.log('✅ Using Supabase Session Mode pooler (port 5432) - compatible with Medusa')
+
+        // For Session Mode, we typically don't need pgbouncer=true
+        // But some clients may require it, so we'll add it as optional
+        // Note: pgbouncer=true disables prepared statements, which Knex needs
+        // So we'll NOT add it for Session Mode
       } else if (port === '6543') {
         // Transaction mode - does NOT support prepared statements
         console.error('❌ ERROR: Supabase Transaction Mode (port 6543) is not compatible with Medusa!')
@@ -95,11 +90,48 @@ if (databaseUrl) {
         process.exit(1)
       }
 
+      // Ensure SSL is enabled (required for Supabase)
+      // Supabase REQUIRES SSL, so we must use 'require' not 'prefer'
+      if (!params.has('sslmode')) {
+        params.set('sslmode', 'require') // 'require' forces SSL from the start
+      }
+
+      // Add connection timeout to prevent hanging (in seconds)
+      if (!params.has('connect_timeout')) {
+        params.set('connect_timeout', '30')
+      }
+
+      // Add statement timeout (in milliseconds) - Supabase default is 3-8 seconds
+      if (!params.has('statement_timeout')) {
+        params.set('statement_timeout', '60000') // 60 seconds
+      }
+
+      // Add keepalive settings for better connection stability
+      if (!params.has('keepalive')) {
+        params.set('keepalive', 'true')
+      }
+      if (!params.has('keepalive_idle')) {
+        params.set('keepalive_idle', '600')
+      }
+
       // Update URL with parameters
       url.search = params.toString()
       databaseUrl = url.toString().replace(/^postgres:/, 'postgresql:')
 
+      // Log connection details (masked for security)
+      const maskedUrl = databaseUrl.replace(/:([^:@]+)@/, ':***@')
       console.log('🔒 SSL and connection parameters configured for Supabase pooler (Railway compatible)')
+      console.log('📋 Connection parameters:', params.toString())
+      console.log('🔗 Final connection string (masked):', maskedUrl)
+      console.log('')
+      console.log('⚠️  TROUBLESHOOTING: If connection still times out:')
+      console.log('   1. ✅ Network Restrictions: Already checked - allowing all IPs')
+      console.log('   2. Verify connection string in Supabase Dashboard → Settings → Database')
+      console.log('   3. Check Supabase project is not paused')
+      console.log('   4. Try testing connection from Railway console:')
+      console.log('      psql "YOUR_CONNECTION_STRING"')
+      console.log('   5. Check Railway logs for network errors')
+      console.log('')
     }
     // Supabase direct connection (requires IPv4 add-on or IPv6 support)
     else if (isSupabaseDirect) {
