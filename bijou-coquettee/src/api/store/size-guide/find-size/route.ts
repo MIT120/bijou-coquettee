@@ -1,4 +1,5 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
+import SizeGuideModuleService from "../../../../modules/size-guide/service"
 
 /**
  * POST /store/size-guide/find-size
@@ -24,7 +25,7 @@ export async function POST(
         return
     }
 
-    const sizeGuideService = req.scope.resolve("sizeGuideModule")
+    const sizeGuideService = req.scope.resolve<SizeGuideModuleService>("sizeGuideModule")
 
     const size = await sizeGuideService.findSizeByMeasurement(
         category,

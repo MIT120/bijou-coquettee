@@ -1,4 +1,5 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
+import WishlistModuleService from "../../../../modules/wishlist/service"
 
 /**
  * POST /store/wishlist/share
@@ -15,7 +16,7 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
             })
         }
 
-        const wishlistService = req.scope.resolve("wishlistModuleService")
+        const wishlistService = req.scope.resolve<WishlistModuleService>("wishlistModuleService")
         const token = await wishlistService.generateShareToken(customerId)
 
         // Generate full share URL

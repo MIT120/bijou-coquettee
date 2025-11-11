@@ -1,4 +1,5 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
+import WishlistModuleService from "../../../../modules/wishlist/service"
 
 /**
  * POST /store/wishlist/check
@@ -24,7 +25,7 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
             })
         }
 
-        const wishlistService = req.scope.resolve("wishlistModuleService")
+        const wishlistService = req.scope.resolve<WishlistModuleService>("wishlistModuleService")
         const isInWishlist = await wishlistService.isProductInWishlist(
             customerId,
             product_id,

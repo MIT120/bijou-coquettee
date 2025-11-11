@@ -1,4 +1,5 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
+import WishlistModuleService from "../../../../../modules/wishlist/service"
 
 /**
  * GET /store/wishlist/shared/:token
@@ -15,7 +16,7 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
             })
         }
 
-        const wishlistService = req.scope.resolve("wishlistModuleService")
+        const wishlistService = req.scope.resolve<WishlistModuleService>("wishlistModuleService")
         const wishlistData = await wishlistService.getSharedWishlist(token)
 
         if (!wishlistData) {

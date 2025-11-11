@@ -1,4 +1,5 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
+import WishlistModuleService from "../../../../../modules/wishlist/service"
 
 /**
  * DELETE /store/wishlist/items/:id
@@ -27,7 +28,7 @@ export async function DELETE(
             })
         }
 
-        const wishlistService = req.scope.resolve("wishlistModuleService")
+        const wishlistService = req.scope.resolve<WishlistModuleService>("wishlistModuleService")
         await wishlistService.removeItemFromWishlist(id)
 
         res.json({

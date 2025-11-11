@@ -1,4 +1,5 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
+import WishlistModuleService from "../../../modules/wishlist/service"
 
 /**
  * GET /store/wishlist
@@ -17,7 +18,7 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
         }
 
         // Get wishlist service
-        const wishlistService = req.scope.resolve("wishlistModuleService")
+        const wishlistService = req.scope.resolve<WishlistModuleService>("wishlistModuleService")
 
         // Get wishlist with items
         const { wishlist, items } = await wishlistService.getWishlistWithItems(
@@ -99,7 +100,7 @@ export async function DELETE(req: MedusaRequest, res: MedusaResponse) {
             })
         }
 
-        const wishlistService = req.scope.resolve("wishlistModuleService")
+        const wishlistService = req.scope.resolve<WishlistModuleService>("wishlistModuleService")
         const result = await wishlistService.clearWishlist(customerId)
 
         res.json({

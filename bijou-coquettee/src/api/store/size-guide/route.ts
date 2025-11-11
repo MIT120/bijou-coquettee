@@ -1,4 +1,5 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
+import SizeGuideModuleService from "../../../modules/size-guide/service"
 
 /**
  * GET /store/size-guide
@@ -8,7 +9,7 @@ export async function GET(
     req: MedusaRequest,
     res: MedusaResponse
 ) {
-    const sizeGuideService = req.scope.resolve("sizeGuideModule")
+    const sizeGuideService = req.scope.resolve<SizeGuideModuleService>("sizeGuideModule")
 
     const category = req.query.category as string | undefined
 
