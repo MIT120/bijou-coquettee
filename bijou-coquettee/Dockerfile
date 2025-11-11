@@ -7,11 +7,23 @@ WORKDIR /app
 # Build-time arguments (if needed for build process)
 # These can be passed via Railway build args or will use defaults
 ARG NODE_ENV=production
-ARG BUILD_DATE
-ARG VCS_REF
+ARG DATABASE_URL
+ARG JWT_SECRET
+ARG COOKIE_SECRET
+ARG STORE_CORS
+ARG ADMIN_CORS
+ARG AUTH_CORS
+ARG STORE_URL
 
 # Set build-time environment variables
 ENV NODE_ENV=${NODE_ENV}
+ENV DATABASE_URL=${DATABASE_URL}
+ENV JWT_SECRET=${JWT_SECRET}
+ENV COOKIE_SECRET=${COOKIE_SECRET}
+ENV STORE_CORS=${STORE_CORS}
+ENV ADMIN_CORS=${ADMIN_CORS}
+ENV AUTH_CORS=${AUTH_CORS}
+ENV STORE_URL=${STORE_URL}
 
 # Copy package files
 COPY package*.json ./
