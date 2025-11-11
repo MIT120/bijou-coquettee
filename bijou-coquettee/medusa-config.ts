@@ -43,21 +43,91 @@ if (nodeEnv === 'production') {
   }
 }
 
-// Prepare database URL with SSL configuration for Railway PostgreSQL
-// Check multiple possible Railway environment variable names
+// Prepare database URL with SSL configuration
+// Check multiple possible environment variable names
 let databaseUrl = process.env.DATABASE_URL ||
   process.env.POSTGRES_URL ||
   process.env.PGDATABASE ||
   process.env.RAILWAY_DATABASE_URL ||
   ''
 
-// For Railway PostgreSQL, ensure SSL is enabled
-// Railway PostgreSQL requires SSL connections
-if (nodeEnv === 'production' && databaseUrl && !databaseUrl.includes('sslmode=')) {
-  // Add SSL mode to connection string if not already present
-  const separator = databaseUrl.includes('?') ? '&' : '?'
-  databaseUrl = `${databaseUrl}${separator}sslmode=require`
-  console.log('🔒 SSL mode added to DATABASE_URL for Railway PostgreSQL')
+// Configure database connection based on provider
+if (databaseUrl) {
+  try {
+    const url = new URL(databaseUrl.replace(/^postgresql:/, 'postgres:'))
+    const hostname = url.hostname.toLowerCase()
+    const port = url.port || '5432'
+
+    // Detect Supabase pooler (Supavisor) - required for Railway IPv4 compatibility
+    const isSupabasePooler = hostname.includes('pooler.supabase.com')
+    // Detect Supabase direct connection
+    const isSupabaseDirect = hostname.includes('.supabase.co') && !hostname.includes('pooler')
+    // Detect Railway PostgreSQL
+    const isRailway = nodeEnv === 'production' && (
+      hostname.includes('railway') ||
+      hostname.includes('railway.app') ||
+      process.env.RAILWAY_ENVIRONMENT
+    )
+
+    // Build connection parameters
+    const params = new URLSearchParams(url.search)
+
+    // Supabase pooler (Supavisor) configuration for Railway
+    if (isSupabasePooler) {
+      // Ensure SSL is enabled (required for Supabase)
+      if (!params.has('sslmode')) {
+        params.set('sslmode', 'require')
+      }
+
+      // Add connection timeout to prevent hanging
+      if (!params.has('connect_timeout')) {
+        params.set('connect_timeout', '10')
+      }
+
+      // Session mode pooler parameters
+      if (port === '5432') {
+        // Session mode - supports prepared statements (required for Knex/Medusa)
+        console.log('✅ Using Supabase Session Mode pooler (port 5432) - compatible with Medusa')
+      } else if (port === '6543') {
+        // Transaction mode - does NOT support prepared statements
+        console.error('❌ ERROR: Supabase Transaction Mode (port 6543) is not compatible with Medusa!')
+        console.error('Please use Session Mode (port 5432) instead.')
+        process.exit(1)
+      }
+
+      // Update URL with parameters
+      url.search = params.toString()
+      databaseUrl = url.toString().replace(/^postgres:/, 'postgresql:')
+
+      console.log('🔒 SSL and connection parameters configured for Supabase pooler (Railway compatible)')
+    }
+    // Supabase direct connection (requires IPv4 add-on or IPv6 support)
+    else if (isSupabaseDirect) {
+      if (!params.has('sslmode')) {
+        params.set('sslmode', 'require')
+      }
+      url.search = params.toString()
+      databaseUrl = url.toString().replace(/^postgres:/, 'postgresql:')
+      console.log('🔒 SSL configured for Supabase direct connection')
+      console.log('⚠️  Note: Direct connection requires IPv4 add-on or IPv6 support')
+    }
+    // Railway PostgreSQL
+    else if (isRailway) {
+      if (!params.has('sslmode')) {
+        params.set('sslmode', 'require')
+      }
+      url.search = params.toString()
+      databaseUrl = url.toString().replace(/^postgres:/, 'postgresql:')
+      console.log('🔒 SSL configured for Railway PostgreSQL')
+    }
+  } catch (error) {
+    // If URL parsing fails, try to add SSL anyway for production
+    if (nodeEnv === 'production' && !databaseUrl.includes('sslmode=')) {
+      const separator = databaseUrl.includes('?') ? '&' : '?'
+      databaseUrl = `${databaseUrl}${separator}sslmode=require`
+      console.log('🔒 SSL mode added to DATABASE_URL (fallback for production)')
+    }
+  }
 }
 
 module.exports = defineConfig({
