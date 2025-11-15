@@ -34,22 +34,46 @@ RUN npm ci --only=production=false
 # Copy source code
 COPY . .
 
-# Build the application
-RUN npm run build
+# Build the application (this builds the admin panel)
+# Medusa v2 builds admin to .medusa/admin directory
+RUN echo "Building Medusa application and admin panel..." && \
+    npm run build && \
+    echo "Build completed. Verifying admin build..."
+
+# Verify admin build exists (Medusa v2 admin build output location)
+# The admin build should be in .medusa/admin directory with index.html
+RUN if [ ! -f ".medusa/admin/index.html" ]; then \
+      echo "ERROR: Admin build file .medusa/admin/index.html not found!" && \
+      echo "Checking build output structure:" && \
+      find .medusa -type f -name "*.html" 2>/dev/null | head -5 || echo "No HTML files found" && \
+      ls -la .medusa 2>/dev/null || echo "No .medusa directory found" && \
+      echo "Full directory structure:" && \
+      ls -laR .medusa 2>/dev/null | head -20 || true && \
+      exit 1; \
+    else \
+      echo "✓ Admin build verified: .medusa/admin/index.html exists" && \
+      echo "Admin build directory contents:" && \
+      ls -la .medusa/admin | head -10; \
+    fi
 
 # Expose port (Medusa default is 9000)
 EXPOSE 9000
 
-# Runtime environment variables are provided by Railway automatically
+# Runtime environment variables are provided by DigitalOcean automatically
 # These are set at container startup, not during build:
-# - DATABASE_URL
-# - JWT_SECRET
-# - COOKIE_SECRET
-# - STORE_CORS
-# - ADMIN_CORS
-# - AUTH_CORS
-# - STORE_URL
-# - Any other variables configured in Railway dashboard
+# - DATABASE_URL (required)
+# - REDIS_URL (REQUIRED for production - prevents MemoryStore warning)
+# - JWT_SECRET (required)
+# - COOKIE_SECRET (required)
+# - STORE_CORS (required)
+# - ADMIN_CORS (required)
+# - AUTH_CORS (required)
+# - STORE_URL (optional but recommended)
+# - NODE_ENV=production (should be set)
+#
+# IMPORTANT: REDIS_URL must be set at runtime to avoid MemoryStore warning.
+# If REDIS_URL is missing or invalid, Medusa will fall back to MemoryStore
+# which is not suitable for production.
 
 # Start the application
 CMD ["npm", "run", "start"]
