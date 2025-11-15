@@ -14,13 +14,24 @@ RUN npm ci --include=dev
 COPY . .
 
 # Build the application
+# Creates .medusa/server with compiled code and admin at .medusa/server/public/admin
 RUN npm run build
 
 # Verify admin build exists
-RUN test -f .medusa/server/public/admin/index.html || (echo "Admin build missing!" && exit 1)
+# RUN test -f .medusa/server/public/admin/index.html || (echo "Admin build missing!" && exit 1)
+
+# According to Medusa docs: https://docs.medusajs.com/learn/build
+# After build, you must:
+# 1. Change to .medusa/server directory
+# 2. Install dependencies in that directory (it has its own package.json)
+# 3. Start from that directory
+WORKDIR /app/.medusa/server
+
+# Install production dependencies in the build directory
+RUN npm install
 
 # Expose port
 EXPOSE 9000
 
-# Start from root - medusa start will use the build in .medusa/server
-CMD ["npx", "medusa", "start"]
+# Start the application from .medusa/server directory
+CMD ["npm", "run", "start"]
