@@ -11,6 +11,7 @@ README.md
 *.log
 coverage
 .nyc_output
-dist
-build
+# Don't exclude dist/build - they contain the admin build output
+# dist
+# build
 
