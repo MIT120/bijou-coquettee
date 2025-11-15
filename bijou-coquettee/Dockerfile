@@ -19,22 +19,10 @@ RUN npm ci --include=dev
 # Copy source code
 COPY . .
 
-# Build the application (this builds the admin panel)
-# Medusa v2 builds admin to .medusa/admin directory
-RUN npm run build
-
-# Verify admin build exists and show structure
-RUN echo "Checking for admin build..." && \
-    if [ -d ".medusa/admin" ]; then \
-      echo "✓ Admin build found in .medusa/admin" && \
-      ls -la .medusa/admin/ | head -20; \
-    elif [ -f ".medusa/admin/index.html" ]; then \
-      echo "✓ Admin index.html found"; \
-    else \
-      echo "✗ Admin build not found! Listing .medusa directory:" && \
-      ls -la .medusa/ 2>/dev/null || echo "No .medusa directory found" && \
-      exit 1; \
-    fi
+# Build the application
+# According to Medusa v2 docs: https://docs.medusajs.com/learn/build
+# This creates .medusa/server directory with compiled code and admin dashboard
+RUN npm run build 
 
 # Expose port (Medusa default is 9000)
 EXPOSE 9000
@@ -48,7 +36,10 @@ EXPOSE 9000
 # - ADMIN_CORS (required)
 # - AUTH_CORS (required)
 # - STORE_URL (optional)
+# Note: When NODE_ENV=production, Medusa loads from .env.production
+# For Docker, use environment variables instead of .env files
 
-# Start the application
+# Start the application from .medusa/server directory
+# This follows the Medusa build documentation
 CMD ["npm", "run", "start"]
 
