@@ -47,20 +47,21 @@ export const WishlistProvider = ({
     const items = wishlist?.items || []
     const itemCount = items.length
 
-    // Fetch wishlist on mount
-    useEffect(() => {
-        if (!initialWishlist) {
-            refreshWishlist()
-        }
-    }, [initialWishlist])
+    // DISABLED: Automatic wishlist fetch on mount
+    // This was causing "Failed to fetch" errors
+    // useEffect(() => {
+    //     if (!initialWishlist) {
+    //         refreshWishlist()
+    //     }
+    // }, [initialWishlist])
 
     const refreshWishlist = async () => {
         setIsLoading(true)
         try {
+            // getWishlist handles errors internally and returns null
+            // so we don't need to catch here - it will never throw
             const data = await getWishlist()
             setWishlist(data)
-        } catch (error) {
-            console.error("Error fetching wishlist:", error)
         } finally {
             setIsLoading(false)
         }

@@ -2,7 +2,7 @@ import { Metadata } from "next"
 
 import { listCartOptions, retrieveCart } from "@lib/data/cart"
 import { retrieveCustomer } from "@lib/data/customer"
-import { getWishlist } from "@lib/data/wishlist"
+// import { getWishlist } from "@lib/data/wishlist" // DISABLED: Wishlist temporarily disabled
 import { getBaseURL } from "@lib/util/env"
 import { WishlistProvider } from "@lib/context/wishlist-context"
 import { StoreCartShippingOption } from "@medusajs/types"
@@ -18,7 +18,9 @@ export const metadata: Metadata = {
 export default async function PageLayout(props: { children: React.ReactNode }) {
   const customer = await retrieveCustomer()
   const cart = await retrieveCart()
-  const wishlist = customer ? await getWishlist() : null
+  // DISABLED: Wishlist fetch temporarily disabled
+  // const wishlist = customer ? await getWishlist() : null
+  const wishlist = null
   let shippingOptions: StoreCartShippingOption[] = []
 
   if (cart) {

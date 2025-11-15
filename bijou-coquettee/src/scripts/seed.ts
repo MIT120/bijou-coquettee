@@ -62,9 +62,9 @@ export default async function seedDemoData({ container }: ExecArgs) {
   const salesChannelModuleService = container.resolve(Modules.SALES_CHANNEL);
   const storeModuleService = container.resolve(Modules.STORE);
 
-  const countries = ["gb", "de", "dk", "se", "fr", "es", "it"];
+  const countries = ["gb", "de", "dk", "se", "fr", "es", "it", "bg"];
 
-  logger.info("Seeding store data...");
+  logger.info("Seeding Bijou Coquettee jewelry store data...");
   const [store] = await storeModuleService.listStores();
   let defaultSalesChannel = await salesChannelModuleService.listSalesChannels({
     name: "Default Sales Channel",
@@ -141,11 +141,11 @@ export default async function seedDemoData({ container }: ExecArgs) {
     input: {
       locations: [
         {
-          name: "European Warehouse",
+          name: "Bijou Coquettee Atelier",
           address: {
-            city: "Copenhagen",
-            country_code: "DK",
-            address_1: "",
+            city: "Paris",
+            country_code: "FR",
+            address_1: "123 Rue de la Paix",
           },
         },
       ],
@@ -193,7 +193,7 @@ export default async function seedDemoData({ container }: ExecArgs) {
   }
 
   const fulfillmentSet = await fulfillmentModuleService.createFulfillmentSets({
-    name: "European Warehouse delivery",
+    name: "European Jewelry Delivery",
     type: "shipping",
     service_zones: [
       {
@@ -227,6 +227,10 @@ export default async function seedDemoData({ container }: ExecArgs) {
             country_code: "it",
             type: "country",
           },
+          {
+            country_code: "bg",
+            type: "country",
+          },
         ],
       },
     ],
@@ -244,28 +248,28 @@ export default async function seedDemoData({ container }: ExecArgs) {
   await createShippingOptionsWorkflow(container).run({
     input: [
       {
-        name: "Standard Shipping",
+        name: "Standard Jewelry Shipping",
         price_type: "flat",
         provider_id: "manual_manual",
         service_zone_id: fulfillmentSet.service_zones[0].id,
         shipping_profile_id: shippingProfile.id,
         type: {
           label: "Standard",
-          description: "Ship in 2-3 days.",
+          description: "Secure jewelry packaging, 3-5 business days.",
           code: "standard",
         },
         prices: [
           {
             currency_code: "usd",
-            amount: 10,
+            amount: 15,
           },
           {
             currency_code: "eur",
-            amount: 10,
+            amount: 15,
           },
           {
             region_id: region.id,
-            amount: 10,
+            amount: 15,
           },
         ],
         rules: [
@@ -282,28 +286,28 @@ export default async function seedDemoData({ container }: ExecArgs) {
         ],
       },
       {
-        name: "Express Shipping",
+        name: "Express Jewelry Shipping",
         price_type: "flat",
         provider_id: "manual_manual",
         service_zone_id: fulfillmentSet.service_zones[0].id,
         shipping_profile_id: shippingProfile.id,
         type: {
           label: "Express",
-          description: "Ship in 24 hours.",
+          description: "Priority jewelry delivery, 1-2 business days.",
           code: "express",
         },
         prices: [
           {
             currency_code: "usd",
-            amount: 10,
+            amount: 35,
           },
           {
             currency_code: "eur",
-            amount: 10,
+            amount: 35,
           },
           {
             region_id: region.id,
-            amount: 10,
+            amount: 35,
           },
         ],
         rules: [
@@ -338,7 +342,7 @@ export default async function seedDemoData({ container }: ExecArgs) {
     input: {
       api_keys: [
         {
-          title: "Webshop",
+          title: "Bijou Coquettee Storefront",
           type: "publishable",
           created_by: "",
         },
@@ -363,20 +367,29 @@ export default async function seedDemoData({ container }: ExecArgs) {
     input: {
       product_categories: [
         {
-          name: "Shirts",
+          name: "Rings",
           is_active: true,
+          description: "Elegant rings for every occasion",
         },
         {
-          name: "Sweatshirts",
+          name: "Necklaces",
           is_active: true,
+          description: "Statement necklaces and delicate chains",
         },
         {
-          name: "Pants",
+          name: "Earrings",
           is_active: true,
+          description: "Sophisticated earrings to complete your look",
         },
         {
-          name: "Merch",
+          name: "Bracelets",
           is_active: true,
+          description: "Charming bracelets and bangles",
+        },
+        {
+          name: "Sets",
+          is_active: true,
+          description: "Matching jewelry sets for a complete look",
         },
       ],
     },
@@ -386,181 +399,124 @@ export default async function seedDemoData({ container }: ExecArgs) {
     input: {
       products: [
         {
-          title: "Medusa T-Shirt",
+          title: "Rose Gold Pearl Ring",
           category_ids: [
-            categoryResult.find((cat) => cat.name === "Shirts")!.id,
+            categoryResult.find((cat) => cat.name === "Rings")!.id,
           ],
           description:
-            "Reimagine the feeling of a classic T-shirt. With our cotton T-shirts, everyday essentials no longer have to be ordinary.",
-          handle: "t-shirt",
-          weight: 400,
+            "A delicate rose gold ring featuring a lustrous freshwater pearl. This timeless piece adds elegance to any outfit and makes a perfect gift for special occasions.",
+          handle: "rose-gold-pearl-ring",
+          weight: 5,
           status: ProductStatus.PUBLISHED,
           shipping_profile_id: shippingProfile.id,
           images: [
             {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/tee-black-front.png",
+              url: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=800&h=800&fit=crop&crop=center",
             },
             {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/tee-black-back.png",
+              url: "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=800&h=800&fit=crop&crop=center",
             },
             {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/tee-white-front.png",
-            },
-            {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/tee-white-back.png",
+              url: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=800&h=800&fit=crop&crop=center",
             },
           ],
           options: [
             {
               title: "Size",
-              values: ["S", "M", "L", "XL"],
+              values: ["5", "6", "7", "8", "9"],
             },
             {
-              title: "Color",
-              values: ["Black", "White"],
+              title: "Metal",
+              values: ["Rose Gold", "Yellow Gold", "White Gold"],
             },
           ],
           variants: [
             {
-              title: "S / Black",
-              sku: "SHIRT-S-BLACK",
+              title: "5 / Rose Gold",
+              sku: "RING-5-RG",
               options: {
-                Size: "S",
-                Color: "Black",
+                Size: "5",
+                Metal: "Rose Gold",
               },
               prices: [
                 {
-                  amount: 10,
+                  amount: 89,
                   currency_code: "eur",
                 },
                 {
-                  amount: 15,
+                  amount: 95,
                   currency_code: "usd",
                 },
               ],
             },
             {
-              title: "S / White",
-              sku: "SHIRT-S-WHITE",
+              title: "6 / Rose Gold",
+              sku: "RING-6-RG",
               options: {
-                Size: "S",
-                Color: "White",
+                Size: "6",
+                Metal: "Rose Gold",
               },
               prices: [
                 {
-                  amount: 10,
+                  amount: 89,
                   currency_code: "eur",
                 },
                 {
-                  amount: 15,
+                  amount: 95,
                   currency_code: "usd",
                 },
               ],
             },
             {
-              title: "M / Black",
-              sku: "SHIRT-M-BLACK",
+              title: "7 / Rose Gold",
+              sku: "RING-7-RG",
               options: {
-                Size: "M",
-                Color: "Black",
+                Size: "7",
+                Metal: "Rose Gold",
               },
               prices: [
                 {
-                  amount: 10,
+                  amount: 89,
                   currency_code: "eur",
                 },
                 {
-                  amount: 15,
+                  amount: 95,
                   currency_code: "usd",
                 },
               ],
             },
             {
-              title: "M / White",
-              sku: "SHIRT-M-WHITE",
+              title: "8 / Rose Gold",
+              sku: "RING-8-RG",
               options: {
-                Size: "M",
-                Color: "White",
+                Size: "8",
+                Metal: "Rose Gold",
               },
               prices: [
                 {
-                  amount: 10,
+                  amount: 89,
                   currency_code: "eur",
                 },
                 {
-                  amount: 15,
+                  amount: 95,
                   currency_code: "usd",
                 },
               ],
             },
             {
-              title: "L / Black",
-              sku: "SHIRT-L-BLACK",
+              title: "9 / Rose Gold",
+              sku: "RING-9-RG",
               options: {
-                Size: "L",
-                Color: "Black",
+                Size: "9",
+                Metal: "Rose Gold",
               },
               prices: [
                 {
-                  amount: 10,
+                  amount: 89,
                   currency_code: "eur",
                 },
                 {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "L / White",
-              sku: "SHIRT-L-WHITE",
-              options: {
-                Size: "L",
-                Color: "White",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "XL / Black",
-              sku: "SHIRT-XL-BLACK",
-              options: {
-                Size: "XL",
-                Color: "Black",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "XL / White",
-              sku: "SHIRT-XL-WHITE",
-              options: {
-                Size: "XL",
-                Color: "White",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
+                  amount: 95,
                   currency_code: "usd",
                 },
               ],
@@ -573,95 +529,88 @@ export default async function seedDemoData({ container }: ExecArgs) {
           ],
         },
         {
-          title: "Medusa Sweatshirt",
+          title: "Diamond Heart Necklace",
           category_ids: [
-            categoryResult.find((cat) => cat.name === "Sweatshirts")!.id,
+            categoryResult.find((cat) => cat.name === "Necklaces")!.id,
           ],
           description:
-            "Reimagine the feeling of a classic sweatshirt. With our cotton sweatshirt, everyday essentials no longer have to be ordinary.",
-          handle: "sweatshirt",
-          weight: 400,
+            "A stunning diamond heart pendant on a delicate chain. This romantic piece features brilliant-cut diamonds and is perfect for expressing your love.",
+          handle: "diamond-heart-necklace",
+          weight: 8,
           status: ProductStatus.PUBLISHED,
           shipping_profile_id: shippingProfile.id,
           images: [
             {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatshirt-vintage-front.png",
+              url: "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=800&h=800&fit=crop&crop=center",
             },
             {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatshirt-vintage-back.png",
+              url: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=800&h=800&fit=crop&crop=center",
+            },
+            {
+              url: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=800&h=800&fit=crop&crop=center",
             },
           ],
           options: [
             {
-              title: "Size",
-              values: ["S", "M", "L", "XL"],
+              title: "Chain Length",
+              values: ["16 inches", "18 inches", "20 inches"],
+            },
+            {
+              title: "Metal",
+              values: ["White Gold", "Yellow Gold", "Rose Gold"],
             },
           ],
           variants: [
             {
-              title: "S",
-              sku: "SWEATSHIRT-S",
+              title: "16 inches / White Gold",
+              sku: "NECKLACE-16-WG",
               options: {
-                Size: "S",
+                "Chain Length": "16 inches",
+                Metal: "White Gold",
               },
               prices: [
                 {
-                  amount: 10,
+                  amount: 299,
                   currency_code: "eur",
                 },
                 {
-                  amount: 15,
+                  amount: 325,
                   currency_code: "usd",
                 },
               ],
             },
             {
-              title: "M",
-              sku: "SWEATSHIRT-M",
+              title: "18 inches / White Gold",
+              sku: "NECKLACE-18-WG",
               options: {
-                Size: "M",
+                "Chain Length": "18 inches",
+                Metal: "White Gold",
               },
               prices: [
                 {
-                  amount: 10,
+                  amount: 299,
                   currency_code: "eur",
                 },
                 {
-                  amount: 15,
+                  amount: 325,
                   currency_code: "usd",
                 },
               ],
             },
             {
-              title: "L",
-              sku: "SWEATSHIRT-L",
+              title: "20 inches / White Gold",
+              sku: "NECKLACE-20-WG",
               options: {
-                Size: "L",
+                "Chain Length": "20 inches",
+                Metal: "White Gold",
               },
               prices: [
                 {
-                  amount: 10,
+                  amount: 299,
                   currency_code: "eur",
                 },
                 {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "XL",
-              sku: "SWEATSHIRT-XL",
-              options: {
-                Size: "XL",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
+                  amount: 325,
                   currency_code: "usd",
                 },
               ],
@@ -674,95 +623,88 @@ export default async function seedDemoData({ container }: ExecArgs) {
           ],
         },
         {
-          title: "Medusa Sweatpants",
+          title: "Pearl Drop Earrings",
           category_ids: [
-            categoryResult.find((cat) => cat.name === "Pants")!.id,
+            categoryResult.find((cat) => cat.name === "Earrings")!.id,
           ],
           description:
-            "Reimagine the feeling of classic sweatpants. With our cotton sweatpants, everyday essentials no longer have to be ordinary.",
-          handle: "sweatpants",
-          weight: 400,
+            "Classic pearl drop earrings that exude timeless elegance. These handcrafted pieces feature lustrous freshwater pearls and are perfect for both casual and formal occasions.",
+          handle: "pearl-drop-earrings",
+          weight: 6,
           status: ProductStatus.PUBLISHED,
           shipping_profile_id: shippingProfile.id,
           images: [
             {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatpants-gray-front.png",
+              url: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=800&h=800&fit=crop&crop=center",
             },
             {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatpants-gray-back.png",
+              url: "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=800&h=800&fit=crop&crop=center",
+            },
+            {
+              url: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=800&h=800&fit=crop&crop=center",
             },
           ],
           options: [
             {
-              title: "Size",
-              values: ["S", "M", "L", "XL"],
+              title: "Pearl Size",
+              values: ["6mm", "8mm", "10mm"],
+            },
+            {
+              title: "Metal",
+              values: ["Sterling Silver", "Gold Plated", "Rose Gold Plated"],
             },
           ],
           variants: [
             {
-              title: "S",
-              sku: "SWEATPANTS-S",
+              title: "6mm / Sterling Silver",
+              sku: "EARRINGS-6MM-SS",
               options: {
-                Size: "S",
+                "Pearl Size": "6mm",
+                Metal: "Sterling Silver",
               },
               prices: [
                 {
-                  amount: 10,
+                  amount: 45,
                   currency_code: "eur",
                 },
                 {
-                  amount: 15,
+                  amount: 49,
                   currency_code: "usd",
                 },
               ],
             },
             {
-              title: "M",
-              sku: "SWEATPANTS-M",
+              title: "8mm / Sterling Silver",
+              sku: "EARRINGS-8MM-SS",
               options: {
-                Size: "M",
+                "Pearl Size": "8mm",
+                Metal: "Sterling Silver",
               },
               prices: [
                 {
-                  amount: 10,
+                  amount: 55,
                   currency_code: "eur",
                 },
                 {
-                  amount: 15,
+                  amount: 59,
                   currency_code: "usd",
                 },
               ],
             },
             {
-              title: "L",
-              sku: "SWEATPANTS-L",
+              title: "10mm / Sterling Silver",
+              sku: "EARRINGS-10MM-SS",
               options: {
-                Size: "L",
+                "Pearl Size": "10mm",
+                Metal: "Sterling Silver",
               },
               prices: [
                 {
-                  amount: 10,
+                  amount: 65,
                   currency_code: "eur",
                 },
                 {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
-            },
-            {
-              title: "XL",
-              sku: "SWEATPANTS-XL",
-              options: {
-                Size: "XL",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
+                  amount: 69,
                   currency_code: "usd",
                 },
               ],
@@ -775,95 +717,182 @@ export default async function seedDemoData({ container }: ExecArgs) {
           ],
         },
         {
-          title: "Medusa Shorts",
+          title: "Charm Bracelet",
           category_ids: [
-            categoryResult.find((cat) => cat.name === "Merch")!.id,
+            categoryResult.find((cat) => cat.name === "Bracelets")!.id,
           ],
           description:
-            "Reimagine the feeling of classic shorts. With our cotton shorts, everyday essentials no longer have to be ordinary.",
-          handle: "shorts",
-          weight: 400,
+            "A dainty charm bracelet featuring delicate charms and a secure clasp. This versatile piece can be customized with additional charms and makes a perfect everyday accessory.",
+          handle: "charm-bracelet",
+          weight: 4,
           status: ProductStatus.PUBLISHED,
           shipping_profile_id: shippingProfile.id,
           images: [
             {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/shorts-vintage-front.png",
+              url: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=800&h=800&fit=crop&crop=center",
             },
             {
-              url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/shorts-vintage-back.png",
+              url: "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=800&h=800&fit=crop&crop=center",
+            },
+            {
+              url: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=800&h=800&fit=crop&crop=center",
             },
           ],
           options: [
             {
               title: "Size",
-              values: ["S", "M", "L", "XL"],
+              values: ["Small (6 inches)", "Medium (7 inches)", "Large (8 inches)"],
+            },
+            {
+              title: "Metal",
+              values: ["Sterling Silver", "Gold Plated", "Rose Gold Plated"],
             },
           ],
           variants: [
             {
-              title: "S",
-              sku: "SHORTS-S",
+              title: "Small / Sterling Silver",
+              sku: "BRACELET-S-SS",
               options: {
-                Size: "S",
+                Size: "Small (6 inches)",
+                Metal: "Sterling Silver",
               },
               prices: [
                 {
-                  amount: 10,
+                  amount: 35,
                   currency_code: "eur",
                 },
                 {
-                  amount: 15,
+                  amount: 39,
                   currency_code: "usd",
                 },
               ],
             },
             {
-              title: "M",
-              sku: "SHORTS-M",
+              title: "Medium / Sterling Silver",
+              sku: "BRACELET-M-SS",
               options: {
-                Size: "M",
+                Size: "Medium (7 inches)",
+                Metal: "Sterling Silver",
               },
               prices: [
                 {
-                  amount: 10,
+                  amount: 35,
                   currency_code: "eur",
                 },
                 {
-                  amount: 15,
+                  amount: 39,
                   currency_code: "usd",
                 },
               ],
             },
             {
-              title: "L",
-              sku: "SHORTS-L",
+              title: "Large / Sterling Silver",
+              sku: "BRACELET-L-SS",
               options: {
-                Size: "L",
+                Size: "Large (8 inches)",
+                Metal: "Sterling Silver",
               },
               prices: [
                 {
-                  amount: 10,
+                  amount: 35,
                   currency_code: "eur",
                 },
                 {
-                  amount: 15,
+                  amount: 39,
+                  currency_code: "usd",
+                },
+              ],
+            },
+          ],
+          sales_channels: [
+            {
+              id: defaultSalesChannel[0].id,
+            },
+          ],
+        },
+        {
+          title: "Pearl & Diamond Set",
+          category_ids: [
+            categoryResult.find((cat) => cat.name === "Sets")!.id,
+          ],
+          description:
+            "A complete jewelry set featuring a pearl necklace, matching earrings, and a coordinating bracelet. This elegant ensemble is perfect for special occasions and formal events.",
+          handle: "pearl-diamond-set",
+          weight: 25,
+          status: ProductStatus.PUBLISHED,
+          shipping_profile_id: shippingProfile.id,
+          images: [
+            {
+              url: "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=800&h=800&fit=crop&crop=center",
+            },
+            {
+              url: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=800&h=800&fit=crop&crop=center",
+            },
+            {
+              url: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=800&h=800&fit=crop&crop=center",
+            },
+          ],
+          options: [
+            {
+              title: "Set Size",
+              values: ["Small", "Medium", "Large"],
+            },
+            {
+              title: "Metal",
+              values: ["White Gold", "Yellow Gold", "Rose Gold"],
+            },
+          ],
+          variants: [
+            {
+              title: "Small / White Gold",
+              sku: "SET-S-WG",
+              options: {
+                "Set Size": "Small",
+                Metal: "White Gold",
+              },
+              prices: [
+                {
+                  amount: 599,
+                  currency_code: "eur",
+                },
+                {
+                  amount: 649,
                   currency_code: "usd",
                 },
               ],
             },
             {
-              title: "XL",
-              sku: "SHORTS-XL",
+              title: "Medium / White Gold",
+              sku: "SET-M-WG",
               options: {
-                Size: "XL",
+                "Set Size": "Medium",
+                Metal: "White Gold",
               },
               prices: [
                 {
-                  amount: 10,
+                  amount: 699,
                   currency_code: "eur",
                 },
                 {
-                  amount: 15,
+                  amount: 749,
+                  currency_code: "usd",
+                },
+              ],
+            },
+            {
+              title: "Large / White Gold",
+              sku: "SET-L-WG",
+              options: {
+                "Set Size": "Large",
+                Metal: "White Gold",
+              },
+              prices: [
+                {
+                  amount: 799,
+                  currency_code: "eur",
+                },
+                {
+                  amount: 849,
                   currency_code: "usd",
                 },
               ],
@@ -891,7 +920,7 @@ export default async function seedDemoData({ container }: ExecArgs) {
   for (const inventoryItem of inventoryItems) {
     const inventoryLevel = {
       location_id: stockLocation.id,
-      stocked_quantity: 1000000,
+      stocked_quantity: 50, // Lower quantity for jewelry
       inventory_item_id: inventoryItem.id,
     };
     inventoryLevels.push(inventoryLevel);
@@ -903,5 +932,5 @@ export default async function seedDemoData({ container }: ExecArgs) {
     },
   });
 
-  logger.info("Finished seeding inventory levels data.");
+  logger.info("Finished seeding Bijou Coquettee jewelry inventory levels data.");
 }

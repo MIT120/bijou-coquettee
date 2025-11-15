@@ -24,36 +24,85 @@ export type Wishlist = {
 
 /**
  * Get customer's wishlist
+ * Note: This is a client-side function, so it cannot use server-only features like `next: { tags }`
+ * 
+ * DISABLED: Temporarily disabled due to "Failed to fetch" errors
+ * To re-enable, remove the early return below
  */
 export async function getWishlist(): Promise<Wishlist | null> {
-    const headers = {
+    // TEMPORARILY DISABLED - Return null immediately to prevent fetch errors
+    return null
+
+    /* COMMENTED OUT - To re-enable, uncomment below and remove the return null above
+    const headers: HeadersInit = {
         "Content-Type": "application/json",
-        "x-publishable-api-key": process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY!,
+    }
+
+    // Add publishable key if available
+    const publishableKey = process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
+    if (publishableKey) {
+        headers["x-publishable-api-key"] = publishableKey
     }
 
     try {
+        // Validate backend URL
+        if (!BACKEND_URL) {
+            console.error("Backend URL is not configured")
+            return null
+        }
+
         const response = await fetch(`${BACKEND_URL}/store/wishlist`, {
             headers,
-            next: { tags: ["wishlist"] },
-            credentials: "include",
+            credentials: "include", // This ensures cookies (including auth token) are sent
+            cache: "no-store", // Client-side fetch should not be cached
         })
 
         if (response.status === 401) {
-            // Not authenticated
+            // Not authenticated - this is expected for guests
             return null
         }
 
         if (!response.ok) {
-            console.error("Failed to fetch wishlist:", response.statusText)
+            const errorText = await response.text().catch(() => "Unable to read error response")
+            console.error("Failed to fetch wishlist:", {
+                status: response.status,
+                statusText: response.statusText,
+                url: `${BACKEND_URL}/store/wishlist`,
+                errorText,
+            })
             return null
         }
 
         const data = await response.json()
         return data.wishlist
     } catch (error) {
-        console.error("Error fetching wishlist:", error)
+        // Better error serialization
+        const errorDetails: any = {
+            url: `${BACKEND_URL}/store/wishlist`,
+            backendUrl: BACKEND_URL,
+            hasPublishableKey: !!publishableKey,
+        }
+
+        if (error instanceof Error) {
+            errorDetails.message = error.message
+            errorDetails.name = error.name
+            errorDetails.stack = error.stack
+        } else if (error instanceof TypeError) {
+            errorDetails.message = error.message
+            errorDetails.name = "TypeError"
+            // Network errors often show as TypeError
+            if (error.message.includes("fetch")) {
+                errorDetails.hint = "This might be a CORS or network connectivity issue. Check if the backend is running and CORS is configured."
+            }
+        } else {
+            errorDetails.rawError = String(error)
+            errorDetails.type = typeof error
+        }
+
+        console.error("Error fetching wishlist:", errorDetails)
         return null
     }
+    */
 }
 
 /**
@@ -63,9 +112,13 @@ export async function addToWishlist(
     productId: string,
     variantId?: string
 ): Promise<boolean> {
-    const headers = {
+    const headers: HeadersInit = {
         "Content-Type": "application/json",
-        "x-publishable-api-key": process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY!,
+    }
+
+    const publishableKey = process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
+    if (publishableKey) {
+        headers["x-publishable-api-key"] = publishableKey
     }
 
     try {
@@ -90,9 +143,13 @@ export async function addToWishlist(
  * Remove item from wishlist
  */
 export async function removeFromWishlist(itemId: string): Promise<boolean> {
-    const headers = {
+    const headers: HeadersInit = {
         "Content-Type": "application/json",
-        "x-publishable-api-key": process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY!,
+    }
+
+    const publishableKey = process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
+    if (publishableKey) {
+        headers["x-publishable-api-key"] = publishableKey
     }
 
     try {
@@ -119,9 +176,13 @@ export async function isInWishlist(
     productId: string,
     variantId?: string
 ): Promise<boolean> {
-    const headers = {
+    const headers: HeadersInit = {
         "Content-Type": "application/json",
-        "x-publishable-api-key": process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY!,
+    }
+
+    const publishableKey = process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
+    if (publishableKey) {
+        headers["x-publishable-api-key"] = publishableKey
     }
 
     try {
@@ -151,9 +212,13 @@ export async function isInWishlist(
  * Clear entire wishlist
  */
 export async function clearWishlist(): Promise<boolean> {
-    const headers = {
+    const headers: HeadersInit = {
         "Content-Type": "application/json",
-        "x-publishable-api-key": process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY!,
+    }
+
+    const publishableKey = process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
+    if (publishableKey) {
+        headers["x-publishable-api-key"] = publishableKey
     }
 
     try {
@@ -174,9 +239,13 @@ export async function clearWishlist(): Promise<boolean> {
  * Generate share link for wishlist
  */
 export async function generateShareLink(): Promise<string | null> {
-    const headers = {
+    const headers: HeadersInit = {
         "Content-Type": "application/json",
-        "x-publishable-api-key": process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY!,
+    }
+
+    const publishableKey = process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
+    if (publishableKey) {
+        headers["x-publishable-api-key"] = publishableKey
     }
 
     try {
@@ -208,7 +277,8 @@ export async function getSharedWishlist(
         const response = await fetch(
             `${BACKEND_URL}/store/wishlist/shared/${token}`,
             {
-                next: { tags: [`wishlist-${token}`] },
+                credentials: "include",
+                cache: "no-store", // Client-side fetch should not be cached
             }
         )
 

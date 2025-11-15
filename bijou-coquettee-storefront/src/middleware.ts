@@ -19,44 +19,71 @@ async function getRegionMap(cacheId: string) {
     )
   }
 
+  if (!PUBLISHABLE_API_KEY) {
+    throw new Error(
+      "Middleware.ts: NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY environment variable is not set."
+    )
+  }
+
   if (
     !regionMap.keys().next().value ||
     regionMapUpdated < Date.now() - 3600 * 1000
   ) {
-    // Fetch regions from Medusa. We can't use the JS client here because middleware is running on Edge and the client needs a Node environment.
-    const { regions } = await fetch(`${BACKEND_URL}/store/regions`, {
-      headers: {
-        "x-publishable-api-key": PUBLISHABLE_API_KEY!,
-      },
-      next: {
-        revalidate: 3600,
-        tags: [`regions-${cacheId}`],
-      },
-      cache: "force-cache",
-    }).then(async (response) => {
+    try {
+      // Fetch regions from Medusa. We can't use the JS client here because middleware is running on Edge and the client needs a Node environment.
+      const response = await fetch(`${BACKEND_URL}/store/regions`, {
+        headers: {
+          "x-publishable-api-key": PUBLISHABLE_API_KEY,
+        },
+        next: {
+          revalidate: 3600,
+          tags: [`regions-${cacheId}`],
+        },
+        cache: "force-cache",
+      })
+
+      // Check if response is JSON before parsing
+      const contentType = response.headers.get("content-type")
+      if (!contentType || !contentType.includes("application/json")) {
+        const text = await response.text()
+        throw new Error(
+          `Expected JSON response but received ${contentType}. This usually means the backend URL is incorrect or the server is returning an error page. Backend URL: ${BACKEND_URL}/store/regions. Response preview: ${text.substring(0, 200)}`
+        )
+      }
+
       const json = await response.json()
 
       if (!response.ok) {
-        throw new Error(json.message)
+        throw new Error(
+          json.message || `Failed to fetch regions: ${response.status} ${response.statusText}`
+        )
       }
 
-      return json
-    })
+      const { regions } = json
 
-    if (!regions?.length) {
-      throw new Error(
-        "No regions found. Please set up regions in your Medusa Admin."
-      )
-    }
+      if (!regions?.length) {
+        throw new Error(
+          "No regions found. Please set up regions in your Medusa Admin."
+        )
+      }
 
-    // Create a map of country codes to regions.
-    regions.forEach((region: HttpTypes.StoreRegion) => {
-      region.countries?.forEach((c) => {
-        regionMapCache.regionMap.set(c.iso_2 ?? "", region)
+      // Create a map of country codes to regions.
+      regions.forEach((region: HttpTypes.StoreRegion) => {
+        region.countries?.forEach((c) => {
+          regionMapCache.regionMap.set(c.iso_2 ?? "", region)
+        })
       })
-    })
 
-    regionMapCache.regionMapUpdated = Date.now()
+      regionMapCache.regionMapUpdated = Date.now()
+    } catch (error) {
+      // Provide more helpful error messages
+      if (error instanceof Error) {
+        throw new Error(
+          `Middleware.ts: Failed to fetch regions from ${BACKEND_URL}/store/regions. ${error.message}`
+        )
+      }
+      throw error
+    }
   }
 
   return regionMapCache.regionMap
