@@ -5,51 +5,49 @@ FROM node:22-alpine
 WORKDIR /app
 
 # Build-time arguments (if needed for build process)
-# These can be passed via Railway build args or will use defaults
 ARG NODE_ENV=production
-ARG DATABASE_URL
-ARG JWT_SECRET
-ARG COOKIE_SECRET
-ARG STORE_CORS
-ARG ADMIN_CORS
-ARG AUTH_CORS
-ARG STORE_URL
 
-# Set build-time environment variables
+# Set NODE_ENV for build process
 ENV NODE_ENV=${NODE_ENV}
-ENV DATABASE_URL=${DATABASE_URL}
-ENV JWT_SECRET=${JWT_SECRET}
-ENV COOKIE_SECRET=${COOKIE_SECRET}
-ENV STORE_CORS=${STORE_CORS}
-ENV ADMIN_CORS=${ADMIN_CORS}
-ENV AUTH_CORS=${AUTH_CORS}
-ENV STORE_URL=${STORE_URL}
 
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production=false
+# Install dependencies (including dev dependencies needed for build)
+RUN npm ci --include=dev
 
 # Copy source code
 COPY . .
 
-# Build the application
+# Build the application (this builds the admin panel)
+# Medusa v2 builds admin to .medusa/admin directory
 RUN npm run build
+
+# Verify admin build exists and show structure
+RUN echo "Checking for admin build..." && \
+    if [ -d ".medusa/admin" ]; then \
+      echo "✓ Admin build found in .medusa/admin" && \
+      ls -la .medusa/admin/ | head -20; \
+    elif [ -f ".medusa/admin/index.html" ]; then \
+      echo "✓ Admin index.html found"; \
+    else \
+      echo "✗ Admin build not found! Listing .medusa directory:" && \
+      ls -la .medusa/ 2>/dev/null || echo "No .medusa directory found" && \
+      exit 1; \
+    fi
 
 # Expose port (Medusa default is 9000)
 EXPOSE 9000
 
-# Runtime environment variables are provided by Railway automatically
-# These are set at container startup, not during build:
-# - DATABASE_URL
-# - JWT_SECRET
-# - COOKIE_SECRET
-# - STORE_CORS
-# - ADMIN_CORS
-# - AUTH_CORS
-# - STORE_URL
-# - Any other variables configured in Railway dashboard
+# Runtime environment variables should be set in DigitalOcean:
+# - DATABASE_URL (required)
+# - REDIS_URL (required for production - fixes MemoryStore warning)
+# - JWT_SECRET (required)
+# - COOKIE_SECRET (required)
+# - STORE_CORS (required)
+# - ADMIN_CORS (required)
+# - AUTH_CORS (required)
+# - STORE_URL (optional)
 
 # Start the application
 CMD ["npm", "run", "start"]
