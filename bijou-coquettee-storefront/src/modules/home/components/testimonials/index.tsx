@@ -1,0 +1,73 @@
+import { Heading, Text } from "@medusajs/ui"
+
+const Testimonials = () => {
+  const testimonials = [
+    {
+      quote: "Absolutely stunning pieces! The quality exceeded my expectations and the packaging was beautiful. I'll definitely be ordering again.",
+      author: "Sarah M.",
+      location: "New York",
+      rating: 5,
+    },
+    {
+      quote: "I've been searching for the perfect necklace and finally found it here. The craftsmanship is exceptional and the customer service was outstanding.",
+      author: "Emily R.",
+      location: "Los Angeles",
+      rating: 5,
+    },
+    {
+      quote: "These pieces are timeless and elegant. I receive compliments every time I wear them. Worth every penny!",
+      author: "Jessica L.",
+      location: "Chicago",
+      rating: 5,
+    },
+  ]
+
+  return (
+    <section className="content-container py-24 small:py-32 border-t border-grey-10 bg-white">
+      <div className="max-w-6xl mx-auto">
+        <div className="text-center mb-16">
+          <div className="inline-block mb-4">
+            <span className="text-xs small:text-sm tracking-[0.3em] uppercase text-grey-60 font-light">
+              Customer Stories
+            </span>
+          </div>
+          <Heading
+            level="h2"
+            className="text-3xl small:text-4xl text-grey-90 font-light tracking-tight"
+          >
+            Loved by Our Customers
+          </Heading>
+        </div>
+
+        <div className="grid grid-cols-1 small:grid-cols-3 gap-8 small:gap-12">
+          {testimonials.map((testimonial, index) => (
+            <div
+              key={index}
+              className="space-y-6 p-6 small:p-8 bg-grey-5 border border-grey-10 hover:border-grey-20 transition-all duration-300 group"
+            >
+              <div className="flex gap-1">
+                {[...Array(testimonial.rating)].map((_, i) => (
+                  <span key={i} className="text-amber-400 text-sm">★</span>
+                ))}
+              </div>
+              <Text className="text-base small:text-lg text-grey-70 font-light leading-relaxed italic">
+                "{testimonial.quote}"
+              </Text>
+              <div className="pt-4 border-t border-grey-10">
+                <Text className="text-sm text-grey-90 font-light">
+                  {testimonial.author}
+                </Text>
+                <Text className="text-xs text-grey-50 font-light">
+                  {testimonial.location}
+                </Text>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+export default Testimonials
+

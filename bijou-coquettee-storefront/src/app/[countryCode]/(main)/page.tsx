@@ -2,13 +2,22 @@ import { Metadata } from "next"
 
 import FeaturedProducts from "@modules/home/components/featured-products"
 import Hero from "@modules/home/components/hero"
+import BrandStory from "@modules/home/components/brand-story"
+import FeaturedCategories from "@modules/home/components/featured-categories"
+import Newsletter from "@modules/home/components/newsletter"
+import ServiceHighlights from "@modules/home/components/service-highlights"
+import Testimonials from "@modules/home/components/testimonials"
+import GiftGuide from "@modules/home/components/gift-guide"
+import NewArrivalsBanner from "@modules/home/components/new-arrivals-banner"
+import CareGuide from "@modules/home/components/care-guide"
+import SpecialOffer from "@modules/home/components/special-offer"
 import { listCollections } from "@lib/data/collections"
 import { getRegion } from "@lib/data/regions"
 
 export const metadata: Metadata = {
-  title: "Medusa Next.js Starter Template",
+  title: "Bijou Coquettee - Timeless Elegance in Fine Jewelry",
   description:
-    "A performant frontend ecommerce starter template with Next.js 15 and Medusa.",
+    "Discover our curated collection of exquisite jewelry, crafted with precision and passion. Shop elegant pieces that celebrate timeless beauty.",
 }
 
 export default async function Home(props: {
@@ -29,13 +38,22 @@ export default async function Home(props: {
   }
 
   return (
-    <>
+    <div className="min-h-screen bg-white">
       <Hero />
-      <div className="py-12">
-        <ul className="flex flex-col gap-x-6">
+      <SpecialOffer />
+      <ServiceHighlights />
+      <NewArrivalsBanner />
+      <div className="bg-white">
+        <ul className="flex flex-col">
           <FeaturedProducts collections={collections} region={region} />
         </ul>
       </div>
-    </>
+      <FeaturedCategories />
+      <GiftGuide />
+      <Testimonials />
+      <BrandStory />
+      <CareGuide />
+      <Newsletter />
+    </div>
   )
 }
