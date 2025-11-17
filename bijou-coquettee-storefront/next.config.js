@@ -1,6 +1,9 @@
 const checkEnvVariables = require("./check-env-variables")
+const createNextIntlPlugin = require("next-intl/plugin")
 
 checkEnvVariables()
+
+const withNextIntl = createNextIntlPlugin("./src/i18n/config.ts")
 
 /**
  * Medusa Cloud-related environment variables
@@ -23,6 +26,13 @@ const nextConfig = {
   },
   typescript: {
     ignoreBuildErrors: true,
+  },
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      "@": require("path").resolve(__dirname, "./src"),
+    }
+    return config
   },
   images: {
     remotePatterns: [
@@ -67,4 +77,4 @@ const nextConfig = {
   },
 }
 
-module.exports = nextConfig
+module.exports = withNextIntl(nextConfig)

@@ -13,6 +13,7 @@ import CareGuide from "@modules/home/components/care-guide"
 import SpecialOffer from "@modules/home/components/special-offer"
 import { listCollections } from "@lib/data/collections"
 import { getRegion } from "@lib/data/regions"
+import { getServerLocale } from "@lib/util/translations-server"
 
 export const metadata: Metadata = {
   title: "Bijou Coquettee - Timeless Elegance in Fine Jewelry",
@@ -28,6 +29,7 @@ export default async function Home(props: {
   const { countryCode } = params
 
   const region = await getRegion(countryCode)
+  const locale = await getServerLocale(countryCode)
 
   const { collections } = await listCollections({
     fields: "id, handle, title",
@@ -39,7 +41,7 @@ export default async function Home(props: {
 
   return (
     <div className="min-h-screen bg-white">
-      <Hero />
+      <Hero locale={locale} />
       <SpecialOffer />
       <ServiceHighlights />
       <NewArrivalsBanner />

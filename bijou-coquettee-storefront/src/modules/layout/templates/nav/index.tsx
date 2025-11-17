@@ -6,9 +6,12 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 import CartButton from "@modules/layout/components/cart-button"
 import WishlistNav from "@modules/layout/components/wishlist-nav"
 import SideMenu from "@modules/layout/components/side-menu"
+import LanguageSwitcher from "@modules/layout/components/language-switcher"
+import { getServerLocale, t } from "@lib/util/translations-server"
 
 export default async function Nav() {
   const regions = await listRegions().then((regions: StoreRegion[]) => regions)
+  const locale = await getServerLocale()
 
   return (
     <div className="sticky top-0 inset-x-0 z-50 group">
@@ -16,7 +19,7 @@ export default async function Nav() {
         <nav className="content-container txt-xsmall-plus text-ui-fg-subtle flex items-center justify-between w-full h-full text-small-regular">
           <div className="flex-1 basis-0 h-full flex items-center">
             <div className="h-full">
-              <SideMenu regions={regions} />
+              <SideMenu regions={regions} locale={locale} />
             </div>
           </div>
 
@@ -26,7 +29,7 @@ export default async function Nav() {
               className="txt-compact-xlarge-plus hover:text-ui-fg-base uppercase"
               data-testid="nav-store-link"
             >
-              Medusa Store
+              {await t("common.brand")}
             </LocalizedClientLink>
           </div>
 
@@ -37,9 +40,10 @@ export default async function Nav() {
                 href="/account"
                 data-testid="nav-account-link"
               >
-                Account
+                {await t("common.account")}
               </LocalizedClientLink>
             </div>
+            <LanguageSwitcher locale={locale} />
             <WishlistNav />
             <Suspense
               fallback={
@@ -48,11 +52,11 @@ export default async function Nav() {
                   href="/cart"
                   data-testid="nav-cart-link"
                 >
-                  Cart (0)
+                  {await t("common.cart")} (0)
                 </LocalizedClientLink>
               }
             >
-              <CartButton />
+              <CartButton locale={locale} />
             </Suspense>
           </div>
         </nav>

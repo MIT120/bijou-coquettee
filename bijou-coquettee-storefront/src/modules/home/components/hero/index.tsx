@@ -1,7 +1,24 @@
+"use client"
+
 import { Button, Heading } from "@medusajs/ui"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import { useParams } from "next/navigation"
+import { getLocale, t } from "@lib/util/translations"
+import { type Locale } from "@/i18n/locale"
+import { useEffect, useState } from "react"
 
-const Hero = () => {
+const Hero = ({ locale: initialLocale }: { locale: Locale }) => {
+  const params = useParams()
+  const countryCode = params?.countryCode as string | undefined
+
+  // Use server-provided locale initially, then sync with client-side locale after hydration
+  const [locale, setLocale] = useState<Locale>(initialLocale)
+
+  useEffect(() => {
+    // After hydration, update to client-side locale (which respects cookie)
+    const clientLocale = getLocale(countryCode)
+    setLocale(clientLocale)
+  }, [countryCode])
   return (
     <div className="relative w-full h-[85vh] small:h-[90vh] overflow-hidden bg-gradient-to-b from-grey-0 via-grey-5 to-grey-10">
       {/* Elegant background pattern */}
@@ -24,21 +41,20 @@ const Hero = () => {
           <div className="space-y-4">
             <div className="inline-block mb-4">
               <span className="text-xs small:text-sm tracking-[0.3em] uppercase text-grey-60 font-light letter-spacing-wider">
-                Bijou Coquettee
+                {t("hero.subtitle", locale)}
               </span>
             </div>
             <Heading
               level="h1"
               className="text-4xl small:text-6xl large:text-7xl leading-tight text-grey-90 font-light tracking-tight"
             >
-              Timeless Elegance
+              {t("hero.title", locale)}
             </Heading>
             <Heading
               level="h2"
               className="text-xl small:text-2xl large:text-3xl leading-relaxed text-grey-60 font-light mt-4 max-w-2xl mx-auto"
             >
-              Discover our curated collection of exquisite jewelry,
-              crafted with precision and passion
+              {t("hero.description", locale)}
             </Heading>
           </div>
 
@@ -49,16 +65,7 @@ const Hero = () => {
                 size="large"
                 className="bg-grey-90 hover:bg-grey-80 text-white px-8 py-3 rounded-none border border-grey-90 hover:border-grey-80 transition-all duration-300 font-light tracking-wide uppercase text-sm letter-spacing-wider"
               >
-                Shop Collection
-              </Button>
-            </LocalizedClientLink>
-            <LocalizedClientLink href="/collections">
-              <Button
-                variant="secondary"
-                size="large"
-                className="bg-transparent hover:bg-grey-90 hover:text-white text-grey-90 px-8 py-3 rounded-none border border-grey-30 hover:border-grey-90 transition-all duration-300 font-light tracking-wide uppercase text-sm letter-spacing-wider"
-              >
-                Explore
+                {t("hero.shopCollection", locale)}
               </Button>
             </LocalizedClientLink>
           </div>

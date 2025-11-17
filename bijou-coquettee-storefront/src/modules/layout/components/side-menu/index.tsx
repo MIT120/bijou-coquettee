@@ -3,21 +3,41 @@
 import { Popover, PopoverPanel, Transition } from "@headlessui/react"
 import { ArrowRightMini, XMark } from "@medusajs/icons"
 import { Text, clx, useToggleState } from "@medusajs/ui"
-import { Fragment } from "react"
+import { Fragment, useEffect, useState } from "react"
+import { useParams } from "next/navigation"
 
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import CountrySelect from "../country-select"
 import { HttpTypes } from "@medusajs/types"
+import { getLocale, t } from "@lib/util/translations"
+import { Locale } from "@/i18n/locale"
 
-const SideMenuItems = {
-  Home: "/",
-  Store: "/store",
-  Account: "/account",
-  Cart: "/cart",
-}
-
-const SideMenu = ({ regions }: { regions: HttpTypes.StoreRegion[] | null }) => {
+const SideMenu = ({
+  regions,
+  locale: initialLocale
+}: {
+  regions: HttpTypes.StoreRegion[] | null
+  locale: Locale
+}) => {
   const toggleState = useToggleState()
+  const params = useParams()
+  const countryCode = params?.countryCode as string | undefined
+
+  // Use server-provided locale initially, then sync with client-side locale after hydration
+  const [locale, setLocale] = useState<Locale>(initialLocale)
+
+  useEffect(() => {
+    // After hydration, update to client-side locale (which respects cookie)
+    const clientLocale = getLocale(countryCode)
+    setLocale(clientLocale)
+  }, [countryCode])
+
+  const SideMenuItems = [
+    { key: "home", href: "/", translationKey: "navigation.home" },
+    { key: "store", href: "/store", translationKey: "navigation.store" },
+    { key: "account", href: "/account", translationKey: "navigation.account" },
+    { key: "cart", href: "/cart", translationKey: "navigation.cart" },
+  ]
 
   return (
     <div className="h-full">
@@ -30,7 +50,7 @@ const SideMenu = ({ regions }: { regions: HttpTypes.StoreRegion[] | null }) => {
                   data-testid="nav-menu-button"
                   className="relative h-full flex items-center transition-all ease-out duration-200 focus:outline-none hover:text-ui-fg-base"
                 >
-                  Menu
+                  {t("navigation.menu", locale)}
                 </Popover.Button>
               </div>
 
@@ -55,16 +75,16 @@ const SideMenu = ({ regions }: { regions: HttpTypes.StoreRegion[] | null }) => {
                       </button>
                     </div>
                     <ul className="flex flex-col gap-6 items-start justify-start">
-                      {Object.entries(SideMenuItems).map(([name, href]) => {
+                      {SideMenuItems.map((item) => {
                         return (
-                          <li key={name}>
+                          <li key={item.key}>
                             <LocalizedClientLink
-                              href={href}
+                              href={item.href}
                               className="text-3xl leading-10 hover:text-ui-fg-disabled"
                               onClick={close}
-                              data-testid={`${name.toLowerCase()}-link`}
+                              data-testid={`${item.key}-link`}
                             >
-                              {name}
+                              {t(item.translationKey, locale)}
                             </LocalizedClientLink>
                           </li>
                         )
@@ -90,8 +110,7 @@ const SideMenu = ({ regions }: { regions: HttpTypes.StoreRegion[] | null }) => {
                         />
                       </div>
                       <Text className="flex justify-between txt-compact-small">
-                        © {new Date().getFullYear()} Medusa Store. All rights
-                        reserved.
+                        {t("common.copyright", locale, { year: new Date().getFullYear().toString() })}
                       </Text>
                     </div>
                   </div>

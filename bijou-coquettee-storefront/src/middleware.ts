@@ -1,5 +1,6 @@
 import { HttpTypes } from "@medusajs/types"
 import { NextRequest, NextResponse } from "next/server"
+import { getLocaleFromCountryCode, getLocaleFromHeaders, defaultLocale } from "./i18n/locale"
 
 const BACKEND_URL = process.env.MEDUSA_BACKEND_URL
 const PUBLISHABLE_API_KEY = process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
@@ -143,12 +144,40 @@ export async function middleware(request: NextRequest) {
 
   const countryCode = regionMap && (await getCountryCode(request, regionMap))
 
+  // Check if user has a locale preference cookie (user preference takes priority)
+  const existingLocaleCookie = request.cookies.get("NEXT_LOCALE")?.value
+
+  // Detect locale: prioritize existing cookie (user preference), then country code, then headers
+  let locale: string
+  if (existingLocaleCookie && (existingLocaleCookie === "en" || existingLocaleCookie === "bg")) {
+    // User has explicitly set a preference - use it
+    locale = existingLocaleCookie
+  } else if (countryCode) {
+    // No user preference, detect from country code
+    locale = getLocaleFromCountryCode(countryCode)
+  } else {
+    // Fallback to headers
+    locale = getLocaleFromHeaders(request.headers)
+  }
+
   const urlHasCountryCode =
     countryCode && request.nextUrl.pathname.split("/")[1].includes(countryCode)
 
   // if one of the country codes is in the url and the cache id is set, return next
   if (urlHasCountryCode && cacheIdCookie) {
-    return NextResponse.next()
+    const response = NextResponse.next()
+    // Always preserve user's cookie preference, or set initial locale if no preference exists
+    if (existingLocaleCookie && (existingLocaleCookie === "en" || existingLocaleCookie === "bg")) {
+      // User has a preference - preserve it (don't overwrite)
+      // Cookie is already set, no need to set it again
+    } else {
+      // No user preference yet - set based on detection
+      response.cookies.set("NEXT_LOCALE", locale, {
+        maxAge: 60 * 60 * 24 * 365, // 1 year
+        path: "/",
+      })
+    }
+    return response
   }
 
   // if one of the country codes is in the url and the cache id is not set, set the cache id and redirect
@@ -174,6 +203,17 @@ export async function middleware(request: NextRequest) {
   if (!urlHasCountryCode && countryCode) {
     redirectUrl = `${request.nextUrl.origin}/${countryCode}${redirectPath}${queryString}`
     response = NextResponse.redirect(`${redirectUrl}`, 307)
+    // Always preserve user's cookie preference, or set initial locale if no preference exists
+    if (existingLocaleCookie && (existingLocaleCookie === "en" || existingLocaleCookie === "bg")) {
+      // User has a preference - preserve it (don't overwrite)
+      // Cookie is already set, no need to set it again
+    } else {
+      // No user preference yet - set based on detection
+      response.cookies.set("NEXT_LOCALE", locale, {
+        maxAge: 60 * 60 * 24 * 365, // 1 year
+        path: "/",
+      })
+    }
   } else if (!urlHasCountryCode && !countryCode) {
     // Handle case where no valid country code exists (empty regions)
     return new NextResponse(
