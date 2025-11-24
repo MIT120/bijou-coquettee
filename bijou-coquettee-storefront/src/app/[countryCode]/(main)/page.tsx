@@ -11,6 +11,8 @@ import GiftGuide from "@modules/home/components/gift-guide"
 import NewArrivalsBanner from "@modules/home/components/new-arrivals-banner"
 import CareGuide from "@modules/home/components/care-guide"
 import SpecialOffer from "@modules/home/components/special-offer"
+import LookbookCarousel from "@modules/home/components/lookbook-carousel"
+import EditorialGallery from "@modules/home/components/editorial-gallery"
 import { listCollections } from "@lib/data/collections"
 import { getRegion } from "@lib/data/regions"
 import { getServerLocale } from "@lib/util/translations-server"
@@ -42,6 +44,8 @@ export default async function Home(props: {
   return (
     <div className="min-h-screen bg-white">
       <Hero locale={locale} />
+      <LookbookCarousel locale={locale} />
+      <EditorialGallery locale={locale} />
       <SpecialOffer />
       <ServiceHighlights />
       <NewArrivalsBanner />

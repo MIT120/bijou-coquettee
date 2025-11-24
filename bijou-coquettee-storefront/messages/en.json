@@ -35,7 +35,32 @@
     "subtitle": "Bijou Coquettee",
     "title": "Timeless Elegance",
     "description": "Discover our curated collection of exquisite jewelry, crafted with precision and passion",
-    "shopCollection": "Shop Collection"
+    "curatedTagline": "Maison Bijou — private preview",
+    "discoverStatement": "Limited-run statement jewels unveiled every month.",
+    "shopCollection": "Shop Collection",
+    "lookbookCta": "View Lookbook",
+    "premiumGuarantee": "Complimentary worldwide delivery & lifetime care",
+    "stats": {
+      "ateliers": "Artisan ateliers",
+      "heirlooms": "Heirlooms curated",
+      "delivery": "Express delivery window"
+    }
+  },
+  "lookbook": {
+    "subtitle": "Seasonless icons in motion",
+    "title": "Maison Lookbook Carousel",
+    "body": "Glide through couture silhouettes, gilt textures, and luminous stones styled for modern heirlooms.",
+    "cta": "Reserve styling session"
+  },
+  "editorial": {
+    "subtitle": "Editorial gallery",
+    "title": "The Maison Edit",
+    "description": "Captured inside our Paris and Sofia ateliers, each frame celebrates the tactility of metal, gem, and light.",
+    "highlights": {
+      "silhouettes": "Silhouettes sketched weekly",
+      "gems": "Precious gems reviewed",
+      "appointments": "Private appointments per week"
+    }
   },
   "auth": {
     "welcomeBack": "Welcome back",
