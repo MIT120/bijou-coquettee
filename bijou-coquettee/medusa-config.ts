@@ -25,5 +25,9 @@ module.exports = defineConfig({
       resolve: "./src/modules/wishlist",
       options: {},
     },
+    {
+      resolve: "./src/modules/product-comments",
+      options: {},
+    },
   ],
 })
