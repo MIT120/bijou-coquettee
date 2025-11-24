@@ -11,6 +11,7 @@ import CountrySelect from "../country-select"
 import { HttpTypes } from "@medusajs/types"
 import { getLocale, t } from "@lib/util/translations"
 import { Locale } from "@/i18n/locale"
+import { NAV_ITEMS } from "@modules/layout/constants/navigation"
 
 const SideMenu = ({
   regions,
@@ -31,13 +32,6 @@ const SideMenu = ({
     const clientLocale = getLocale(countryCode)
     setLocale(clientLocale)
   }, [countryCode])
-
-  const SideMenuItems = [
-    { key: "home", href: "/", translationKey: "navigation.home" },
-    { key: "store", href: "/store", translationKey: "navigation.store" },
-    { key: "account", href: "/account", translationKey: "navigation.account" },
-    { key: "cart", href: "/cart", translationKey: "navigation.cart" },
-  ]
 
   return (
     <div className="h-full">
@@ -74,10 +68,10 @@ const SideMenu = ({
                         <XMark />
                       </button>
                     </div>
-                    <ul className="flex flex-col gap-6 items-start justify-start">
-                      {SideMenuItems.map((item) => {
+                    <ul className="flex flex-col gap-6 items-start justify-start w-full">
+                      {NAV_ITEMS.map((item) => {
                         return (
-                          <li key={item.key}>
+                          <li key={item.key} className="w-full">
                             <LocalizedClientLink
                               href={item.href}
                               className="text-3xl leading-10 hover:text-ui-fg-disabled"
@@ -86,6 +80,22 @@ const SideMenu = ({
                             >
                               {t(item.translationKey, locale)}
                             </LocalizedClientLink>
+                            {item.children && (
+                              <ul className="mt-2 ml-4 flex flex-col gap-3 text-lg leading-7">
+                                {item.children.map((child) => (
+                                  <li key={child.key}>
+                                    <LocalizedClientLink
+                                      href={child.href}
+                                      className="hover:text-ui-fg-disabled"
+                                      onClick={close}
+                                      data-testid={`${child.key}-link`}
+                                    >
+                                      {t(child.translationKey, locale)}
+                                    </LocalizedClientLink>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
                           </li>
                         )
                       })}

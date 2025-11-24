@@ -12,6 +12,7 @@
     "view": "View",
     "details": "Details",
     "close": "Close",
+    "clear": "Clear",
     "save": "Save",
     "cancel": "Cancel",
     "delete": "Delete",
@@ -145,12 +146,29 @@
     "priceLowToHigh": "Price: Low -> High",
     "priceHighToLow": "Price: High -> Low"
   },
+  "search": {
+    "placeholder": "Search jewelry or keywords",
+    "cta": "Search",
+    "title": "Search results for \"{term}\"",
+    "resultsCount": "{count} products",
+    "noQuery": "Start by entering a keyword to find matching products.",
+    "empty": "No products matched \"{term}\". Try another keyword.",
+    "suggestionsTitle": "More to explore",
+    "suggestionsSubtitle": "Handpicked favorites customers love right now"
+  },
   "navigation": {
     "menu": "Menu",
     "home": "Home",
+    "jewelry": "Jewelry",
+    "jewelry_earrings": "Earrings",
+    "jewelry_bracelets": "Bracelets",
+    "jewelry_necklaces": "Necklaces",
+    "accessories": "Accessories",
+    "collections": "Collections",
+    "promo": "Promo %",
+    "about": "About us",
     "store": "Store",
     "account": "Account",
     "cart": "Cart"
   }
 }
-
