@@ -12,6 +12,7 @@
     "view": "Преглед",
     "details": "Детайли",
     "close": "Затвори",
+    "clear": "Изчисти",
     "save": "Запази",
     "cancel": "Отказ",
     "delete": "Изтрий",
@@ -170,9 +171,27 @@
     "priceLowToHigh": "Цена: Ниска -> Висока",
     "priceHighToLow": "Цена: Висока -> Ниска"
   },
+  "search": {
+    "placeholder": "Търси бижута или ключови думи",
+    "cta": "Търси",
+    "title": "Резултати за „{term}“",
+    "resultsCount": "{count} продукта",
+    "noQuery": "Започнете, като въведете ключова дума, за да откриете продукти.",
+    "empty": "Няма намерени продукти за „{term}“. Опитайте с друга ключова дума.",
+    "suggestionsTitle": "Още предложения",
+    "suggestionsSubtitle": "Нашите любими бижута в момента"
+  },
   "navigation": {
     "menu": "Меню",
     "home": "Начало",
+    "jewelry": "Бижута",
+    "jewelry_earrings": "Обеци",
+    "jewelry_bracelets": "Гривни",
+    "jewelry_necklaces": "Колие",
+    "accessories": "Аксесоари",
+    "collections": "Колекции",
+    "promo": "Промо %",
+    "about": "За нас",
     "store": "Магазин",
     "account": "Профил",
     "cart": "Количка"
