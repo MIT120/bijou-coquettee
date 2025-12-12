@@ -59,6 +59,7 @@ export type LocationSearchInput = {
   type: EcontLocationType
   search?: string
   city?: string
+  cityId?: number
   countryCode?: string
   limit?: number
 }

@@ -14,13 +14,42 @@ export type EcontClientConfig = {
   isDemo?: boolean
 }
 
-type EcontApiEnvelope<T> = {
-  success: boolean
-  data?: T
-  error?: {
-    code?: string
-    message: string
-  }
+type EcontOfficeResponse = {
+  offices: Array<{
+    id: number
+    code: string
+    name: string
+    nameEn: string
+    address: {
+      city: {
+        id: number
+        name: string
+        nameEn: string
+        postCode: string
+      }
+      fullAddress: string
+      fullAddressEn: string
+    }
+  }>
+}
+
+type EcontCityResponse = {
+  cities: Array<{
+    id: number
+    name: string
+    nameEn: string
+    postCode: string
+    regionName: string
+    regionNameEn: string
+  }>
+}
+
+type EcontStreetResponse = {
+  streets: Array<{
+    id: number
+    name: string
+    nameEn: string
+  }>
 }
 
 export class EcontApiClient {
@@ -35,7 +64,11 @@ export class EcontApiClient {
   }
 
   private buildUrl(service: string, method: string) {
-    return `${this.baseUrl}/${service}.${method}.json`
+    // Econt API requires a subdirectory matching the service category
+    // e.g., NomenclaturesService -> Nomenclatures/NomenclaturesService.getOffices.json
+    //       ShipmentsService -> Shipments/ShipmentsService.create.json
+    const serviceCategory = service.replace("Service", "")
+    return `${this.baseUrl}/${serviceCategory}/${service}.${method}.json`
   }
 
   private async request<T>(
@@ -59,56 +92,108 @@ export class EcontApiClient {
       )
     }
 
-    const envelope = (await response.json()) as EcontApiEnvelope<T>
+    const data = (await response.json()) as T
 
-    if (envelope.error) {
+    // Check for error in response
+    if (data && typeof data === "object" && "type" in data && (data as any).type === "ExException") {
       throw new Error(
-        `Econt API ${service}.${method} error: ${envelope.error.message}`
+        `Econt API ${service}.${method} error: ${(data as any).message}`
       )
     }
 
-    return envelope.data as T
+    return data
   }
 
   async fetchOffices(input: LocationSearchInput) {
-    return this.request(
+    const response = await this.request<EcontOfficeResponse>(
       "NomenclaturesService",
       "getOffices",
-      this.buildLocationPayload(input)
+      this.buildOfficesPayload(input)
     )
+
+    // Transform to normalized format
+    return (response.offices || []).map((office) => ({
+      id: office.id,
+      code: office.code,
+      name: office.name,
+      nameEn: office.nameEn,
+      cityId: office.address?.city?.id,
+      cityName: office.address?.city?.name,
+      cityNameEn: office.address?.city?.nameEn,
+      address: office.address?.fullAddress,
+      addressEn: office.address?.fullAddressEn,
+    }))
   }
 
   async fetchCities(input: LocationSearchInput) {
-    return this.request(
+    const response = await this.request<EcontCityResponse>(
       "NomenclaturesService",
       "getCities",
-      this.buildLocationPayload(input)
+      this.buildCitiesPayload(input)
     )
+
+    // Transform to normalized format
+    return (response.cities || []).map((city) => ({
+      id: city.id,
+      name: city.name,
+      nameEn: city.nameEn,
+      postCode: city.postCode,
+      regionName: city.regionName,
+      regionNameEn: city.regionNameEn,
+    }))
   }
 
-  async fetchStreets(input: LocationSearchInput & { cityId?: string }) {
-    return this.request(
+  async fetchStreets(input: LocationSearchInput & { cityId?: number }) {
+    const response = await this.request<EcontStreetResponse>(
       "NomenclaturesService",
       "getStreets",
-      this.buildLocationPayload(input)
+      this.buildStreetsPayload(input)
     )
+
+    return (response.streets || []).map((street) => ({
+      id: street.id,
+      name: street.name,
+      nameEn: street.nameEn,
+    }))
   }
 
-  private buildLocationPayload(input: LocationSearchInput) {
+  private buildOfficesPayload(input: LocationSearchInput) {
     const payload: Record<string, unknown> = {
       countryCode: input.countryCode || "BGR",
     }
 
+    // Filter by city ID if provided
+    if (input.cityId) {
+      payload.cityID = input.cityId
+    }
+
+    return payload
+  }
+
+  private buildCitiesPayload(input: LocationSearchInput) {
+    const payload: Record<string, unknown> = {
+      countryCode: input.countryCode || "BGR",
+    }
+
+    // Search by name if provided
     if (input.search) {
       payload.name = input.search
     }
 
-    if (input.city) {
-      payload.city = input.city
+    return payload
+  }
+
+  private buildStreetsPayload(input: LocationSearchInput & { cityId?: number }) {
+    const payload: Record<string, unknown> = {
+      countryCode: input.countryCode || "BGR",
     }
 
-    if (input.limit) {
-      payload.size = input.limit
+    if (input.cityId) {
+      payload.cityID = input.cityId
+    }
+
+    if (input.search) {
+      payload.name = input.search
     }
 
     return payload

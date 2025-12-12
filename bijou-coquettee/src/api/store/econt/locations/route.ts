@@ -5,7 +5,7 @@ const SUPPORTED_TYPES = new Set(["office", "city", "street"])
 
 export async function GET(req: MedusaRequest, res: MedusaResponse) {
     const {
-        query: { type = "office", search, city, limit },
+        query: { type = "office", search, city, cityId, limit },
     } = req
 
     if (typeof type !== "string" || !SUPPORTED_TYPES.has(type)) {
@@ -25,6 +25,7 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
         type: type as "office" | "city" | "street",
         search: typeof search === "string" ? search : undefined,
         city: typeof city === "string" ? city : undefined,
+        cityId: typeof cityId === "string" ? Number(cityId) : undefined,
         limit: typeof limit === "string" ? Number(limit) : undefined,
         countryCode: "BGR",
     })

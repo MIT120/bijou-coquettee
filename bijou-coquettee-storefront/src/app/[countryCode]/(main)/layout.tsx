@@ -30,7 +30,7 @@ export default async function PageLayout(props: { children: React.ReactNode }) {
   }
 
   return (
-    <WishlistProvider initialWishlist={wishlist}>
+    <WishlistProvider customer={customer}>
       <Nav />
       {customer && cart && (
         <CartMismatchBanner customer={customer} cart={cart} />

@@ -103,16 +103,23 @@ export default function ProductActions({
         return true
       }
 
-      // If inventory_quantity is null/undefined but manage_inventory is true,
-      // it might mean inventory isn't properly linked - check if we should allow
-      // In Medusa v2, if inventory_quantity is not returned, it might mean it's not
-      // available for this region's locations, so we should not allow purchase
-      // However, if the admin shows stock, it might be a data sync issue
-      // For now, we'll be conservative and require explicit inventory > 0
+      // WORKAROUND: In Medusa v2, inventory_quantity may return undefined even when
+      // stock exists at the warehouse level. This happens when the inventory linkage
+      // between sales channels, stock locations, and fulfillment sets isn't complete.
+      // For now, if inventory_quantity is undefined (not 0), allow the purchase.
+      // The backend will validate actual availability when adding to cart.
+      if (inventoryQty === undefined || inventoryQty === null) {
+        return true
+      }
+
+      // Only block if inventory_quantity is explicitly 0
+      if (inventoryQty === 0) {
+        return false
+      }
     }
 
-    // Otherwise, we can't add to cart
-    return false
+    // Otherwise, allow purchase (backend will validate)
+    return true
   }, [selectedVariant])
 
   const actionsRef = useRef<HTMLDivElement>(null)
@@ -182,6 +189,8 @@ export default function ProductActions({
                       title={option.title ?? ""}
                       data-testid="product-options"
                       disabled={!!disabled || isAdding}
+                      variants={product.variants ?? undefined}
+                      selectedOptions={options}
                     />
                   </div>
                 )
@@ -215,9 +224,9 @@ export default function ProductActions({
             isLoading={isAdding}
             data-testid="add-product-button"
           >
-            {!selectedVariant && !options
-              ? "Select variant"
-              : !inStock || !isValidVariant
+            {!selectedVariant
+              ? "Select options"
+              : !inStock
                 ? "Out of stock"
                 : "Add to cart"}
           </Button>

@@ -1,6 +1,8 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import type EcontShippingModuleService from "../../../../modules/econt-shipping/service"
 import { EcontDeliveryType } from "../../../../modules/econt-shipping/types"
+import { Modules } from "@medusajs/framework/utils"
+import type { ICartModuleService } from "@medusajs/framework/types"
 
 export async function GET(req: MedusaRequest, res: MedusaResponse) {
   const cartId = req.query.cart_id
@@ -157,6 +159,73 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
       : undefined,
     metadata: body.metadata,
   })
+
+  // Update the cart's shipping address with Econt delivery details
+  // This ensures the order shows the correct delivery address
+  try {
+    const cartService = req.scope.resolve<ICartModuleService>(Modules.CART)
+
+    let shippingAddress: Record<string, string | null>
+
+    if (body.delivery_type === "office" && body.office) {
+      // For office pickup: use office name and address
+      shippingAddress = {
+        first_name: body.recipient.first_name,
+        last_name: body.recipient.last_name,
+        phone: body.recipient.phone,
+        address_1: `Econt Office: ${body.office.office_name || body.office.office_code}`,
+        address_2: `Office Code: ${body.office.office_code}`,
+        city: body.office.city || "Bulgaria",
+        postal_code: null,
+        country_code: "bg",
+        province: null,
+        company: "Econt Express - Office Pickup",
+      }
+    } else if (body.delivery_type === "address" && body.address) {
+      // For address delivery: use the provided address
+      const addressParts = [body.address.address_line1]
+      if (body.address.entrance) addressParts.push(`вх. ${body.address.entrance}`)
+      if (body.address.floor) addressParts.push(`ет. ${body.address.floor}`)
+      if (body.address.apartment) addressParts.push(`ап. ${body.address.apartment}`)
+
+      shippingAddress = {
+        first_name: body.recipient.first_name,
+        last_name: body.recipient.last_name,
+        phone: body.recipient.phone,
+        address_1: addressParts.join(", "),
+        address_2: body.address.address_line2 || null,
+        city: body.address.city,
+        postal_code: body.address.postal_code || null,
+        country_code: "bg",
+        province: body.address.neighborhood || null,
+        company: "Econt Express - Address Delivery",
+      }
+    } else {
+      shippingAddress = {
+        first_name: body.recipient.first_name,
+        last_name: body.recipient.last_name,
+        phone: body.recipient.phone,
+        address_1: "Econt Delivery",
+        address_2: null,
+        city: "Bulgaria",
+        postal_code: null,
+        country_code: "bg",
+        province: null,
+        company: "Econt Express",
+      }
+    }
+
+    await cartService.updateCarts([
+      {
+        id: body.cart_id,
+        shipping_address: shippingAddress,
+        billing_address: shippingAddress,
+      },
+    ])
+  } catch (cartError) {
+    // Log but don't fail if cart update fails
+    console.error("[Econt Preferences] Failed to update cart shipping address:", cartError)
+  }
 
   res.json({
     preference,

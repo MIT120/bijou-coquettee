@@ -1,6 +1,8 @@
 const BACKEND_URL =
     process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL || "http://localhost:9000"
 
+const LOCAL_STORAGE_KEY = "bijou_guest_wishlist"
+
 /**
  * Wishlist API Response Types
  */
@@ -10,42 +12,74 @@ export type WishlistItem = {
     product_id: string
     variant_id: string | null
     added_at: string
-    product: any
-    variant: any | null
+    product?: any
+    variant?: any | null
 }
 
 export type Wishlist = {
     id: string
-    customer_id: string
+    customer_id: string | null
     is_public: boolean
     share_token: string | null
     items: WishlistItem[]
 }
 
 /**
- * Get customer's wishlist
- * Note: This is a client-side function, so it cannot use server-only features like `next: { tags }`
- * 
- * DISABLED: Temporarily disabled due to "Failed to fetch" errors
- * To re-enable, remove the early return below
+ * Local storage wishlist item (minimal data stored locally)
+ */
+type LocalWishlistItem = {
+    id: string
+    product_id: string
+    variant_id: string | null
+    added_at: string
+}
+
+/**
+ * Get guest wishlist from local storage
+ */
+function getLocalWishlist(): LocalWishlistItem[] {
+    if (typeof window === "undefined") return []
+    try {
+        const stored = localStorage.getItem(LOCAL_STORAGE_KEY)
+        return stored ? JSON.parse(stored) : []
+    } catch {
+        return []
+    }
+}
+
+/**
+ * Save guest wishlist to local storage
+ */
+function saveLocalWishlist(items: LocalWishlistItem[]): void {
+    if (typeof window === "undefined") return
+    try {
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(items))
+    } catch (error) {
+        console.error("Error saving wishlist to local storage:", error)
+    }
+}
+
+/**
+ * Generate a unique ID for local wishlist items
+ */
+function generateLocalId(): string {
+    return `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+}
+
+/**
+ * Get customer's wishlist (for authenticated users)
  */
 export async function getWishlist(): Promise<Wishlist | null> {
-    // TEMPORARILY DISABLED - Return null immediately to prevent fetch errors
-    return null
-
-    /* COMMENTED OUT - To re-enable, uncomment below and remove the return null above
     const headers: HeadersInit = {
         "Content-Type": "application/json",
     }
 
-    // Add publishable key if available
     const publishableKey = process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
     if (publishableKey) {
         headers["x-publishable-api-key"] = publishableKey
     }
 
     try {
-        // Validate backend URL
         if (!BACKEND_URL) {
             console.error("Backend URL is not configured")
             return null
@@ -53,60 +87,154 @@ export async function getWishlist(): Promise<Wishlist | null> {
 
         const response = await fetch(`${BACKEND_URL}/store/wishlist`, {
             headers,
-            credentials: "include", // This ensures cookies (including auth token) are sent
-            cache: "no-store", // Client-side fetch should not be cached
+            credentials: "include",
+            cache: "no-store",
         })
 
         if (response.status === 401) {
-            // Not authenticated - this is expected for guests
+            // Not authenticated - return null (caller should use local wishlist)
             return null
         }
 
         if (!response.ok) {
-            const errorText = await response.text().catch(() => "Unable to read error response")
-            console.error("Failed to fetch wishlist:", {
-                status: response.status,
-                statusText: response.statusText,
-                url: `${BACKEND_URL}/store/wishlist`,
-                errorText,
-            })
+            console.error("Failed to fetch wishlist:", response.status)
             return null
         }
 
         const data = await response.json()
         return data.wishlist
     } catch (error) {
-        // Better error serialization
-        const errorDetails: any = {
-            url: `${BACKEND_URL}/store/wishlist`,
-            backendUrl: BACKEND_URL,
-            hasPublishableKey: !!publishableKey,
-        }
-
-        if (error instanceof Error) {
-            errorDetails.message = error.message
-            errorDetails.name = error.name
-            errorDetails.stack = error.stack
-        } else if (error instanceof TypeError) {
-            errorDetails.message = error.message
-            errorDetails.name = "TypeError"
-            // Network errors often show as TypeError
-            if (error.message.includes("fetch")) {
-                errorDetails.hint = "This might be a CORS or network connectivity issue. Check if the backend is running and CORS is configured."
-            }
-        } else {
-            errorDetails.rawError = String(error)
-            errorDetails.type = typeof error
-        }
-
-        console.error("Error fetching wishlist:", errorDetails)
+        console.error("Error fetching wishlist:", error)
         return null
     }
-    */
 }
 
 /**
- * Add item to wishlist
+ * Get local wishlist as Wishlist type (for guests)
+ */
+export function getLocalWishlistAsWishlist(): Wishlist {
+    const items = getLocalWishlist()
+    return {
+        id: "local",
+        customer_id: null,
+        is_public: false,
+        share_token: null,
+        items: items.map((item) => ({
+            ...item,
+            wishlist_id: "local",
+            product: undefined,
+            variant: undefined,
+        })),
+    }
+}
+
+/**
+ * Add item to local wishlist (for guests)
+ */
+export function addToLocalWishlist(
+    productId: string,
+    variantId?: string
+): LocalWishlistItem {
+    const items = getLocalWishlist()
+
+    // Check if already exists
+    const exists = items.some(
+        (item) =>
+            item.product_id === productId &&
+            (variantId ? item.variant_id === variantId : true)
+    )
+
+    if (exists) {
+        return items.find(
+            (item) =>
+                item.product_id === productId &&
+                (variantId ? item.variant_id === variantId : true)
+        )!
+    }
+
+    const newItem: LocalWishlistItem = {
+        id: generateLocalId(),
+        product_id: productId,
+        variant_id: variantId || null,
+        added_at: new Date().toISOString(),
+    }
+
+    items.push(newItem)
+    saveLocalWishlist(items)
+    return newItem
+}
+
+/**
+ * Remove item from local wishlist (for guests)
+ */
+export function removeFromLocalWishlist(itemId: string): boolean {
+    const items = getLocalWishlist()
+    const filtered = items.filter((item) => item.id !== itemId)
+
+    if (filtered.length === items.length) {
+        return false // Item not found
+    }
+
+    saveLocalWishlist(filtered)
+    return true
+}
+
+/**
+ * Remove item from local wishlist by product ID (for guests)
+ */
+export function removeFromLocalWishlistByProductId(
+    productId: string,
+    variantId?: string
+): boolean {
+    const items = getLocalWishlist()
+    const filtered = items.filter(
+        (item) =>
+            !(
+                item.product_id === productId &&
+                (variantId ? item.variant_id === variantId : true)
+            )
+    )
+
+    if (filtered.length === items.length) {
+        return false // Item not found
+    }
+
+    saveLocalWishlist(filtered)
+    return true
+}
+
+/**
+ * Clear local wishlist
+ */
+export function clearLocalWishlist(): void {
+    if (typeof window === "undefined") return
+    localStorage.removeItem(LOCAL_STORAGE_KEY)
+}
+
+/**
+ * Check if product is in local wishlist
+ */
+export function isInLocalWishlist(
+    productId: string,
+    variantId?: string
+): boolean {
+    const items = getLocalWishlist()
+    return items.some(
+        (item) =>
+            item.product_id === productId &&
+            (variantId ? item.variant_id === variantId : true)
+    )
+}
+
+/**
+ * Get local wishlist item IDs (product IDs)
+ */
+export function getLocalWishlistProductIds(): string[] {
+    return getLocalWishlist().map((item) => item.product_id)
+}
+
+/**
+ * Add item to wishlist (authenticated)
  */
 export async function addToWishlist(
     productId: string,
@@ -140,7 +268,7 @@ export async function addToWishlist(
 }
 
 /**
- * Remove item from wishlist
+ * Remove item from wishlist (authenticated)
  */
 export async function removeFromWishlist(itemId: string): Promise<boolean> {
     const headers: HeadersInit = {
@@ -170,7 +298,7 @@ export async function removeFromWishlist(itemId: string): Promise<boolean> {
 }
 
 /**
- * Check if product is in wishlist
+ * Check if product is in wishlist (authenticated)
  */
 export async function isInWishlist(
     productId: string,
@@ -209,7 +337,7 @@ export async function isInWishlist(
 }
 
 /**
- * Clear entire wishlist
+ * Clear entire wishlist (authenticated)
  */
 export async function clearWishlist(): Promise<boolean> {
     const headers: HeadersInit = {
@@ -278,7 +406,7 @@ export async function getSharedWishlist(
             `${BACKEND_URL}/store/wishlist/shared/${token}`,
             {
                 credentials: "include",
-                cache: "no-store", // Client-side fetch should not be cached
+                cache: "no-store",
             }
         )
 
@@ -293,4 +421,3 @@ export async function getSharedWishlist(
         return null
     }
 }
-
