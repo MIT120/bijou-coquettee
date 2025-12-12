@@ -1,11 +1,16 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useState } from "react"
 import type { ProductComment } from "@lib/data/comments"
+
+// Extended type to include formatted date from server
+type CommentWithFormattedDate = ProductComment & {
+    formatted_date?: string
+}
 
 type ProductCommentsClientProps = {
     productId: string
-    initialComments: ProductComment[]
+    initialComments: CommentWithFormattedDate[]
     initialCount: number
 }
 
@@ -15,7 +20,7 @@ const ProductCommentsClient = ({
     initialCount,
 }: ProductCommentsClientProps) => {
     const [comments, setComments] =
-        useState<ProductComment[]>(initialComments ?? [])
+        useState<CommentWithFormattedDate[]>(initialComments ?? [])
     const [count, setCount] = useState(initialCount ?? 0)
     const [name, setName] = useState("")
     const [email, setEmail] = useState("")
@@ -24,13 +29,7 @@ const ProductCommentsClient = ({
     const [error, setError] = useState<string | null>(null)
     const [success, setSuccess] = useState<string | null>(null)
 
-    const dateFormatter = useMemo(() => {
-        return new Intl.DateTimeFormat(undefined, {
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-        })
-    }, [])
+    // Dates are pre-formatted on the server to prevent hydration mismatches
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault()
@@ -87,11 +86,23 @@ const ProductCommentsClient = ({
             const data = await response.json()
 
             if (data?.comment) {
+                // Format the date for the new comment to match server formatting
+                const formattedComment: CommentWithFormattedDate = {
+                    ...data.comment,
+                    formatted_date: data.comment.created_at
+                        ? new Intl.DateTimeFormat("en-US", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                        }).format(new Date(data.comment.created_at))
+                        : "",
+                }
+
                 setComments((prev) => {
-                    if (prev.some((item) => item.id === data.comment.id)) {
+                    if (prev.some((item) => item.id === formattedComment.id)) {
                         return prev
                     }
-                    return [data.comment, ...prev]
+                    return [formattedComment, ...prev]
                 })
                 setCount((prev) => prev + 1)
                 setContent("")
@@ -217,11 +228,7 @@ const ProductCommentsClient = ({
                                         {comment.author_name || "Anonymous collector"}
                                     </span>
                                     <span className="text-xs text-ui-fg-muted">
-                                        {comment.created_at
-                                            ? dateFormatter.format(
-                                                new Date(comment.created_at)
-                                            )
-                                            : ""}
+                                        {comment.formatted_date || ""}
                                     </span>
                                 </div>
                                 <p className="mt-2 text-sm text-ui-fg-base whitespace-pre-line">

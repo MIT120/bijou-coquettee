@@ -1,14 +1,38 @@
 import { getProductComments } from "@lib/data/comments"
 import ProductCommentsClient from "./product-comments-client"
+import type { ProductComment } from "@lib/data/comments"
 
 type ProductCommentsSectionProps = {
     productId: string
+}
+
+// Format date consistently on server side to prevent hydration mismatches
+const formatCommentDate = (dateString: string): string => {
+    const date = new Date(dateString)
+    return new Intl.DateTimeFormat("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+    }).format(date)
+}
+
+// Add formatted date to comment for client component
+const addFormattedDates = (comments: ProductComment[]) => {
+    return comments.map((comment) => ({
+        ...comment,
+        formatted_date: comment.created_at
+            ? formatCommentDate(comment.created_at)
+            : "",
+    }))
 }
 
 const ProductCommentsSection = async ({
     productId,
 }: ProductCommentsSectionProps) => {
     const data = await getProductComments(productId, { limit: 25 })
+
+    // Format dates on server side to ensure consistency
+    const commentsWithFormattedDates = addFormattedDates(data.comments)
 
     return (
         <section className="w-full rounded-3xl border border-ui-border-base bg-ui-bg-base shadow-sm">
@@ -24,7 +48,7 @@ const ProductCommentsSection = async ({
                 </div>
                 <ProductCommentsClient
                     productId={productId}
-                    initialComments={data.comments}
+                    initialComments={commentsWithFormattedDates}
                     initialCount={data.count}
                 />
             </div>

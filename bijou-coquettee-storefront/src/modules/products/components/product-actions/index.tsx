@@ -74,22 +74,41 @@ export default function ProductActions({
 
   // check if the selected variant is in stock
   const inStock = useMemo(() => {
+    if (!selectedVariant) {
+      return false
+    }
+
     // If we don't manage inventory, we can always add to cart
-    if (selectedVariant && !selectedVariant.manage_inventory) {
+    if (selectedVariant.manage_inventory === false) {
+      return true
+    }
+
+    // If manage_inventory is null/undefined, default to allowing purchase
+    // (This handles cases where inventory management isn't configured)
+    if (selectedVariant.manage_inventory === null || selectedVariant.manage_inventory === undefined) {
       return true
     }
 
     // If we allow back orders on the variant, we can add to cart
-    if (selectedVariant?.allow_backorder) {
+    if (selectedVariant.allow_backorder === true) {
       return true
     }
 
-    // If there is inventory available, we can add to cart
-    if (
-      selectedVariant?.manage_inventory &&
-      (selectedVariant?.inventory_quantity || 0) > 0
-    ) {
-      return true
+    // If manage_inventory is true, check inventory quantity
+    if (selectedVariant.manage_inventory === true) {
+      const inventoryQty = selectedVariant.inventory_quantity
+
+      // If inventory_quantity is explicitly set and greater than 0, it's in stock
+      if (inventoryQty !== null && inventoryQty !== undefined && inventoryQty > 0) {
+        return true
+      }
+
+      // If inventory_quantity is null/undefined but manage_inventory is true,
+      // it might mean inventory isn't properly linked - check if we should allow
+      // In Medusa v2, if inventory_quantity is not returned, it might mean it's not
+      // available for this region's locations, so we should not allow purchase
+      // However, if the admin shows stock, it might be a data sync issue
+      // For now, we'll be conservative and require explicit inventory > 0
     }
 
     // Otherwise, we can't add to cart
