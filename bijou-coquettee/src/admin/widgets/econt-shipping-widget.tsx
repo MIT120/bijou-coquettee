@@ -27,6 +27,20 @@ import {
   MapPin,
 } from "@medusajs/icons"
 
+type EcontTrackingEvent = {
+  destinationType: string
+  destinationDetails: {
+    officeName?: string
+    officeNameEn?: string
+    cityName?: string
+    cityNameEn?: string
+    countryCode?: string
+  }
+  date: string
+  time: string
+  returnReceiptEvent?: boolean
+}
+
 type EcontShipment = {
   id: string
   order_id: string | null
@@ -44,9 +58,14 @@ type EcontShipment = {
   recipient_email: string | null
   cod_amount: number | null
   status: string
+  short_status: string | null
+  short_status_en: string | null
   waybill_number: string | null
   tracking_number: string | null
   label_url: string | null
+  tracking_events: EcontTrackingEvent[] | null
+  delivery_attempts: number
+  expected_delivery_date: string | null
   allow_saturday: boolean
   created_at: string
   updated_at: string
@@ -406,7 +425,7 @@ const EcontShippingWidget = ({ data: order }: OrderDetailWidgetProps) => {
               <div className="flex items-center gap-2">
                 <StatusIcon status={shipment.status} />
                 <Badge color={STATUS_CONFIG[shipment.status]?.color || "grey"}>
-                  {STATUS_CONFIG[shipment.status]?.label || shipment.status}
+                  {shipment.short_status || STATUS_CONFIG[shipment.status]?.label || shipment.status}
                 </Badge>
               </div>
               {shipment.last_synced_at && (
@@ -415,6 +434,92 @@ const EcontShippingWidget = ({ data: order }: OrderDetailWidgetProps) => {
                 </Text>
               )}
             </div>
+
+            {/* Progress Indicator */}
+            {shipment.waybill_number && (
+              <div className="bg-ui-bg-subtle rounded-lg p-3">
+                <div className="flex items-center justify-between mb-2">
+                  {["registered", "in_transit", "delivered"].map((step, index) => {
+                    const steps = ["registered", "in_transit", "delivered"]
+                    const currentIndex = steps.indexOf(shipment.status)
+                    const isCompleted = index <= currentIndex
+                    const isCurrent = index === currentIndex
+                    const isCancelled = shipment.status === "cancelled" || shipment.status === "error"
+
+                    return (
+                      <div key={step} className="flex items-center flex-1">
+                        <div
+                          className={`w-3 h-3 rounded-full border-2 ${
+                            isCancelled && index === 0
+                              ? "bg-ui-tag-red-icon border-ui-tag-red-icon"
+                              : isCompleted
+                              ? "bg-ui-tag-green-icon border-ui-tag-green-icon"
+                              : isCurrent
+                              ? "bg-ui-bg-base border-ui-tag-green-icon"
+                              : "bg-ui-bg-subtle-pressed border-ui-border-base"
+                          }`}
+                        />
+                        {index < 2 && (
+                          <div
+                            className={`flex-1 h-0.5 mx-1 ${
+                              isCancelled
+                                ? "bg-ui-tag-red-icon"
+                                : index < currentIndex
+                                ? "bg-ui-tag-green-icon"
+                                : "bg-ui-border-base"
+                            }`}
+                          />
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+                <div className="flex items-center justify-between text-xs text-ui-fg-muted">
+                  <span>Registered</span>
+                  <span>In Transit</span>
+                  <span>Delivered</span>
+                </div>
+                {shipment.expected_delivery_date && (
+                  <Text size="xsmall" className="text-ui-fg-subtle mt-2">
+                    Expected: {shipment.expected_delivery_date}
+                  </Text>
+                )}
+                {shipment.delivery_attempts > 0 && (
+                  <Text size="xsmall" className="text-ui-fg-warning mt-1">
+                    Delivery attempts: {shipment.delivery_attempts}
+                  </Text>
+                )}
+              </div>
+            )}
+
+            {/* Tracking Timeline (last 3 events) */}
+            {shipment.tracking_events && shipment.tracking_events.length > 0 && (
+              <div className="space-y-2">
+                <Text size="small" className="font-medium text-ui-fg-muted">Recent Activity</Text>
+                <div className="space-y-0">
+                  {shipment.tracking_events.slice(0, 3).map((event, index) => (
+                    <div key={index} className="flex gap-2">
+                      <div className="flex flex-col items-center">
+                        <div className={`w-2 h-2 rounded-full ${
+                          index === 0 ? "bg-ui-tag-green-icon" : "bg-ui-border-strong"
+                        }`} />
+                        {index < Math.min(shipment.tracking_events!.length - 1, 2) && (
+                          <div className="w-0.5 h-6 bg-ui-border-base" />
+                        )}
+                      </div>
+                      <div className="pb-1">
+                        <Text size="xsmall" className="font-medium capitalize">
+                          {event.destinationType.replace(/_/g, " ")}
+                        </Text>
+                        <Text size="xsmall" className="text-ui-fg-subtle">
+                          {event.destinationDetails?.cityName || event.destinationDetails?.officeName} - {event.date}
+                        </Text>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Delivery Details */}
             <div className="grid grid-cols-2 gap-4">

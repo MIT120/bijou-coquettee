@@ -52,6 +52,43 @@ type EcontStreetResponse = {
   }>
 }
 
+export type EcontTrackingEvent = {
+  destinationType: string // client, courier, office, delivery, etc.
+  destinationDetails: {
+    officeName?: string
+    officeNameEn?: string
+    cityName?: string
+    cityNameEn?: string
+    countryCode?: string
+  }
+  date: string
+  time: string
+  returnReceiptEvent?: boolean
+}
+
+export type EcontShipmentStatus = {
+  shipmentNumber: string
+  createdTime?: string
+  sendTime?: string
+  deliveryTime?: string
+  deliveryAttemptCount?: number
+  cdCollectedTime?: string
+  cdPaidTime?: string
+  shortDeliveryStatus?: string
+  shortDeliveryStatusEn?: string
+  trackingEvents?: EcontTrackingEvent[]
+  pdfURL?: string
+  primaryShipment?: boolean
+  returnShipmentNumber?: string
+  expectedDeliveryDate?: string
+  weight?: number
+  sizeWeight?: number
+}
+
+type EcontTrackingResponse = {
+  shipmentStatuses?: EcontShipmentStatus[]
+}
+
 export class EcontApiClient {
   private readonly baseUrl: string
   private readonly authHeader: string
@@ -218,8 +255,16 @@ export class EcontApiClient {
   }
 
   async trackShipment(waybillNumber: string) {
-    return this.request("ShipmentsService", "track", {
-      shipmentNumber: waybillNumber,
+    return this.request<EcontTrackingResponse>("ShipmentsService", "getShipmentStatuses", {
+      shipmentNumbers: [waybillNumber],
+      full_tracking: "ON",
+    })
+  }
+
+  async trackMultipleShipments(waybillNumbers: string[]) {
+    return this.request<EcontTrackingResponse>("ShipmentsService", "getShipmentStatuses", {
+      shipmentNumbers: waybillNumbers,
+      full_tracking: "ON",
     })
   }
 

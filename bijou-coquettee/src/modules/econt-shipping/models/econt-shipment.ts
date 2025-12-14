@@ -31,6 +31,17 @@ const EcontShipment = model.define("econt_shipment", {
   waybill_number: model.text().nullable(),
   tracking_number: model.text().nullable(),
   label_url: model.text().nullable(),
+  // Enhanced tracking fields
+  short_status: model.text().nullable(),
+  short_status_en: model.text().nullable(),
+  tracking_events: model.json().nullable(),
+  delivery_attempts: model.number().default(0),
+  expected_delivery_date: model.text().nullable(),
+  send_time: model.dateTime().nullable(),
+  delivery_time: model.dateTime().nullable(),
+  cod_collected_time: model.dateTime().nullable(),
+  cod_paid_time: model.dateTime().nullable(),
+  // Existing fields
   metadata: model.json().nullable(),
   raw_request: model.json().nullable(),
   raw_response: model.json().nullable(),

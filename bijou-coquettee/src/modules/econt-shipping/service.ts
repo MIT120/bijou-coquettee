@@ -2,7 +2,7 @@ import { MedusaService } from "@medusajs/framework/utils"
 import { ECONT_DEFAULT_BASE_URL, ECONT_SHIPPING_STATUS } from "./constants"
 import EcontLocation from "./models/econt-location"
 import EcontShipment from "./models/econt-shipment"
-import EcontApiClient from "./clients/econt-client"
+import EcontApiClient, { type EcontShipmentStatus } from "./clients/econt-client"
 import type {
   CreateShipmentPayload,
   LocationSearchInput,
@@ -164,7 +164,7 @@ class EcontShippingModuleService extends MedusaService({
         waybill_number: (apiResponse as any)?.shipmentNumber ?? null,
         tracking_number: (apiResponse as any)?.trackingNumber ?? null,
         label_url: (apiResponse as any)?.labelUrl ?? null,
-        raw_response: apiResponse,
+        raw_response: apiResponse as Record<string, unknown>,
       },
     ])
 
@@ -235,20 +235,102 @@ class EcontShippingModuleService extends MedusaService({
     }
 
     const tracking = await this.client.trackShipment(shipment.waybill_number)
+    const shipmentStatus = (tracking as any)?.shipmentStatuses?.[0] as EcontShipmentStatus | undefined
 
-    const normalizedStatus =
-      ((tracking as any)?.status as string)?.toLowerCase() || "in_transit"
+    if (!shipmentStatus) {
+      const [updated] = await this.updateEcontShipments([
+        {
+          id: shipmentId,
+          last_synced_at: new Date(),
+          raw_response: tracking as Record<string, unknown>,
+        },
+      ])
+      return updated
+    }
 
-    const [updated] = await this.updateEcontShipments([
+    const normalizedStatus = this.mapEcontStatus(shipmentStatus.shortDeliveryStatusEn || "") as typeof ECONT_SHIPPING_STATUS[keyof typeof ECONT_SHIPPING_STATUS]
+
+    const updated = await this.updateEcontShipments(
       {
-        id: shipmentId,
-        status: this.mapRemoteStatus(normalizedStatus),
-        raw_response: tracking,
-        last_synced_at: new Date(),
-      },
-    ])
+        selector: { id: shipmentId },
+        data: {
+          status: normalizedStatus,
+          short_status: shipmentStatus.shortDeliveryStatus ?? null,
+          short_status_en: shipmentStatus.shortDeliveryStatusEn ?? null,
+          tracking_events: (shipmentStatus.trackingEvents ?? null) as Record<string, unknown> | null,
+          delivery_attempts: shipmentStatus.deliveryAttemptCount ?? 0,
+          expected_delivery_date: shipmentStatus.expectedDeliveryDate ?? null,
+          send_time: shipmentStatus.sendTime ? new Date(shipmentStatus.sendTime) : null,
+          delivery_time: shipmentStatus.deliveryTime ? new Date(shipmentStatus.deliveryTime) : null,
+          cod_collected_time: shipmentStatus.cdCollectedTime ? new Date(shipmentStatus.cdCollectedTime) : null,
+          cod_paid_time: shipmentStatus.cdPaidTime ? new Date(shipmentStatus.cdPaidTime) : null,
+          label_url: shipmentStatus.pdfURL ?? shipment.label_url ?? null,
+          raw_response: tracking as Record<string, unknown>,
+          last_synced_at: new Date(),
+        },
+      }
+    )
 
-    return updated
+    return Array.isArray(updated) ? updated[0] : updated
+  }
+
+  async syncMultipleShipments(shipmentIds: string[]) {
+    const shipments = await this.listEcontShipments(
+      { id: shipmentIds },
+      { take: shipmentIds.length }
+    )
+
+    const waybillToShipment = new Map<string, typeof shipments[0]>()
+    const waybillNumbers: string[] = []
+
+    for (const shipment of shipments) {
+      if (shipment.waybill_number) {
+        waybillNumbers.push(shipment.waybill_number)
+        waybillToShipment.set(shipment.waybill_number, shipment)
+      }
+    }
+
+    if (waybillNumbers.length === 0) {
+      return shipments
+    }
+
+    const tracking = await this.client.trackMultipleShipments(waybillNumbers)
+    const statuses = (tracking as any)?.shipmentStatuses || []
+
+    const updatedShipments: typeof shipments = []
+
+    for (const status of statuses as EcontShipmentStatus[]) {
+      const shipment = waybillToShipment.get(status.shipmentNumber)
+      if (!shipment) continue
+
+      const normalizedStatus = this.mapEcontStatus(status.shortDeliveryStatusEn || "") as typeof ECONT_SHIPPING_STATUS[keyof typeof ECONT_SHIPPING_STATUS]
+
+      const updateResult = await this.updateEcontShipments(
+        {
+          selector: { id: shipment.id },
+          data: {
+            status: normalizedStatus,
+            short_status: status.shortDeliveryStatus ?? null,
+            short_status_en: status.shortDeliveryStatusEn ?? null,
+            tracking_events: (status.trackingEvents ?? null) as Record<string, unknown> | null,
+            delivery_attempts: status.deliveryAttemptCount ?? 0,
+            expected_delivery_date: status.expectedDeliveryDate ?? null,
+            send_time: status.sendTime ? new Date(status.sendTime) : null,
+            delivery_time: status.deliveryTime ? new Date(status.deliveryTime) : null,
+            cod_collected_time: status.cdCollectedTime ? new Date(status.cdCollectedTime) : null,
+            cod_paid_time: status.cdPaidTime ? new Date(status.cdPaidTime) : null,
+            label_url: status.pdfURL ?? shipment.label_url ?? null,
+            raw_response: status as unknown as Record<string, unknown>,
+            last_synced_at: new Date(),
+          },
+        }
+      )
+
+      const updated = Array.isArray(updateResult) ? updateResult[0] : updateResult
+      updatedShipments.push(updated)
+    }
+
+    return updatedShipments.length > 0 ? updatedShipments : shipments
   }
 
   async cancelShipment(shipmentId: string) {
@@ -281,6 +363,58 @@ class EcontShippingModuleService extends MedusaService({
 
     if (remote.includes("ready") || remote.includes("registered")) {
       return ECONT_SHIPPING_STATUS.REGISTERED
+    }
+
+    return ECONT_SHIPPING_STATUS.IN_TRANSIT
+  }
+
+  /**
+   * Maps Econt's shortDeliveryStatusEn to internal status.
+   * Possible values from Econt:
+   * - "Prepared in eEcont"
+   * - "Accepted in Econt"
+   * - "In route"
+   * - "In courier"
+   * - "In pick up courier"
+   * - "Accepted in office"
+   * - "In delivery courier's office"
+   * - "Arrived in office"
+   * - "Arrival departure from hub"
+   * - "Delivered"
+   * - "Cancelled after sending"
+   * - "Cancelled before sending"
+   * - "Is returning to sender"
+   * - "Returned to sender"
+   */
+  private mapEcontStatus(statusEn: string): string {
+    const status = statusEn.toLowerCase()
+
+    if (status.includes("delivered")) {
+      return ECONT_SHIPPING_STATUS.DELIVERED
+    }
+
+    if (status.includes("cancelled") || status.includes("cancel")) {
+      return ECONT_SHIPPING_STATUS.CANCELLED
+    }
+
+    if (status.includes("return")) {
+      return ECONT_SHIPPING_STATUS.CANCELLED
+    }
+
+    if (status.includes("prepared") || status.includes("accepted in econt")) {
+      return ECONT_SHIPPING_STATUS.REGISTERED
+    }
+
+    if (
+      status.includes("in route") ||
+      status.includes("in courier") ||
+      status.includes("in pick up") ||
+      status.includes("accepted in office") ||
+      status.includes("courier's office") ||
+      status.includes("arrived in office") ||
+      status.includes("departure from hub")
+    ) {
+      return ECONT_SHIPPING_STATUS.IN_TRANSIT
     }
 
     return ECONT_SHIPPING_STATUS.IN_TRANSIT
