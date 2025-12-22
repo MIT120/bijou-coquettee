@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from "react"
 import { HttpTypes } from "@medusajs/types"
 import { Button, Heading, Text, Input, clx } from "@medusajs/ui"
+import { convertToLocale } from "@lib/util/money"
+import { noDivisionCurrencies } from "@lib/constants"
 
 type CityOption = {
   id: number
@@ -164,6 +166,51 @@ const SearchableDropdown = <T extends { id?: number | string }>({
   )
 }
 
+/**
+ * Validates Bulgarian phone number format.
+ * Accepts formats: +359XXXXXXXXX, 0XXXXXXXXX, 08XXXXXXXX, 359XXXXXXXXX
+ */
+const validateBulgarianPhone = (phone: string): { valid: boolean; formatted: string; error?: string } => {
+  // Remove spaces, dashes, and parentheses
+  const cleaned = phone.replace(/[\s\-\(\)]/g, "")
+
+  // Check if empty
+  if (!cleaned) {
+    return { valid: false, formatted: phone, error: "Моля, въведете телефонен номер" }
+  }
+
+  // Bulgarian mobile patterns
+  const patterns = [
+    /^(\+359|00359|359)(8[789]\d{7})$/, // +359 8X XXX XXXX (mobile)
+    /^0(8[789]\d{7})$/,                  // 08X XXX XXXX (mobile, local format)
+    /^(\+359|00359|359)(2\d{7})$/,       // +359 2 XXX XXXX (Sofia landline)
+    /^0(2\d{7})$/,                        // 02 XXX XXXX (Sofia landline, local)
+    /^(\+359|00359|359)([3-9]\d{7,8})$/, // Other landlines
+    /^0([3-9]\d{7,8})$/,                  // Other landlines, local format
+  ]
+
+  for (const pattern of patterns) {
+    if (pattern.test(cleaned)) {
+      // Format to international format for Econt
+      let formatted = cleaned
+      if (cleaned.startsWith("0") && !cleaned.startsWith("00")) {
+        formatted = "+359" + cleaned.substring(1)
+      } else if (cleaned.startsWith("359") && !cleaned.startsWith("+")) {
+        formatted = "+" + cleaned
+      } else if (cleaned.startsWith("00359")) {
+        formatted = "+" + cleaned.substring(2)
+      }
+      return { valid: true, formatted }
+    }
+  }
+
+  return {
+    valid: false,
+    formatted: phone,
+    error: "Невалиден телефонен номер. Използвайте формат: +359 8XX XXX XXX или 08XX XXX XXX"
+  }
+}
+
 const EcontShippingForm = ({ cart }: EcontShippingFormProps) => {
   const countryCode =
     cart.shipping_address?.country_code?.toLowerCase() ||
@@ -202,6 +249,7 @@ const EcontShippingForm = ({ cart }: EcontShippingFormProps) => {
   const [error, setError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [hasSavedPreference, setHasSavedPreference] = useState(false)
+  const [phoneError, setPhoneError] = useState<string | null>(null)
 
   // Ref to store saved preference for restoring selections after data loads
   const savedPreferenceRef = useRef<{
@@ -225,21 +273,31 @@ const EcontShippingForm = ({ cart }: EcontShippingFormProps) => {
     return match ? match[1].trim() : null
   }, [cart.shipping_address?.address_1])
 
-  // Calculate the total COD amount including shipping
-  // cart.total should include everything, but we need to ensure we get the right value
+  // Calculate the total COD amount including shipping (in decimal format for API)
+  // cart.total = subtotal + shipping_total + tax_total - discount_total - gift_card_total
   const codAmount = useMemo(() => {
-    // Try to get the most accurate total
-    // cart.total = subtotal + shipping_total + tax_total - discount_total - gift_card_total
+    const currencyCode = cart.region?.currency_code?.toLowerCase() || "eur"
+    const divisor = noDivisionCurrencies.includes(currencyCode) ? 1 : 100
+
     if (cart.total !== undefined && cart.total !== null) {
-      return cart.total / 100
+      return cart.total / divisor
     }
     // Fallback: calculate from components if total is not available
     const subtotal = cart.subtotal || 0
     const shippingTotal = cart.shipping_total || 0
     const taxTotal = cart.tax_total || 0
     const discountTotal = cart.discount_total || 0
-    return (subtotal + shippingTotal + taxTotal - discountTotal) / 100
-  }, [cart.total, cart.subtotal, cart.shipping_total, cart.tax_total, cart.discount_total])
+    return (subtotal + shippingTotal + taxTotal - discountTotal) / divisor
+  }, [cart.total, cart.subtotal, cart.shipping_total, cart.tax_total, cart.discount_total, cart.region?.currency_code])
+
+  // Formatted COD amount for display
+  const formattedCodAmount = useMemo(() => {
+    const total = cart.total ?? 0
+    return convertToLocale({
+      amount: total,
+      currency_code: cart.region?.currency_code || "eur",
+    })
+  }, [cart.total, cart.region?.currency_code])
 
   const recipient = useMemo(
     () => ({
@@ -485,8 +543,16 @@ const EcontShippingForm = ({ cart }: EcontShippingFormProps) => {
 
     if (!recipient.first_name || !recipient.last_name || !recipient.phone) {
       setError(
-        "Please ensure the shipping address includes first name, last name, and phone."
+        "Моля, попълнете име, фамилия и телефон за получаване."
       )
+      return
+    }
+
+    // Validate phone number
+    const phoneValidation = validateBulgarianPhone(recipient.phone)
+    if (!phoneValidation.valid) {
+      setPhoneError(phoneValidation.error || "Невалиден телефонен номер")
+      setError(phoneValidation.error || "Невалиден телефонен номер")
       return
     }
 
@@ -495,7 +561,10 @@ const EcontShippingForm = ({ cart }: EcontShippingFormProps) => {
       delivery_type: deliveryType,
       cod_amount: Number(codAmount.toFixed(2)),
       country_code: "bg",
-      recipient,
+      recipient: {
+        ...recipient,
+        phone: phoneValidation.formatted, // Use validated/formatted phone
+      },
       office: selectedOffice
         ? {
             office_code: selectedOffice.code,
@@ -934,10 +1003,28 @@ const EcontShippingForm = ({ cart }: EcontShippingFormProps) => {
             <label className="text-ui-fg-base text-small-regular">Телефон *</label>
             <Input
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              onChange={(e) => {
+                setPhone(e.target.value)
+                setPhoneError(null) // Clear error on change
+              }}
+              onBlur={() => {
+                // Validate on blur
+                if (phone) {
+                  const validation = validateBulgarianPhone(phone)
+                  if (!validation.valid) {
+                    setPhoneError(validation.error || null)
+                  } else {
+                    setPhoneError(null)
+                  }
+                }
+              }}
               placeholder="+359 888 123 456"
               required
+              className={phoneError ? "border-red-500" : ""}
             />
+            {phoneError && (
+              <Text size="small" className="text-red-600">{phoneError}</Text>
+            )}
           </div>
           <div className="grid grid-cols-1 gap-2">
             <label className="text-ui-fg-base text-small-regular">Имейл</label>
@@ -977,7 +1064,7 @@ const EcontShippingForm = ({ cart }: EcontShippingFormProps) => {
           </div>
         </div>
         <Text weight="plus" className="text-xl text-green-800">
-          {codAmount.toFixed(2)} {cart.region?.currency_code?.toUpperCase()}
+          {formattedCodAmount}
         </Text>
       </div>
 

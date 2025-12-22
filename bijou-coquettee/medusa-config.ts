@@ -33,5 +33,9 @@ module.exports = defineConfig({
       resolve: "./src/modules/econt-shipping",
       options: {},
     },
+    {
+      resolve: "./src/modules/email-campaign",
+      options: {},
+    },
   ],
 })

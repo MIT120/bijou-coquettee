@@ -2,7 +2,6 @@ import { ECONT_DEFAULT_BASE_URL } from "../constants"
 import type {
   CreateShipmentPayload,
   EcontAddressSelection,
-  EcontOfficeSelection,
   LocationSearchInput,
 } from "../types"
 
@@ -12,6 +11,20 @@ export type EcontClientConfig = {
   password: string
   clientNumber?: string
   isDemo?: boolean
+  // COD payout configuration
+  cdAgreementNum?: string
+  payoutMethod?: "bank" | "office" | "door"
+  payoutIban?: string
+  payoutBic?: string
+}
+
+export type CDPayOptions = {
+  method: "bank" | "office" | "door"
+  IBAN?: string
+  BIC?: string
+  bankCurrency?: string
+  officeCode?: string
+  payDays?: number[]
 }
 
 type EcontOfficeResponse = {
@@ -272,10 +285,6 @@ export class EcontApiClient {
     const base: Record<string, unknown> = {
       clientNumber: this.config.clientNumber,
       shipmentType: payload.deliveryType === "office" ? "OFFICE" : "ADDRESS",
-      cod: {
-        amount: payload.codAmount,
-        currency: "BGN",
-      },
       receiver: {
         name: `${payload.recipient.firstName} ${payload.recipient.lastName}`,
         phones: [{ number: payload.recipient.phone }],
@@ -284,31 +293,50 @@ export class EcontApiClient {
       metadata: payload.metadata ?? undefined,
     }
 
+    // COD (Cash on Delivery / Наложен платеж) configuration
+    if (payload.codAmount && payload.codAmount > 0) {
+      base.services = {
+        ...(base.services as object || {}),
+        cdAmount: payload.codAmount,
+        cdType: "get", // "get" = collect from receiver
+        cdCurrency: "BGN",
+      }
+
+      // If we have an agreement number, use it (recommended approach)
+      // Otherwise, specify cdPayOptions for where to send the money
+      if (this.config.cdAgreementNum) {
+        (base.services as Record<string, unknown>).cdAgreementNum = this.config.cdAgreementNum
+      } else if (this.config.payoutIban && this.config.payoutBic) {
+        // Fallback: specify bank details per shipment
+        (base.services as Record<string, unknown>).cdPayOptions = this.buildCdPayOptions()
+      }
+    }
+
     if (payload.deliveryType === "office" && payload.office) {
-      base.office = this.buildOfficePayload(payload.office)
+      base.receiverOfficeCode = payload.office.officeCode
     }
 
     if (payload.deliveryType === "address" && payload.address) {
-      base.address = this.buildAddressPayload(payload.address)
+      base.receiverAddress = this.buildAddressPayload(payload.address)
     }
 
     return base
   }
 
-  private buildOfficePayload(office: EcontOfficeSelection) {
-    const result: Record<string, unknown> = {
-      code: office.officeCode,
+  private buildCdPayOptions(): CDPayOptions | undefined {
+    if (!this.config.payoutMethod) return undefined
+
+    const options: CDPayOptions = {
+      method: this.config.payoutMethod,
     }
 
-    if (office.officeName) {
-      result.name = office.officeName
+    if (this.config.payoutMethod === "bank") {
+      options.IBAN = this.config.payoutIban
+      options.BIC = this.config.payoutBic
+      options.bankCurrency = "BGN"
     }
 
-    if (office.city) {
-      result.city = office.city
-    }
-
-    return result
+    return options
   }
 
   private buildAddressPayload(address: EcontAddressSelection) {

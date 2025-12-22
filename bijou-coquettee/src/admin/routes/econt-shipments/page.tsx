@@ -11,6 +11,7 @@ import {
   Table,
   IconButton,
   DropdownMenu,
+  Label,
   clx,
   toast,
 } from "@medusajs/ui"
@@ -26,6 +27,9 @@ import {
   MapPin,
   ArrowDownTray,
   Eye,
+  PencilSquare,
+  ExclamationCircle,
+  RocketLaunch,
 } from "@medusajs/icons"
 
 type EcontTrackingEvent = {
@@ -73,6 +77,20 @@ type EcontShipment = {
   created_at: string
   updated_at: string
   last_synced_at: string | null
+}
+
+type CityOption = {
+  id: number
+  name: string
+  nameEn: string
+  postCode: string
+}
+
+type OfficeOption = {
+  code: string
+  name: string
+  address?: string
+  cityName?: string
 }
 
 const STATUS_CONFIG: Record<string, { color: "green" | "orange" | "red" | "blue" | "grey"; label: string; labelBg: string }> = {
@@ -335,12 +353,465 @@ const ShipmentDetailsDrawer = ({
   )
 }
 
+// Edit Drawer for Draft Shipments
+const EditShipmentDrawer = ({
+  shipment,
+  isOpen,
+  onClose,
+  onSave,
+}: {
+  shipment: EcontShipment | null
+  isOpen: boolean
+  onClose: () => void
+  onSave: () => void
+}) => {
+  const [formData, setFormData] = useState({
+    delivery_type: "office" as "office" | "address",
+    recipient_first_name: "",
+    recipient_last_name: "",
+    recipient_phone: "",
+    recipient_email: "",
+    office_code: "",
+    office_name: "",
+    address_city: "",
+    address_postal_code: "",
+    address_line1: "",
+    address_line2: "",
+    cod_amount: 0,
+    allow_saturday: false,
+  })
+  const [saving, setSaving] = useState(false)
+  const [cities, setCities] = useState<CityOption[]>([])
+  const [offices, setOffices] = useState<OfficeOption[]>([])
+  const [citySearch, setCitySearch] = useState("")
+  const [selectedCityId, setSelectedCityId] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (shipment && isOpen) {
+      setFormData({
+        delivery_type: shipment.delivery_type,
+        recipient_first_name: shipment.recipient_first_name || "",
+        recipient_last_name: shipment.recipient_last_name || "",
+        recipient_phone: shipment.recipient_phone || "",
+        recipient_email: shipment.recipient_email || "",
+        office_code: shipment.office_code || "",
+        office_name: shipment.office_name || "",
+        address_city: shipment.address_city || "",
+        address_postal_code: shipment.address_postal_code || "",
+        address_line1: shipment.address_line1 || "",
+        address_line2: shipment.address_line2 || "",
+        cod_amount: shipment.cod_amount ? Number(shipment.cod_amount) : 0,
+        allow_saturday: shipment.allow_saturday || false,
+      })
+    }
+  }, [shipment, isOpen])
+
+  // Fetch cities when search changes
+  useEffect(() => {
+    if (citySearch.length < 2) {
+      setCities([])
+      return
+    }
+
+    const fetchCities = async () => {
+      try {
+        const response = await fetch(
+          `/admin/econt/locations?type=city&search=${encodeURIComponent(citySearch)}`
+        )
+        const data = await response.json()
+        setCities(data.locations || [])
+      } catch (error) {
+        console.error("Failed to fetch cities:", error)
+      }
+    }
+
+    const timeout = setTimeout(fetchCities, 300)
+    return () => clearTimeout(timeout)
+  }, [citySearch])
+
+  // Fetch offices when city is selected
+  useEffect(() => {
+    if (!selectedCityId) {
+      setOffices([])
+      return
+    }
+
+    const fetchOffices = async () => {
+      try {
+        const response = await fetch(
+          `/admin/econt/locations?type=office&cityId=${selectedCityId}`
+        )
+        const data = await response.json()
+        setOffices(data.locations || [])
+      } catch (error) {
+        console.error("Failed to fetch offices:", error)
+      }
+    }
+
+    fetchOffices()
+  }, [selectedCityId])
+
+  const handleSave = async () => {
+    if (!shipment) return
+
+    setSaving(true)
+    try {
+      const response = await fetch(`/admin/econt/shipments/${shipment.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      })
+
+      if (response.ok) {
+        toast.success("Товарителницата е обновена")
+        onSave()
+        onClose()
+      } else {
+        const data = await response.json()
+        toast.error(data.message || "Грешка при запис")
+      }
+    } catch (error) {
+      toast.error("Грешка при запис")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (!isOpen || !shipment) return null
+
+  return (
+    <div className="fixed inset-0 z-50 flex">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="relative ml-auto w-full max-w-lg bg-ui-bg-base shadow-xl overflow-y-auto">
+        <div className="sticky top-0 bg-ui-bg-base border-b border-ui-border-base px-6 py-4 flex items-center justify-between">
+          <div>
+            <Heading level="h2">Редактиране на товарителница</Heading>
+            <Text size="small" className="text-ui-fg-muted">
+              Редактирайте данните преди изпращане към Econt
+            </Text>
+          </div>
+          <Button variant="secondary" size="small" onClick={onClose}>
+            Затвори
+          </Button>
+        </div>
+
+        <div className="p-6 space-y-6">
+          {/* Delivery Type */}
+          <div className="space-y-2">
+            <Label>Тип доставка</Label>
+            <Select
+              value={formData.delivery_type}
+              onValueChange={(value) =>
+                setFormData({ ...formData, delivery_type: value as "office" | "address" })
+              }
+            >
+              <Select.Trigger>
+                <Select.Value />
+              </Select.Trigger>
+              <Select.Content>
+                <Select.Item value="office">До офис на Еконт</Select.Item>
+                <Select.Item value="address">До адрес</Select.Item>
+              </Select.Content>
+            </Select>
+          </div>
+
+          {/* Recipient Info */}
+          <div className="space-y-4">
+            <Text className="font-medium">Получател</Text>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Име</Label>
+                <Input
+                  value={formData.recipient_first_name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, recipient_first_name: e.target.value })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Фамилия</Label>
+                <Input
+                  value={formData.recipient_last_name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, recipient_last_name: e.target.value })
+                  }
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Телефон</Label>
+              <Input
+                value={formData.recipient_phone}
+                onChange={(e) =>
+                  setFormData({ ...formData, recipient_phone: e.target.value })
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Имейл (незадължително)</Label>
+              <Input
+                value={formData.recipient_email}
+                onChange={(e) =>
+                  setFormData({ ...formData, recipient_email: e.target.value })
+                }
+              />
+            </div>
+          </div>
+
+          {/* Office Selection */}
+          {formData.delivery_type === "office" && (
+            <div className="space-y-4">
+              <Text className="font-medium">Офис на Еконт</Text>
+              <div className="space-y-2">
+                <Label>Търсене на град</Label>
+                <Input
+                  placeholder="Въведете име на град..."
+                  value={citySearch}
+                  onChange={(e) => setCitySearch(e.target.value)}
+                />
+                {cities.length > 0 && (
+                  <div className="border rounded-md max-h-40 overflow-y-auto">
+                    {cities.map((city) => (
+                      <button
+                        key={city.id}
+                        className="w-full text-left px-3 py-2 hover:bg-ui-bg-subtle text-sm"
+                        onClick={() => {
+                          setSelectedCityId(city.id)
+                          setFormData({ ...formData, address_city: city.name })
+                          setCitySearch(city.name)
+                          setCities([])
+                        }}
+                      >
+                        {city.name} ({city.postCode})
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {offices.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Избор на офис</Label>
+                  <Select
+                    value={formData.office_code}
+                    onValueChange={(value) => {
+                      const office = offices.find((o) => o.code === value)
+                      setFormData({
+                        ...formData,
+                        office_code: value,
+                        office_name: office?.name || "",
+                      })
+                    }}
+                  >
+                    <Select.Trigger>
+                      <Select.Value placeholder="Изберете офис" />
+                    </Select.Trigger>
+                    <Select.Content>
+                      {offices.map((office) => (
+                        <Select.Item key={office.code} value={office.code}>
+                          {office.name}
+                        </Select.Item>
+                      ))}
+                    </Select.Content>
+                  </Select>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Address Fields */}
+          {formData.delivery_type === "address" && (
+            <div className="space-y-4">
+              <Text className="font-medium">Адрес за доставка</Text>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>Град</Label>
+                  <Input
+                    value={formData.address_city}
+                    onChange={(e) =>
+                      setFormData({ ...formData, address_city: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Пощенски код</Label>
+                  <Input
+                    value={formData.address_postal_code}
+                    onChange={(e) =>
+                      setFormData({ ...formData, address_postal_code: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Адрес</Label>
+                <Input
+                  value={formData.address_line1}
+                  onChange={(e) =>
+                    setFormData({ ...formData, address_line1: e.target.value })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Допълнителен адрес</Label>
+                <Input
+                  value={formData.address_line2}
+                  onChange={(e) =>
+                    setFormData({ ...formData, address_line2: e.target.value })
+                  }
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="allow_saturday"
+                  checked={formData.allow_saturday}
+                  onChange={(e) =>
+                    setFormData({ ...formData, allow_saturday: e.target.checked })
+                  }
+                  className="w-4 h-4"
+                />
+                <Label htmlFor="allow_saturday">Доставка в събота</Label>
+              </div>
+            </div>
+          )}
+
+          {/* COD Amount */}
+          <div className="space-y-2">
+            <Label>Наложен платеж (лв.)</Label>
+            <Input
+              type="number"
+              step="0.01"
+              value={formData.cod_amount}
+              onChange={(e) =>
+                setFormData({ ...formData, cod_amount: parseFloat(e.target.value) || 0 })
+              }
+            />
+          </div>
+
+          {/* Actions */}
+          <div className="pt-4 border-t border-ui-border-base flex gap-2">
+            <Button variant="secondary" onClick={onClose} className="flex-1">
+              Отказ
+            </Button>
+            <Button onClick={handleSave} disabled={saving} className="flex-1">
+              {saving ? "Запазване..." : "Запази"}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Draft Shipments Alert Card
+const DraftShipmentsCard = ({
+  drafts,
+  onEdit,
+  onConfirm,
+  onViewDetails,
+}: {
+  drafts: EcontShipment[]
+  onEdit: (shipment: EcontShipment) => void
+  onConfirm: (shipment: EcontShipment) => void
+  onViewDetails: (shipment: EcontShipment) => void
+}) => {
+  const [confirmingId, setConfirmingId] = useState<string | null>(null)
+
+  if (drafts.length === 0) return null
+
+  return (
+    <div className="bg-ui-tag-orange-bg border border-ui-tag-orange-border rounded-lg p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <ExclamationCircle className="w-5 h-5 text-ui-tag-orange-icon" />
+        <Heading level="h3" className="text-ui-tag-orange-text">
+          Чакащи потвърждение ({drafts.length})
+        </Heading>
+      </div>
+      <Text size="small" className="text-ui-fg-muted mb-4">
+        Тези товарителници са създадени от клиенти, но още не са изпратени към Еконт.
+        Прегледайте данните и потвърдете за да генерирате товарителница.
+      </Text>
+      <div className="space-y-3">
+        {drafts.map((shipment) => (
+          <div
+            key={shipment.id}
+            className="bg-ui-bg-base rounded-lg border border-ui-border-base p-4 flex items-center justify-between"
+          >
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                {shipment.delivery_type === "office" ? (
+                  <BuildingStorefront className="w-4 h-4 text-ui-fg-subtle" />
+                ) : (
+                  <MapPin className="w-4 h-4 text-ui-fg-subtle" />
+                )}
+                <Text className="font-medium">
+                  {shipment.recipient_first_name} {shipment.recipient_last_name}
+                </Text>
+                <Badge color="grey" size="small">Чернова</Badge>
+              </div>
+              <Text size="small" className="text-ui-fg-muted">
+                {shipment.delivery_type === "office"
+                  ? shipment.office_name || "Офис не е избран"
+                  : shipment.address_city || "Адрес не е въведен"}
+                {" • "}
+                {shipment.recipient_phone}
+                {shipment.cod_amount && (
+                  <> • <span className="font-medium">{Number(shipment.cod_amount).toFixed(2)} лв.</span></>
+                )}
+              </Text>
+              {shipment.order_id && (
+                <Text size="xsmall" className="text-ui-fg-subtle mt-1">
+                  Поръчка: {shipment.order_id.slice(0, 8)}...
+                </Text>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <IconButton
+                variant="transparent"
+                size="small"
+                onClick={() => onViewDetails(shipment)}
+              >
+                <Eye className="w-4 h-4" />
+              </IconButton>
+              <IconButton
+                variant="transparent"
+                size="small"
+                onClick={() => onEdit(shipment)}
+              >
+                <PencilSquare className="w-4 h-4" />
+              </IconButton>
+              <Button
+                size="small"
+                disabled={confirmingId === shipment.id}
+                onClick={async () => {
+                  setConfirmingId(shipment.id)
+                  await onConfirm(shipment)
+                  setConfirmingId(null)
+                }}
+              >
+                {confirmingId === shipment.id ? (
+                  <ArrowPath className="w-4 h-4 animate-spin mr-1" />
+                ) : (
+                  <RocketLaunch className="w-4 h-4 mr-1" />
+                )}
+                Изпрати
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 const EcontShipmentsPage = () => {
   const [shipments, setShipments] = useState<EcontShipment[]>([])
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
   const [selectedShipment, setSelectedShipment] = useState<EcontShipment | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [editDrawerOpen, setEditDrawerOpen] = useState(false)
+  const [editingShipment, setEditingShipment] = useState<EcontShipment | null>(null)
 
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>("all")
@@ -430,6 +901,33 @@ const EcontShipmentsPage = () => {
     setDrawerOpen(true)
   }
 
+  const openEditDrawer = (shipment: EcontShipment) => {
+    setEditingShipment(shipment)
+    setEditDrawerOpen(true)
+  }
+
+  const handleConfirmShipment = async (shipment: EcontShipment) => {
+    try {
+      const response = await fetch(`/admin/econt/shipments/${shipment.id}/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      })
+
+      if (response.ok) {
+        toast.success("Товарителницата е изпратена към Еконт")
+        await fetchShipments()
+      } else {
+        const data = await response.json()
+        toast.error(data.message || "Грешка при изпращане")
+      }
+    } catch {
+      toast.error("Грешка при изпращане към Еконт")
+    }
+  }
+
+  // Get draft shipments for the alert card
+  const draftShipments = shipments.filter(s => s.status === "draft" || s.status === "ready")
+
   const filteredShipments = shipments.filter(s => {
     if (!searchQuery) return true
     const q = searchQuery.toLowerCase()
@@ -470,6 +968,18 @@ const EcontShipmentsPage = () => {
           Синхронизирай всички
         </Button>
       </div>
+
+      {/* Draft Shipments Alert */}
+      {draftShipments.length > 0 && (
+        <div className="px-6 py-4">
+          <DraftShipmentsCard
+            drafts={draftShipments}
+            onEdit={openEditDrawer}
+            onConfirm={handleConfirmShipment}
+            onViewDetails={openDrawer}
+          />
+        </div>
+      )}
 
       {/* Status Summary Cards */}
       <div className="px-6 py-4 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
@@ -638,6 +1148,24 @@ const EcontShipmentsPage = () => {
                           <Eye className="mr-2" />
                           Детайли
                         </DropdownMenu.Item>
+                        {(shipment.status === "draft" || shipment.status === "ready") && (
+                          <>
+                            <DropdownMenu.Item onClick={(e) => {
+                              e.stopPropagation()
+                              openEditDrawer(shipment)
+                            }}>
+                              <PencilSquare className="mr-2" />
+                              Редактирай
+                            </DropdownMenu.Item>
+                            <DropdownMenu.Item onClick={(e) => {
+                              e.stopPropagation()
+                              handleConfirmShipment(shipment)
+                            }}>
+                              <RocketLaunch className="mr-2" />
+                              Изпрати към Еконт
+                            </DropdownMenu.Item>
+                          </>
+                        )}
                         {shipment.waybill_number && (
                           <DropdownMenu.Item onClick={(e) => {
                             e.stopPropagation()
@@ -686,6 +1214,14 @@ const EcontShipmentsPage = () => {
         shipment={selectedShipment}
         isOpen={drawerOpen}
         onClose={() => setDrawerOpen(false)}
+      />
+
+      {/* Edit Shipment Drawer */}
+      <EditShipmentDrawer
+        shipment={editingShipment}
+        isOpen={editDrawerOpen}
+        onClose={() => setEditDrawerOpen(false)}
+        onSave={fetchShipments}
       />
     </Container>
   )

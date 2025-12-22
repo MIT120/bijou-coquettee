@@ -39,6 +39,11 @@ class EcontShippingModuleService extends MedusaService({
       password,
       clientNumber: process.env.ECONT_SENDER_CLIENT_NUMBER,
       isDemo: process.env.ECONT_IS_DEMO === "true",
+      // COD payout configuration
+      cdAgreementNum: process.env.ECONT_CD_AGREEMENT_NUM,
+      payoutMethod: (process.env.ECONT_PAYOUT_METHOD as "bank" | "office" | "door") || "bank",
+      payoutIban: process.env.ECONT_PAYOUT_IBAN,
+      payoutBic: process.env.ECONT_PAYOUT_BIC,
     })
   }
 
@@ -105,6 +110,11 @@ class EcontShippingModuleService extends MedusaService({
     return preference ?? null
   }
 
+  /**
+   * Creates a draft shipment from an order.
+   * This does NOT register with Econt API - admin must manually approve and register.
+   * The shipment is created with status "ready" so admin can review before sending.
+   */
   async createShipmentFromOrder(orderId: string, cartId?: string | null) {
     if (!cartId) {
       throw new Error(
@@ -120,55 +130,84 @@ class EcontShippingModuleService extends MedusaService({
       )
     }
 
-    const payload: CreateShipmentPayload = {
-      cartId,
-      orderId,
-      codAmount: Number(preference.cod_amount || 0),
-      deliveryType: preference.delivery_type as "office" | "address",
-      recipient: {
-        firstName: preference.recipient_first_name,
-        lastName: preference.recipient_last_name,
-        phone: preference.recipient_phone,
-        email: preference.recipient_email ?? undefined,
-      },
-      office: preference.office_code
-        ? {
-            officeCode: preference.office_code,
-            officeName: preference.office_name ?? undefined,
-            city: preference.address_city ?? undefined,
-          }
-        : undefined,
-      address: preference.address_line1
-        ? {
-            city: preference.address_city ?? "",
-            postalCode: preference.address_postal_code ?? undefined,
-            addressLine1: preference.address_line1,
-            addressLine2: preference.address_line2 ?? undefined,
-            entrance: preference.entrance ?? undefined,
-            floor: preference.floor ?? undefined,
-            apartment: preference.apartment ?? undefined,
-            neighborhood: preference.neighborhood ?? undefined,
-            allowSaturdayDelivery: preference.allow_saturday ?? false,
-          }
-        : undefined,
-      metadata: preference.metadata ?? undefined,
-    }
-
-    const apiResponse = await this.client.createShipment(payload)
-
+    // Update the existing preference record with order_id and set status to "ready"
+    // This allows admin to review and manually register with Econt API
     const [shipment] = await this.updateEcontShipments([
       {
         id: preference.id,
         order_id: orderId,
-        status: ECONT_SHIPPING_STATUS.REGISTERED,
-        waybill_number: (apiResponse as any)?.shipmentNumber ?? null,
-        tracking_number: (apiResponse as any)?.trackingNumber ?? null,
-        label_url: (apiResponse as any)?.labelUrl ?? null,
-        raw_response: apiResponse as Record<string, unknown>,
+        status: ECONT_SHIPPING_STATUS.READY,
       },
     ])
 
     return shipment
+  }
+
+  /**
+   * Register a draft shipment with Econt API.
+   * This is used when admin confirms a shipment from the admin panel.
+   */
+  async registerShipment(shipmentId: string) {
+    const shipment = await this.retrieveEcontShipment(shipmentId)
+
+    if (!shipment) {
+      throw new Error(`[EcontShipping] Shipment ${shipmentId} not found`)
+    }
+
+    if (shipment.status !== "draft" && shipment.status !== "ready") {
+      throw new Error(
+        `[EcontShipping] Cannot register shipment with status "${shipment.status}". Only draft or ready shipments can be registered.`
+      )
+    }
+
+    const payload: CreateShipmentPayload = {
+      cartId: shipment.cart_id ?? undefined,
+      orderId: shipment.order_id ?? "",
+      codAmount: Number(shipment.cod_amount || 0),
+      deliveryType: shipment.delivery_type as "office" | "address",
+      recipient: {
+        firstName: shipment.recipient_first_name,
+        lastName: shipment.recipient_last_name,
+        phone: shipment.recipient_phone,
+        email: shipment.recipient_email ?? undefined,
+      },
+      office: shipment.office_code
+        ? {
+            officeCode: shipment.office_code,
+            officeName: shipment.office_name ?? undefined,
+            city: shipment.address_city ?? undefined,
+          }
+        : undefined,
+      address: shipment.address_line1
+        ? {
+            city: shipment.address_city ?? "",
+            postalCode: shipment.address_postal_code ?? undefined,
+            addressLine1: shipment.address_line1,
+            addressLine2: shipment.address_line2 ?? undefined,
+            entrance: shipment.entrance ?? undefined,
+            floor: shipment.floor ?? undefined,
+            apartment: shipment.apartment ?? undefined,
+            neighborhood: shipment.neighborhood ?? undefined,
+            allowSaturdayDelivery: shipment.allow_saturday ?? false,
+          }
+        : undefined,
+      metadata: shipment.metadata ?? undefined,
+    }
+
+    const apiResponse = await this.client.createShipment(payload)
+
+    const [updated] = await this.updateEcontShipments([
+      {
+        id: shipmentId,
+        status: ECONT_SHIPPING_STATUS.REGISTERED,
+        waybill_number: (apiResponse as any)?.shipmentNumber ?? null,
+        tracking_number: (apiResponse as any)?.trackingNumber ?? null,
+        label_url: (apiResponse as any)?.pdfURL ?? (apiResponse as any)?.labelUrl ?? null,
+        raw_response: apiResponse as Record<string, unknown>,
+      },
+    ])
+
+    return updated
   }
 
   async calculateShipment(cartId: string) {
