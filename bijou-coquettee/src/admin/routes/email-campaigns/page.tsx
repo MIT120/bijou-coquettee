@@ -45,6 +45,12 @@ type EmailCampaign = {
     popup_title: string | null
     popup_description: string | null
     max_uses_per_code: number
+    // Banner settings
+    banner_enabled: boolean
+    banner_text: string | null
+    banner_cta_text: string | null
+    banner_cta_link: string | null
+    banner_bg_color: string | null
     created_at: string
     stats: CampaignStats
 }
@@ -117,6 +123,12 @@ const CampaignFormModal = ({
         popup_description: "",
         max_uses_per_code: 1,
         is_active: true,
+        // Banner settings
+        banner_enabled: false,
+        banner_text: "",
+        banner_cta_text: "",
+        banner_cta_link: "",
+        banner_bg_color: "",
     })
 
     useEffect(() => {
@@ -131,6 +143,12 @@ const CampaignFormModal = ({
                 popup_description: campaign.popup_description || "",
                 max_uses_per_code: campaign.max_uses_per_code,
                 is_active: campaign.is_active,
+                // Banner settings
+                banner_enabled: campaign.banner_enabled || false,
+                banner_text: campaign.banner_text || "",
+                banner_cta_text: campaign.banner_cta_text || "",
+                banner_cta_link: campaign.banner_cta_link || "",
+                banner_bg_color: campaign.banner_bg_color || "",
             })
         } else {
             setFormData({
@@ -143,6 +161,12 @@ const CampaignFormModal = ({
                 popup_description: "",
                 max_uses_per_code: 1,
                 is_active: true,
+                // Banner settings
+                banner_enabled: false,
+                banner_text: "",
+                banner_cta_text: "",
+                banner_cta_link: "",
+                banner_bg_color: "",
             })
         }
     }, [campaign, isOpen])
@@ -303,6 +327,73 @@ const CampaignFormModal = ({
                             className="w-4 h-4"
                         />
                         <Label htmlFor="is_active">Campaign is active</Label>
+                    </div>
+
+                    {/* Banner Settings Section */}
+                    <div className="border-t border-ui-border-base pt-4 mt-4">
+                        <Heading level="h3" className="mb-3">Banner Settings</Heading>
+                        <Text size="small" className="text-ui-fg-muted mb-4">
+                            Configure the promotional banner shown at the top of your storefront
+                        </Text>
+
+                        <div className="flex items-center gap-2 mb-4">
+                            <input
+                                type="checkbox"
+                                id="banner_enabled"
+                                checked={formData.banner_enabled}
+                                onChange={(e) => setFormData({ ...formData, banner_enabled: e.target.checked })}
+                                className="w-4 h-4"
+                            />
+                            <Label htmlFor="banner_enabled">Show promotional banner</Label>
+                        </div>
+
+                        {formData.banner_enabled && (
+                            <div className="space-y-4 pl-6 border-l-2 border-ui-border-base">
+                                <div>
+                                    <Label htmlFor="banner_text">Banner Text</Label>
+                                    <Input
+                                        id="banner_text"
+                                        value={formData.banner_text}
+                                        onChange={(e) => setFormData({ ...formData, banner_text: e.target.value })}
+                                        placeholder={`Default: "${formData.discount_percent}% OFF - Limited Time Offer!"`}
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <Label htmlFor="banner_cta_text">CTA Button Text</Label>
+                                        <Input
+                                            id="banner_cta_text"
+                                            value={formData.banner_cta_text}
+                                            onChange={(e) => setFormData({ ...formData, banner_cta_text: e.target.value })}
+                                            placeholder="Default: Shop Now"
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="banner_cta_link">CTA Button Link</Label>
+                                        <Input
+                                            id="banner_cta_link"
+                                            value={formData.banner_cta_link}
+                                            onChange={(e) => setFormData({ ...formData, banner_cta_link: e.target.value })}
+                                            placeholder="Default: /store"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <Label htmlFor="banner_bg_color">Background Color (optional)</Label>
+                                    <Input
+                                        id="banner_bg_color"
+                                        value={formData.banner_bg_color}
+                                        onChange={(e) => setFormData({ ...formData, banner_bg_color: e.target.value })}
+                                        placeholder="e.g., #1a1a1a or gradient-amber"
+                                    />
+                                    <Text size="xsmall" className="text-ui-fg-muted mt-1">
+                                        Leave empty for default dark gradient
+                                    </Text>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     <div className="flex justify-end gap-2 pt-4 border-t border-ui-border-base">
@@ -600,7 +691,12 @@ const EmailCampaignsPage = () => {
                                         </Text>
                                     </Table.Cell>
                                     <Table.Cell>
-                                        <Badge color={config.color}>{config.label}</Badge>
+                                        <div className="flex items-center gap-2">
+                                            <Badge color={config.color}>{config.label}</Badge>
+                                            {campaign.banner_enabled && (
+                                                <Badge color="orange">Banner</Badge>
+                                            )}
+                                        </div>
                                     </Table.Cell>
                                     <Table.Cell>
                                         <Text>{campaign.stats.total_subscriptions}</Text>

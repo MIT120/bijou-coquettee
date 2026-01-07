@@ -15,6 +15,12 @@ const EmailCampaign = model.define("email_campaign", {
     popup_title: model.text().nullable(),
     popup_description: model.text().nullable(),
     max_uses_per_code: model.number().default(1),
+    // Banner display settings
+    banner_enabled: model.boolean().default(false),
+    banner_text: model.text().nullable(),
+    banner_cta_text: model.text().nullable(),
+    banner_cta_link: model.text().nullable(),
+    banner_bg_color: model.text().nullable(), // Hex color or gradient name
 })
 
 export default EmailCampaign

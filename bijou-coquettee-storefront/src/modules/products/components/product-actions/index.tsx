@@ -2,6 +2,8 @@
 
 import { addToCart } from "@lib/data/cart"
 import { useIntersection } from "@lib/hooks/use-in-view"
+import { useAnalytics } from "@lib/context/analytics-context"
+import { useMetaPixel } from "@lib/components/meta-pixel"
 import { HttpTypes } from "@medusajs/types"
 import { Button } from "@medusajs/ui"
 import Divider from "@modules/common/components/divider"
@@ -36,6 +38,8 @@ export default function ProductActions({
   const [options, setOptions] = useState<Record<string, string | undefined>>({})
   const [isAdding, setIsAdding] = useState(false)
   const countryCode = useParams().countryCode as string
+  const { trackAddToCart } = useAnalytics()
+  const { trackAddToCart: trackMetaAddToCart } = useMetaPixel()
 
   // If there is only 1 variant, preselect the options
   useEffect(() => {
@@ -137,6 +141,24 @@ export default function ProductActions({
       quantity: 1,
       countryCode,
     })
+
+    // Track add to cart event
+    const price = selectedVariant.calculated_price?.calculated_amount
+      ? selectedVariant.calculated_price.calculated_amount / 100
+      : 0
+    const currency = selectedVariant.calculated_price?.currency_code?.toUpperCase() || "USD"
+
+    trackAddToCart({
+      item_id: product.id!,
+      item_name: product.title || "",
+      item_category: product.categories?.[0]?.name,
+      item_variant: selectedVariant.title || undefined,
+      price,
+      currency,
+      quantity: 1,
+    })
+
+    trackMetaAddToCart(product.id!, product.title || "", price, currency)
 
     setIsAdding(false)
   }
