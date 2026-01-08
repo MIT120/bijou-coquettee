@@ -47,6 +47,12 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
             popup_description,
             max_uses_per_code = 1,
             is_active = true,
+            // Banner settings
+            banner_enabled = false,
+            banner_text,
+            banner_cta_text,
+            banner_cta_link,
+            banner_bg_color,
         } = req.body as {
             name: string
             code_prefix: string
@@ -57,6 +63,12 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
             popup_description?: string
             max_uses_per_code?: number
             is_active?: boolean
+            // Banner settings
+            banner_enabled?: boolean
+            banner_text?: string
+            banner_cta_text?: string
+            banner_cta_link?: string
+            banner_bg_color?: string
         }
 
         if (!name || !code_prefix || !discount_percent || !start_date || !end_date) {
@@ -88,6 +100,12 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
                 popup_title: popup_title || null,
                 popup_description: popup_description || null,
                 max_uses_per_code,
+                // Banner settings
+                banner_enabled,
+                banner_text: banner_text || null,
+                banner_cta_text: banner_cta_text || null,
+                banner_cta_link: banner_cta_link || null,
+                banner_bg_color: banner_bg_color || null,
             },
         ])
 

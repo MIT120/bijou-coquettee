@@ -11,6 +11,7 @@ import { notFound } from "next/navigation"
 import ProductActionsWrapper from "./product-actions-wrapper"
 import { HttpTypes } from "@medusajs/types"
 import ProductCommentsSection from "@modules/products/components/product-comments"
+import ProductViewTracker from "@modules/products/components/product-view-tracker"
 
 type ProductTemplateProps = {
   product: HttpTypes.StoreProduct
@@ -29,6 +30,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
 
   return (
     <>
+      <ProductViewTracker product={product} region={region} />
       <div
         className="content-container flex flex-col small:flex-row small:items-start py-4 small:py-12 relative gap-x-8 gap-y-4 small:gap-y-8"
         data-testid="product-container"

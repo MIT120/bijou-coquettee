@@ -49,6 +49,12 @@ export async function PATCH(req: MedusaRequest, res: MedusaResponse) {
             popup_title?: string | null
             popup_description?: string | null
             max_uses_per_code?: number
+            // Banner settings
+            banner_enabled?: boolean
+            banner_text?: string | null
+            banner_cta_text?: string | null
+            banner_cta_link?: string | null
+            banner_bg_color?: string | null
         }
 
         const emailCampaignService = req.scope.resolve<EmailCampaignModuleService>(
@@ -89,6 +95,12 @@ export async function PATCH(req: MedusaRequest, res: MedusaResponse) {
         if (updates.popup_title !== undefined) updateData.popup_title = updates.popup_title
         if (updates.popup_description !== undefined) updateData.popup_description = updates.popup_description
         if (updates.max_uses_per_code !== undefined) updateData.max_uses_per_code = updates.max_uses_per_code
+        // Banner settings
+        if (updates.banner_enabled !== undefined) updateData.banner_enabled = updates.banner_enabled
+        if (updates.banner_text !== undefined) updateData.banner_text = updates.banner_text
+        if (updates.banner_cta_text !== undefined) updateData.banner_cta_text = updates.banner_cta_text
+        if (updates.banner_cta_link !== undefined) updateData.banner_cta_link = updates.banner_cta_link
+        if (updates.banner_bg_color !== undefined) updateData.banner_bg_color = updates.banner_bg_color
 
         await emailCampaignService.updateEmailCampaigns([updateData])
 

@@ -64,7 +64,10 @@ export const isManual = (providerId?: string) => {
 }
 
 // Add currencies that don't need to be divided by 100
+// Note: EUR is included because prices in our database are stored in whole euros, not cents
 export const noDivisionCurrencies = [
+  "eur",
+  "bgn",
   "krw",
   "jpy",
   "vnd",
