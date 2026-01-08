@@ -31,9 +31,22 @@ services:
     networks:
       - bijou-coquettee-network
 
+  redis:
+    image: redis:7-alpine
+    container_name: bijou-coquettee-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - bijou-coquettee-network
+    command: redis-server --appendonly yes
+
 volumes:
   postgres_data:
   pgadmin_data:
+  redis_data:
 
 networks:
   bijou-coquettee-network:

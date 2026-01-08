@@ -30,17 +30,27 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
   return (
     <>
       <div
-        className="content-container flex flex-col small:flex-row small:items-start py-6 small:py-12 relative gap-x-8 gap-y-8"
+        className="content-container flex flex-col small:flex-row small:items-start py-4 small:py-12 relative gap-x-8 gap-y-4 small:gap-y-8"
         data-testid="product-container"
       >
-        <div className="flex flex-col small:sticky small:top-48 small:py-0 small:max-w-[300px] w-full gap-y-6">
+        {/* Product Info - Hidden on mobile, shown in sidebar on desktop */}
+        <div className="hidden small:flex flex-col small:sticky small:top-48 small:py-0 small:max-w-[300px] w-full gap-y-6">
           <ProductInfo product={product} />
           <ProductTabs product={product} />
         </div>
-        <div className="block w-full relative small:px-4">
+
+        {/* Image Gallery - Full width on mobile */}
+        <div className="block w-full relative small:px-4 order-first small:order-none">
           <ImageGallery images={product?.images || []} />
         </div>
-        <div className="flex flex-col small:sticky small:top-48 small:py-0 small:max-w-[300px] w-full gap-y-12">
+
+        {/* Product Actions & Info on Mobile */}
+        <div className="flex flex-col small:sticky small:top-48 small:py-0 small:max-w-[300px] w-full gap-y-4 small:gap-y-12">
+          {/* Show product info on mobile only */}
+          <div className="small:hidden">
+            <ProductInfo product={product} />
+          </div>
+
           <ProductOnboardingCta />
           <Suspense
             fallback={
@@ -53,6 +63,11 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
           >
             <ProductActionsWrapper id={product.id} region={region} />
           </Suspense>
+
+          {/* Show product tabs on mobile only */}
+          <div className="small:hidden mt-4">
+            <ProductTabs product={product} />
+          </div>
         </div>
       </div>
       <div className="content-container my-16 small:my-24">

@@ -29,5 +29,13 @@ module.exports = defineConfig({
       resolve: "./src/modules/product-comments",
       options: {},
     },
+    {
+      resolve: "./src/modules/econt-shipping",
+      options: {},
+    },
+    {
+      resolve: "./src/modules/email-campaign",
+      options: {},
+    },
   ],
 })

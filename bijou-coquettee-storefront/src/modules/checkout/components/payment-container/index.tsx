@@ -15,7 +15,7 @@ type PaymentContainerProps = {
   paymentProviderId: string
   selectedPaymentOptionId: string | null
   disabled?: boolean
-  paymentInfoMap: Record<string, { title: string; icon: JSX.Element }>
+  paymentInfoMap: Record<string, { title: string; icon: JSX.Element; description?: string }>
   children?: React.ReactNode
 }
 
@@ -27,6 +27,9 @@ const PaymentContainer: React.FC<PaymentContainerProps> = ({
   children,
 }) => {
   const isDevelopment = process.env.NODE_ENV === "development"
+  const isSelected = selectedPaymentOptionId === paymentProviderId
+  const paymentInfo = paymentInfoMap[paymentProviderId]
+  const isCOD = isManual(paymentProviderId)
 
   return (
     <RadioGroupOption
@@ -34,28 +37,40 @@ const PaymentContainer: React.FC<PaymentContainerProps> = ({
       value={paymentProviderId}
       disabled={disabled}
       className={clx(
-        "flex flex-col gap-y-2 text-small-regular cursor-pointer py-4 border rounded-rounded px-8 mb-2 hover:shadow-borders-interactive-with-active",
+        "flex flex-col gap-y-2 text-small-regular cursor-pointer py-4 border rounded-lg px-6 mb-3 transition-all duration-200",
+        "hover:shadow-borders-interactive-with-active hover:border-ui-border-interactive",
         {
-          "border-ui-border-interactive":
-            selectedPaymentOptionId === paymentProviderId,
+          "border-ui-border-interactive bg-ui-bg-subtle shadow-sm": isSelected,
+          "border-ui-border-base": !isSelected,
+          "bg-green-50/50 border-green-200": isCOD && isSelected,
         }
       )}
     >
-      <div className="flex items-center justify-between ">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-x-4">
-          <Radio checked={selectedPaymentOptionId === paymentProviderId} />
-          <Text className="text-base-regular">
-            {paymentInfoMap[paymentProviderId]?.title || paymentProviderId}
-          </Text>
-          {isManual(paymentProviderId) && isDevelopment && (
+          <Radio checked={isSelected} />
+          <div className="flex flex-col">
+            <Text className="text-base-regular font-medium">
+              {paymentInfo?.title || paymentProviderId}
+            </Text>
+            {paymentInfo?.description && (
+              <Text className="text-small-regular text-ui-fg-subtle mt-0.5">
+                {paymentInfo.description}
+              </Text>
+            )}
+          </div>
+          {isCOD && isDevelopment && (
             <PaymentTest className="hidden small:block" />
           )}
         </div>
-        <span className="justify-self-end text-ui-fg-base">
-          {paymentInfoMap[paymentProviderId]?.icon}
+        <span className={clx(
+          "justify-self-end p-2 rounded-lg",
+          isCOD ? "bg-green-100" : "bg-ui-bg-base"
+        )}>
+          {paymentInfo?.icon}
         </span>
       </div>
-      {isManual(paymentProviderId) && isDevelopment && (
+      {isCOD && isDevelopment && (
         <PaymentTest className="small:hidden text-[10px]" />
       )}
       {children}

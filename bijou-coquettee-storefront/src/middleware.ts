@@ -132,6 +132,18 @@ async function getCountryCode(
  * Middleware to handle region selection and onboarding status.
  */
 export async function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname
+
+  // Redirect /account/wishlist to /wishlist (wishlist works for both guests and authenticated users)
+  const wishlistMatch = pathname.match(/^\/([a-z]{2})\/account\/wishlist\/?$/)
+  if (wishlistMatch) {
+    const countryCode = wishlistMatch[1]
+    return NextResponse.redirect(
+      new URL(`/${countryCode}/wishlist`, request.url),
+      307
+    )
+  }
+
   let redirectUrl = request.nextUrl.href
 
   let response = NextResponse.redirect(redirectUrl, 307)

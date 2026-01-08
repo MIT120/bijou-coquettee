@@ -10,6 +10,7 @@ import { Button, clx, Heading, Text } from "@medusajs/ui"
 import ErrorMessage from "@modules/checkout/components/error-message"
 import Divider from "@modules/common/components/divider"
 import MedusaRadio from "@modules/common/components/radio"
+import EcontShippingForm from "../econt-shipping-form"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useState } from "react"
 
@@ -370,6 +371,12 @@ const Shipping: React.FC<ShippingProps> = ({
                   </RadioGroup>
                 </div>
               </div>
+            </div>
+          )}
+
+          {cart?.shipping_address?.country_code?.toLowerCase() === "bg" && (
+            <div className="mt-6">
+              <EcontShippingForm cart={cart} />
             </div>
           )}
 

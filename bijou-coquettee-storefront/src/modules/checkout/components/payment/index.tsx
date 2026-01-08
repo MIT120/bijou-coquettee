@@ -1,7 +1,7 @@
 "use client"
 
 import { RadioGroup } from "@headlessui/react"
-import { isStripe as isStripeFunc, paymentInfoMap } from "@lib/constants"
+import { isStripe as isStripeFunc, isManual as isManualFunc, paymentInfoMap } from "@lib/constants"
 import { initiatePaymentSession } from "@lib/data/cart"
 import { CheckCircleSolid, CreditCard } from "@medusajs/icons"
 import { Button, Container, Heading, Text, clx } from "@medusajs/ui"
@@ -185,21 +185,26 @@ const Payment = ({
             data-testid="payment-method-error-message"
           />
 
-          <Button
-            size="large"
-            className="mt-6"
-            onClick={handleSubmit}
-            isLoading={isLoading}
-            disabled={
-              (isStripe && !cardComplete) ||
-              (!selectedPaymentMethod && !paidByGiftcard)
-            }
-            data-testid="submit-payment-button"
-          >
-            {!activeSession && isStripeFunc(selectedPaymentMethod)
-              ? " Enter card details"
-              : "Continue to review"}
-          </Button>
+          <div className="mt-8 pt-6 border-t border-ui-border-base">
+            <Button
+              size="large"
+              className={clx(
+                "w-full sm:w-auto min-w-[200px] transition-all duration-200",
+                isManualFunc(selectedPaymentMethod) && "bg-green-600 hover:bg-green-700"
+              )}
+              onClick={handleSubmit}
+              isLoading={isLoading}
+              disabled={
+                (isStripe && !cardComplete) ||
+                (!selectedPaymentMethod && !paidByGiftcard)
+              }
+              data-testid="submit-payment-button"
+            >
+              {!activeSession && isStripeFunc(selectedPaymentMethod)
+                ? "Enter card details"
+                : "Continue to review"}
+            </Button>
+          </div>
         </div>
 
         <div className={isOpen ? "hidden" : "block"}>

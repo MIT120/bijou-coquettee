@@ -74,26 +74,52 @@ export default function ProductActions({
 
   // check if the selected variant is in stock
   const inStock = useMemo(() => {
+    if (!selectedVariant) {
+      return false
+    }
+
     // If we don't manage inventory, we can always add to cart
-    if (selectedVariant && !selectedVariant.manage_inventory) {
+    if (selectedVariant.manage_inventory === false) {
+      return true
+    }
+
+    // If manage_inventory is null/undefined, default to allowing purchase
+    // (This handles cases where inventory management isn't configured)
+    if (selectedVariant.manage_inventory === null || selectedVariant.manage_inventory === undefined) {
       return true
     }
 
     // If we allow back orders on the variant, we can add to cart
-    if (selectedVariant?.allow_backorder) {
+    if (selectedVariant.allow_backorder === true) {
       return true
     }
 
-    // If there is inventory available, we can add to cart
-    if (
-      selectedVariant?.manage_inventory &&
-      (selectedVariant?.inventory_quantity || 0) > 0
-    ) {
-      return true
+    // If manage_inventory is true, check inventory quantity
+    if (selectedVariant.manage_inventory === true) {
+      const inventoryQty = selectedVariant.inventory_quantity
+
+      // If inventory_quantity is explicitly set and greater than 0, it's in stock
+      if (inventoryQty !== null && inventoryQty !== undefined && inventoryQty > 0) {
+        return true
+      }
+
+      // WORKAROUND: In Medusa v2, inventory_quantity may return undefined even when
+      // stock exists at the warehouse level. This happens when the inventory linkage
+      // between sales channels, stock locations, and fulfillment sets isn't complete.
+      // For now, if inventory_quantity is undefined (not 0), allow the purchase.
+      // The backend will validate actual availability when adding to cart.
+      if (inventoryQty === undefined || inventoryQty === null) {
+        return true
+      }
+
+      // Only block if inventory_quantity is explicitly 0
+      if (inventoryQty === 0) {
+        return false
+      }
     }
 
-    // Otherwise, we can't add to cart
-    return false
+    // Otherwise, allow purchase (backend will validate)
+    return true
   }, [selectedVariant])
 
   const actionsRef = useRef<HTMLDivElement>(null)
@@ -163,6 +189,8 @@ export default function ProductActions({
                       title={option.title ?? ""}
                       data-testid="product-options"
                       disabled={!!disabled || isAdding}
+                      variants={product.variants ?? undefined}
+                      selectedOptions={options}
                     />
                   </div>
                 )
@@ -196,9 +224,9 @@ export default function ProductActions({
             isLoading={isAdding}
             data-testid="add-product-button"
           >
-            {!selectedVariant && !options
-              ? "Select variant"
-              : !inStock || !isValidVariant
+            {!selectedVariant
+              ? "Select options"
+              : !inStock
                 ? "Out of stock"
                 : "Add to cart"}
           </Button>

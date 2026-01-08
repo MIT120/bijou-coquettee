@@ -63,7 +63,7 @@ export const listProducts = async ({
           offset,
           region_id: region?.id,
           fields:
-            "*variants.calculated_price,+variants.inventory_quantity,+metadata,+tags",
+            "*variants.calculated_price,+variants.inventory_quantity,+variants.manage_inventory,+variants.allow_backorder,+metadata,+tags",
           ...queryParams,
         },
         headers,
@@ -83,6 +83,59 @@ export const listProducts = async ({
         queryParams,
       }
     })
+}
+
+/**
+ * This will fetch 100 products to the Next.js cache and sort them based on the sortBy parameter.
+ * It will then return the paginated products based on the page and limit parameters.
+ */
+export const getProductsByIds = async ({
+  ids,
+  countryCode,
+}: {
+  ids: string[]
+  countryCode: string
+}): Promise<HttpTypes.StoreProduct[]> => {
+  if (!ids || ids.length === 0) {
+    return []
+  }
+
+  const region = await getRegion(countryCode)
+
+  if (!region) {
+    return []
+  }
+
+  const headers = {
+    ...(await getAuthHeaders()),
+  }
+
+  const next = {
+    ...(await getCacheOptions("products")),
+  }
+
+  try {
+    const { products } = await sdk.client.fetch<{
+      products: HttpTypes.StoreProduct[]
+    }>(`/store/products`, {
+      method: "GET",
+      query: {
+        id: ids,
+        region_id: region.id,
+        fields:
+          "*variants.calculated_price,+variants.inventory_quantity,+variants.manage_inventory,+variants.allow_backorder,+metadata,+tags",
+        limit: ids.length,
+      },
+      headers,
+      next,
+      cache: "force-cache",
+    })
+
+    return products
+  } catch (error) {
+    console.error("Error fetching products by IDs:", error)
+    return []
+  }
 }
 
 /**
