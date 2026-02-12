@@ -52,11 +52,17 @@ type EcontShipment = {
   address_postal_code: string | null
   address_line1: string | null
   address_line2: string | null
+  entrance: string | null
+  floor: string | null
+  apartment: string | null
+  neighborhood: string | null
   recipient_first_name: string
   recipient_last_name: string
   recipient_phone: string
   recipient_email: string | null
   cod_amount: number | null
+  shipping_cost: number | null
+  shipping_cost_currency: string | null
   status: string
   short_status: string | null
   short_status_en: string | null
@@ -85,6 +91,23 @@ type OfficeOption = {
   name: string
   address?: string
   cityName?: string
+}
+
+// Fixed BGN/EUR exchange rate (Bulgarian currency board peg)
+const BGN_TO_EUR = 1.9558
+
+const formatMoney = (amount: number | null | undefined, sourceCurrency?: string | null): string => {
+  if (amount == null || isNaN(Number(amount))) return "-"
+  const num = Number(amount)
+  const src = (sourceCurrency || "BGN").toUpperCase()
+
+  if (src === "EUR") {
+    const bgn = Math.round(num * BGN_TO_EUR * 100) / 100
+    return `\u20AC${num.toFixed(2)} (${bgn.toFixed(2)} лв.)`
+  }
+
+  const eur = Math.round((num / BGN_TO_EUR) * 100) / 100
+  return `\u20AC${eur.toFixed(2)} (${num.toFixed(2)} лв.)`
 }
 
 const STATUS_CONFIG: Record<string, { color: "green" | "orange" | "red" | "blue" | "grey"; label: string }> = {
@@ -147,6 +170,10 @@ const EcontShippingWidget = ({ data: order }: OrderDetailWidgetProps) => {
     address_postal_code: "",
     address_line1: "",
     address_line2: "",
+    entrance: "",
+    floor: "",
+    apartment: "",
+    neighborhood: "",
     recipient_first_name: order.shipping_address?.first_name || "",
     recipient_last_name: order.shipping_address?.last_name || "",
     recipient_phone: order.shipping_address?.phone || "",
@@ -188,6 +215,10 @@ const EcontShippingWidget = ({ data: order }: OrderDetailWidgetProps) => {
           address_postal_code: s.address_postal_code || "",
           address_line1: s.address_line1 || "",
           address_line2: s.address_line2 || "",
+          entrance: s.entrance || "",
+          floor: s.floor || "",
+          apartment: s.apartment || "",
+          neighborhood: s.neighborhood || "",
           recipient_first_name: s.recipient_first_name || "",
           recipient_last_name: s.recipient_last_name || "",
           recipient_phone: s.recipient_phone || "",
@@ -240,6 +271,19 @@ const EcontShippingWidget = ({ data: order }: OrderDetailWidgetProps) => {
     }
   }, [fetchShipment, isBulgarianOrder])
 
+  // Auto-refresh shipment data every 5 minutes for active shipments
+  useEffect(() => {
+    if (!isBulgarianOrder || !shipment?.waybill_number) return
+    const isActive = shipment.status === "registered" || shipment.status === "in_transit"
+    if (!isActive) return
+
+    const interval = setInterval(() => {
+      fetchShipment()
+    }, 5 * 60 * 1000)
+
+    return () => clearInterval(interval)
+  }, [isBulgarianOrder, shipment?.waybill_number, shipment?.status, fetchShipment])
+
   useEffect(() => {
     if (isDrawerOpen && cities.length === 0) {
       fetchCities()
@@ -266,7 +310,18 @@ const EcontShippingWidget = ({ data: order }: OrderDetailWidgetProps) => {
       if (response.ok) {
         const data = await response.json()
         setShipment(data.shipment)
-        toast.success("Shipment status synced successfully")
+        if (data.statusChanged) {
+          const statusLabels: Record<string, string> = {
+            draft: "Чернова", ready: "Готова", registered: "Регистрирана",
+            in_transit: "В доставка", delivered: "Доставена",
+            cancelled: "Отменена", error: "Грешка",
+          }
+          const from = statusLabels[data.previousStatus] || data.previousStatus
+          const to = statusLabels[data.newStatus] || data.newStatus
+          toast.success(`Статус: ${from} → ${to}`)
+        } else {
+          toast.success("Shipment status synced successfully")
+        }
       } else {
         const error = await response.json()
         toast.error(error.message || "Failed to sync status")
@@ -555,6 +610,18 @@ const EcontShippingWidget = ({ data: order }: OrderDetailWidgetProps) => {
                   {shipment.address_line2 && (
                     <Text size="small" className="text-ui-fg-subtle">{shipment.address_line2}</Text>
                   )}
+                  {(shipment.entrance || shipment.floor || shipment.apartment) && (
+                    <Text size="small" className="text-ui-fg-subtle">
+                      {[
+                        shipment.entrance && `вх. ${shipment.entrance}`,
+                        shipment.floor && `ет. ${shipment.floor}`,
+                        shipment.apartment && `ап. ${shipment.apartment}`,
+                      ].filter(Boolean).join(", ")}
+                    </Text>
+                  )}
+                  {shipment.neighborhood && (
+                    <Text size="small" className="text-ui-fg-subtle">кв. {shipment.neighborhood}</Text>
+                  )}
                 </div>
               )}
             </div>
@@ -571,13 +638,22 @@ const EcontShippingWidget = ({ data: order }: OrderDetailWidgetProps) => {
               )}
             </div>
 
-            {/* COD & Waybill */}
+            {/* COD, Shipping Cost & Waybill */}
             <div className="grid grid-cols-2 gap-4">
               {shipment.cod_amount && (
                 <div className="space-y-1">
                   <Text size="small" className="text-ui-fg-muted">COD Amount</Text>
                   <Text className="font-medium">
-                    {Number(shipment.cod_amount).toFixed(2)} {order.currency_code?.toUpperCase()}
+                    {formatMoney(shipment.cod_amount, "BGN")}
+                  </Text>
+                </div>
+              )}
+
+              {shipment.shipping_cost && (
+                <div className="space-y-1">
+                  <Text size="small" className="text-ui-fg-muted">Shipping Cost</Text>
+                  <Text className="font-medium">
+                    {formatMoney(shipment.shipping_cost, shipment.shipping_cost_currency)}
                   </Text>
                 </div>
               )}
@@ -745,8 +821,44 @@ const EcontShippingWidget = ({ data: order }: OrderDetailWidgetProps) => {
                   <Input
                     value={formData.address_line2}
                     onChange={(e) => setFormData({ ...formData, address_line2: e.target.value })}
-                    placeholder="Apartment, entrance, floor..."
+                    placeholder="Additional address info"
                   />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Entrance</Label>
+                    <Input
+                      value={formData.entrance}
+                      onChange={(e) => setFormData({ ...formData, entrance: e.target.value })}
+                      placeholder="вх."
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Floor</Label>
+                    <Input
+                      value={formData.floor}
+                      onChange={(e) => setFormData({ ...formData, floor: e.target.value })}
+                      placeholder="ет."
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Apartment</Label>
+                    <Input
+                      value={formData.apartment}
+                      onChange={(e) => setFormData({ ...formData, apartment: e.target.value })}
+                      placeholder="ап."
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Neighborhood</Label>
+                    <Input
+                      value={formData.neighborhood}
+                      onChange={(e) => setFormData({ ...formData, neighborhood: e.target.value })}
+                      placeholder="кв."
+                    />
+                  </div>
                 </div>
               </>
             )}
@@ -792,7 +904,7 @@ const EcontShippingWidget = ({ data: order }: OrderDetailWidgetProps) => {
             <div className="border-t pt-4 mt-4">
               <Text className="font-medium mb-4">Payment & Options</Text>
               <div className="space-y-2">
-                <Label>COD Amount ({order.currency_code?.toUpperCase()})</Label>
+                <Label>COD Amount (EUR / лв.)</Label>
                 <Input
                   type="number"
                   value={formData.cod_amount}

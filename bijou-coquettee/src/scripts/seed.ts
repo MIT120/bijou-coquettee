@@ -171,6 +171,16 @@ export default async function seedDemoData({ container }: ExecArgs) {
     },
   });
 
+  // Link stock location to Econt fulfillment provider
+  await link.create({
+    [Modules.STOCK_LOCATION]: {
+      stock_location_id: stockLocation.id,
+    },
+    [Modules.FULFILLMENT]: {
+      fulfillment_provider_id: "econt_econt",
+    },
+  });
+
   logger.info("Seeding fulfillment data...");
   const shippingProfiles = await fulfillmentModuleService.listShippingProfiles({
     type: "default",
@@ -192,6 +202,7 @@ export default async function seedDemoData({ container }: ExecArgs) {
     shippingProfile = shippingProfileResult[0];
   }
 
+  // European fulfillment set (excluding Bulgaria — Bulgaria uses Econt)
   const fulfillmentSet = await fulfillmentModuleService.createFulfillmentSets({
     name: "European Jewelry Delivery",
     type: "shipping",
@@ -227,10 +238,6 @@ export default async function seedDemoData({ container }: ExecArgs) {
             country_code: "it",
             type: "country",
           },
-          {
-            country_code: "bg",
-            type: "country",
-          },
         ],
       },
     ],
@@ -245,8 +252,36 @@ export default async function seedDemoData({ container }: ExecArgs) {
     },
   });
 
+  // Econt fulfillment set (Bulgaria only — calculated pricing from Econt API)
+  const econtFulfillmentSet =
+    await fulfillmentModuleService.createFulfillmentSets({
+      name: "Econt Bulgaria Delivery",
+      type: "shipping",
+      service_zones: [
+        {
+          name: "Bulgaria (Econt)",
+          geo_zones: [
+            {
+              country_code: "bg",
+              type: "country",
+            },
+          ],
+        },
+      ],
+    });
+
+  await link.create({
+    [Modules.STOCK_LOCATION]: {
+      stock_location_id: stockLocation.id,
+    },
+    [Modules.FULFILLMENT]: {
+      fulfillment_set_id: econtFulfillmentSet.id,
+    },
+  });
+
   await createShippingOptionsWorkflow(container).run({
     input: [
+      // Standard flat-rate shipping for non-BG European countries
       {
         name: "Standard Jewelry Shipping",
         price_type: "flat",
@@ -285,6 +320,7 @@ export default async function seedDemoData({ container }: ExecArgs) {
           },
         ],
       },
+      // Express flat-rate shipping for non-BG European countries
       {
         name: "Express Jewelry Shipping",
         price_type: "flat",
@@ -308,6 +344,38 @@ export default async function seedDemoData({ container }: ExecArgs) {
           {
             region_id: region.id,
             amount: 35,
+          },
+        ],
+        rules: [
+          {
+            attribute: "enabled_in_store",
+            value: "true",
+            operator: "eq",
+          },
+          {
+            attribute: "is_return",
+            value: "false",
+            operator: "eq",
+          },
+        ],
+      },
+      // Econt calculated shipping for Bulgaria
+      {
+        name: "Econt Express",
+        price_type: "calculated",
+        provider_id: "econt_econt",
+        service_zone_id: econtFulfillmentSet.service_zones[0].id,
+        shipping_profile_id: shippingProfile.id,
+        type: {
+          label: "Econt Express",
+          description:
+            "Econt courier delivery for Bulgaria (office or address)",
+          code: "econt-express",
+        },
+        prices: [
+          {
+            currency_code: "eur",
+            amount: 0,
           },
         ],
         rules: [

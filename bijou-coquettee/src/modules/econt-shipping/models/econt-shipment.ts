@@ -25,6 +25,8 @@ const EcontShipment = model.define("econt_shipment", {
   recipient_phone: model.text(),
   recipient_email: model.text().nullable(),
   cod_amount: model.bigNumber().nullable(),
+  shipping_cost: model.bigNumber().nullable(),
+  shipping_cost_currency: model.text().nullable(),
   status: model.enum(Object.values(ECONT_SHIPPING_STATUS)).default(
     ECONT_SHIPPING_STATUS.DRAFT
   ),

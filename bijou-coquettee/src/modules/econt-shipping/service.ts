@@ -1,14 +1,18 @@
-import { MedusaService } from "@medusajs/framework/utils"
-import { ECONT_DEFAULT_BASE_URL, ECONT_SHIPPING_STATUS } from "./constants"
-import EcontLocation from "./models/econt-location"
-import EcontShipment from "./models/econt-shipment"
-import EcontApiClient, { type EcontShipmentStatus } from "./clients/econt-client"
+import { MedusaService } from "@medusajs/framework/utils";
+import { ECONT_DEFAULT_BASE_URL, ECONT_SHIPPING_STATUS } from "./constants";
+import EcontLocation from "./models/econt-location";
+import EcontShipment from "./models/econt-shipment";
+import EcontApiClient, {
+  type EcontShipmentStatus,
+  type EcontCalculateResult,
+} from "./clients/econt-client";
 import type {
   CreateShipmentPayload,
   LocationSearchInput,
   SyncStatusInput,
   UpsertCartPreferenceInput,
-} from "./types"
+} from "./types";
+import { parseShipmentResponse, parseEcontDate } from "./types";
 
 /**
  * Handles persistence, synchronization, and remote API orchestration for the
@@ -18,19 +22,33 @@ class EcontShippingModuleService extends MedusaService({
   EcontLocation,
   EcontShipment,
 }) {
-  private readonly client: EcontApiClient
+  private readonly client: EcontApiClient;
 
   constructor(...args: any[]) {
     // @ts-ignore - MedusaService requires the container/options arguments
-    super(...args)
+    super(...args);
 
-    const username = process.env.ECONT_API_USERNAME || "iasp-dev"
-    const password = process.env.ECONT_API_PASSWORD || "1Asp-dev"
+    const isDemo = process.env.ECONT_IS_DEMO === "true";
 
-    if (!process.env.ECONT_API_USERNAME || !process.env.ECONT_API_PASSWORD) {
+    // In production mode, require credentials - fail fast to prevent silent failures
+    if (
+      !isDemo &&
+      (!process.env.ECONT_API_USERNAME || !process.env.ECONT_API_PASSWORD)
+    ) {
+      throw new Error(
+        "[EcontShipping] Missing ECONT_API_USERNAME or ECONT_API_PASSWORD. " +
+          "Set these environment variables for production, or set ECONT_IS_DEMO=true for demo mode.",
+      );
+    }
+
+    // Use demo credentials only when explicitly in demo mode
+    const username = isDemo ? "iasp-dev" : process.env.ECONT_API_USERNAME!;
+    const password = isDemo ? "1Asp-dev" : process.env.ECONT_API_PASSWORD!;
+
+    if (isDemo) {
       console.warn(
-        "[EcontShipping] Falling back to demo credentials. Please configure ECONT_API_USERNAME and ECONT_API_PASSWORD for production."
-      )
+        "[EcontShipping] Running in DEMO mode. Shipments will be sent to Econt demo system.",
+      );
     }
 
     this.client = new EcontApiClient({
@@ -39,30 +57,40 @@ class EcontShippingModuleService extends MedusaService({
       password,
       clientNumber: process.env.ECONT_SENDER_CLIENT_NUMBER,
       isDemo: process.env.ECONT_IS_DEMO === "true",
+      // Sender info for label creation
+      senderName: process.env.ECONT_SENDER_NAME,
+      senderPhone: process.env.ECONT_SENDER_PHONE,
+      senderCity: process.env.ECONT_SENDER_CITY,
+      senderPostCode: process.env.ECONT_SENDER_POST_CODE,
+      senderStreet: process.env.ECONT_SENDER_STREET,
+      senderStreetNum: process.env.ECONT_SENDER_STREET_NUM,
+      senderOfficeCode: process.env.ECONT_SENDER_OFFICE_CODE,
       // COD payout configuration
       cdAgreementNum: process.env.ECONT_CD_AGREEMENT_NUM,
-      payoutMethod: (process.env.ECONT_PAYOUT_METHOD as "bank" | "office" | "door") || "bank",
+      payoutMethod:
+        (process.env.ECONT_PAYOUT_METHOD as "bank" | "office" | "door") ||
+        "bank",
       payoutIban: process.env.ECONT_PAYOUT_IBAN,
       payoutBic: process.env.ECONT_PAYOUT_BIC,
-    })
+    });
   }
 
   async searchLocations(input: LocationSearchInput) {
     switch (input.type) {
       case "city":
-        return this.client.fetchCities(input)
+        return this.client.fetchCities(input);
       case "street":
-        return this.client.fetchStreets(input)
+        return this.client.fetchStreets(input);
       default:
-        return this.client.fetchOffices(input)
+        return this.client.fetchOffices(input);
     }
   }
 
   async saveCartPreference(input: UpsertCartPreferenceInput) {
     const [existing] = await this.listEcontShipments(
       { cart_id: input.cartId },
-      { take: 1 }
-    )
+      { take: 1 },
+    );
 
     const payload = {
       cart_id: input.cartId,
@@ -85,7 +113,7 @@ class EcontShippingModuleService extends MedusaService({
       cod_amount: input.codAmount,
       metadata: input.metadata ?? null,
       status: existing?.status ?? ECONT_SHIPPING_STATUS.DRAFT,
-    }
+    };
 
     if (existing) {
       const [updated] = await this.updateEcontShipments([
@@ -93,21 +121,21 @@ class EcontShippingModuleService extends MedusaService({
           id: existing.id,
           ...payload,
         },
-      ])
+      ]);
 
-      return updated
+      return updated;
     }
 
-    const [created] = await this.createEcontShipments([payload])
-    return created
+    const [created] = await this.createEcontShipments([payload]);
+    return created;
   }
 
   async getCartPreference(cartId: string) {
     const [preference] = await this.listEcontShipments(
       { cart_id: cartId },
-      { take: 1 }
-    )
-    return preference ?? null
+      { take: 1 },
+    );
+    return preference ?? null;
   }
 
   /**
@@ -118,16 +146,16 @@ class EcontShippingModuleService extends MedusaService({
   async createShipmentFromOrder(orderId: string, cartId?: string | null) {
     if (!cartId) {
       throw new Error(
-        "[EcontShipping] Cannot create shipment without associated cart id."
-      )
+        "[EcontShipping] Cannot create shipment without associated cart id.",
+      );
     }
 
-    const preference = await this.getCartPreference(cartId)
+    const preference = await this.getCartPreference(cartId);
 
     if (!preference) {
       throw new Error(
-        `[EcontShipping] No stored Econt preference found for cart ${cartId}`
-      )
+        `[EcontShipping] No stored Econt preference found for cart ${cartId}`,
+      );
     }
 
     // Update the existing preference record with order_id and set status to "ready"
@@ -138,9 +166,9 @@ class EcontShippingModuleService extends MedusaService({
         order_id: orderId,
         status: ECONT_SHIPPING_STATUS.READY,
       },
-    ])
+    ]);
 
-    return shipment
+    return shipment;
   }
 
   /**
@@ -148,16 +176,16 @@ class EcontShippingModuleService extends MedusaService({
    * This is used when admin confirms a shipment from the admin panel.
    */
   async registerShipment(shipmentId: string) {
-    const shipment = await this.retrieveEcontShipment(shipmentId)
+    const shipment = await this.retrieveEcontShipment(shipmentId);
 
     if (!shipment) {
-      throw new Error(`[EcontShipping] Shipment ${shipmentId} not found`)
+      throw new Error(`[EcontShipping] Shipment ${shipmentId} not found`);
     }
 
     if (shipment.status !== "draft" && shipment.status !== "ready") {
       throw new Error(
-        `[EcontShipping] Cannot register shipment with status "${shipment.status}". Only draft or ready shipments can be registered.`
-      )
+        `[EcontShipping] Cannot register shipment with status "${shipment.status}". Only draft or ready shipments can be registered.`,
+      );
     }
 
     const payload: CreateShipmentPayload = {
@@ -192,31 +220,34 @@ class EcontShippingModuleService extends MedusaService({
           }
         : undefined,
       metadata: shipment.metadata ?? undefined,
-    }
+    };
 
-    const apiResponse = await this.client.createShipment(payload)
+    const apiResponse = await this.client.createShipment(payload);
+
+    // Type-safe extraction of shipment data from Econt API response
+    const parsedResponse = parseShipmentResponse(apiResponse);
 
     const [updated] = await this.updateEcontShipments([
       {
         id: shipmentId,
         status: ECONT_SHIPPING_STATUS.REGISTERED,
-        waybill_number: (apiResponse as any)?.shipmentNumber ?? null,
-        tracking_number: (apiResponse as any)?.trackingNumber ?? null,
-        label_url: (apiResponse as any)?.pdfURL ?? (apiResponse as any)?.labelUrl ?? null,
+        waybill_number: parsedResponse.waybillNumber,
+        tracking_number: parsedResponse.trackingNumber,
+        label_url: parsedResponse.labelUrl,
         raw_response: apiResponse as Record<string, unknown>,
       },
-    ])
+    ]);
 
-    return updated
+    return updated;
   }
 
-  async calculateShipment(cartId: string) {
-    const preference = await this.getCartPreference(cartId)
+  async calculateShipment(cartId: string): Promise<EcontCalculateResult> {
+    const preference = await this.getCartPreference(cartId);
 
     if (!preference) {
       throw new Error(
-        `[EcontShipping] No stored Econt preference found for cart ${cartId}`
-      )
+        `[EcontShipping] No stored Econt preference found for cart ${cartId}`,
+      );
     }
 
     const payload: CreateShipmentPayload = {
@@ -251,30 +282,36 @@ class EcontShippingModuleService extends MedusaService({
           }
         : undefined,
       metadata: preference.metadata ?? undefined,
-    }
+    };
 
-    return this.client.calculateShipment(payload)
+    return this.client.calculateShipment(payload);
   }
 
-  async syncShipmentStatus({ shipmentId, refreshTracking = false }: SyncStatusInput) {
-    const shipment = await this.retrieveEcontShipment(shipmentId)
+  async syncShipmentStatus({
+    shipmentId,
+    refreshTracking = false,
+  }: SyncStatusInput): Promise<{ shipment: any; statusChanged: boolean; previousStatus: string | null; newStatus: string | null }> {
+    const shipment = await this.retrieveEcontShipment(shipmentId);
 
     if (!shipment.waybill_number) {
       throw new Error(
-        `[EcontShipping] Shipment ${shipmentId} does not have a registered waybill number`
-      )
+        `[EcontShipping] Shipment ${shipmentId} does not have a registered waybill number`,
+      );
     }
 
     if (!refreshTracking && shipment.last_synced_at) {
-      const diff = Date.now() - new Date(shipment.last_synced_at).getTime()
-      const FIFTEEN_MIN = 15 * 60 * 1000
+      const diff = Date.now() - new Date(shipment.last_synced_at).getTime();
+      const FIFTEEN_MIN = 15 * 60 * 1000;
       if (diff < FIFTEEN_MIN) {
-        return shipment
+        return { shipment, statusChanged: false, previousStatus: null, newStatus: null };
       }
     }
 
-    const tracking = await this.client.trackShipment(shipment.waybill_number)
-    const shipmentStatus = (tracking as any)?.shipmentStatuses?.[0] as EcontShipmentStatus | undefined
+    const previousStatus = shipment.status;
+    const tracking = await this.client.trackShipment(shipment.waybill_number);
+
+    // Type-safe access - tracking response is properly typed from the client
+    const shipmentStatus = tracking?.shipmentStatuses?.[0];
 
     if (!shipmentStatus) {
       const [updated] = await this.updateEcontShipments([
@@ -283,128 +320,162 @@ class EcontShippingModuleService extends MedusaService({
           last_synced_at: new Date(),
           raw_response: tracking as Record<string, unknown>,
         },
-      ])
-      return updated
+      ]);
+      return { shipment: updated, statusChanged: false, previousStatus, newStatus: previousStatus };
     }
 
-    const normalizedStatus = this.mapEcontStatus(shipmentStatus.shortDeliveryStatusEn || "") as typeof ECONT_SHIPPING_STATUS[keyof typeof ECONT_SHIPPING_STATUS]
+    const normalizedStatus = this.mapEcontStatus(
+      shipmentStatus.shortDeliveryStatusEn || "",
+    ) as (typeof ECONT_SHIPPING_STATUS)[keyof typeof ECONT_SHIPPING_STATUS];
 
-    const updated = await this.updateEcontShipments(
-      {
-        selector: { id: shipmentId },
-        data: {
-          status: normalizedStatus,
-          short_status: shipmentStatus.shortDeliveryStatus ?? null,
-          short_status_en: shipmentStatus.shortDeliveryStatusEn ?? null,
-          tracking_events: (shipmentStatus.trackingEvents ?? null) as Record<string, unknown> | null,
-          delivery_attempts: shipmentStatus.deliveryAttemptCount ?? 0,
-          expected_delivery_date: shipmentStatus.expectedDeliveryDate ?? null,
-          send_time: shipmentStatus.sendTime ? new Date(shipmentStatus.sendTime) : null,
-          delivery_time: shipmentStatus.deliveryTime ? new Date(shipmentStatus.deliveryTime) : null,
-          cod_collected_time: shipmentStatus.cdCollectedTime ? new Date(shipmentStatus.cdCollectedTime) : null,
-          cod_paid_time: shipmentStatus.cdPaidTime ? new Date(shipmentStatus.cdPaidTime) : null,
-          label_url: shipmentStatus.pdfURL ?? shipment.label_url ?? null,
-          raw_response: tracking as Record<string, unknown>,
-          last_synced_at: new Date(),
-        },
-      }
-    )
+    const statusChanged = previousStatus !== normalizedStatus;
 
-    return Array.isArray(updated) ? updated[0] : updated
+    const updated = await this.updateEcontShipments({
+      selector: { id: shipmentId },
+      data: {
+        status: normalizedStatus,
+        short_status: shipmentStatus.shortDeliveryStatus ?? null,
+        short_status_en: shipmentStatus.shortDeliveryStatusEn ?? null,
+        tracking_events: (shipmentStatus.trackingEvents ?? null) as Record<
+          string,
+          unknown
+        > | null,
+        delivery_attempts: shipmentStatus.deliveryAttemptCount ?? 0,
+        expected_delivery_date: shipmentStatus.expectedDeliveryDate ?? null,
+        // Use type-safe date parsing
+        send_time: parseEcontDate(shipmentStatus.sendTime),
+        delivery_time: parseEcontDate(shipmentStatus.deliveryTime),
+        cod_collected_time: parseEcontDate(shipmentStatus.cdCollectedTime),
+        cod_paid_time: parseEcontDate(shipmentStatus.cdPaidTime),
+        label_url: shipmentStatus.pdfURL ?? shipment.label_url ?? null,
+        raw_response: tracking as Record<string, unknown>,
+        last_synced_at: new Date(),
+      },
+    });
+
+    const result = Array.isArray(updated) ? updated[0] : updated;
+    return { shipment: result, statusChanged, previousStatus, newStatus: normalizedStatus };
   }
 
-  async syncMultipleShipments(shipmentIds: string[]) {
+  async syncMultipleShipments(shipmentIds: string[]): Promise<{
+    shipments: any[];
+    statusChanges: Array<{ shipmentId: string; orderId: string | null; waybill: string | null; previousStatus: string; newStatus: string; recipientName: string }>;
+  }> {
     const shipments = await this.listEcontShipments(
       { id: shipmentIds },
-      { take: shipmentIds.length }
-    )
+      { take: shipmentIds.length },
+    );
 
-    const waybillToShipment = new Map<string, typeof shipments[0]>()
-    const waybillNumbers: string[] = []
+    const waybillToShipment = new Map<string, (typeof shipments)[0]>();
+    const waybillNumbers: string[] = [];
 
     for (const shipment of shipments) {
       if (shipment.waybill_number) {
-        waybillNumbers.push(shipment.waybill_number)
-        waybillToShipment.set(shipment.waybill_number, shipment)
+        waybillNumbers.push(shipment.waybill_number);
+        waybillToShipment.set(shipment.waybill_number, shipment);
       }
     }
 
     if (waybillNumbers.length === 0) {
-      return shipments
+      return { shipments, statusChanges: [] };
     }
 
-    const tracking = await this.client.trackMultipleShipments(waybillNumbers)
-    const statuses = (tracking as any)?.shipmentStatuses || []
+    const tracking = await this.client.trackMultipleShipments(waybillNumbers);
 
-    const updatedShipments: typeof shipments = []
+    // Type-safe access - tracking response is properly typed from the client
+    const statuses = tracking?.shipmentStatuses || [];
 
-    for (const status of statuses as EcontShipmentStatus[]) {
-      const shipment = waybillToShipment.get(status.shipmentNumber)
-      if (!shipment) continue
+    const updatedShipments: typeof shipments = [];
+    const statusChanges: Array<{ shipmentId: string; orderId: string | null; waybill: string | null; previousStatus: string; newStatus: string; recipientName: string }> = [];
 
-      const normalizedStatus = this.mapEcontStatus(status.shortDeliveryStatusEn || "") as typeof ECONT_SHIPPING_STATUS[keyof typeof ECONT_SHIPPING_STATUS]
+    for (const status of statuses) {
+      const shipment = waybillToShipment.get(status.shipmentNumber);
+      if (!shipment) continue;
 
-      const updateResult = await this.updateEcontShipments(
-        {
-          selector: { id: shipment.id },
-          data: {
-            status: normalizedStatus,
-            short_status: status.shortDeliveryStatus ?? null,
-            short_status_en: status.shortDeliveryStatusEn ?? null,
-            tracking_events: (status.trackingEvents ?? null) as Record<string, unknown> | null,
-            delivery_attempts: status.deliveryAttemptCount ?? 0,
-            expected_delivery_date: status.expectedDeliveryDate ?? null,
-            send_time: status.sendTime ? new Date(status.sendTime) : null,
-            delivery_time: status.deliveryTime ? new Date(status.deliveryTime) : null,
-            cod_collected_time: status.cdCollectedTime ? new Date(status.cdCollectedTime) : null,
-            cod_paid_time: status.cdPaidTime ? new Date(status.cdPaidTime) : null,
-            label_url: status.pdfURL ?? shipment.label_url ?? null,
-            raw_response: status as unknown as Record<string, unknown>,
-            last_synced_at: new Date(),
-          },
-        }
-      )
+      const normalizedStatus = this.mapEcontStatus(
+        status.shortDeliveryStatusEn || "",
+      ) as (typeof ECONT_SHIPPING_STATUS)[keyof typeof ECONT_SHIPPING_STATUS];
 
-      const updated = Array.isArray(updateResult) ? updateResult[0] : updateResult
-      updatedShipments.push(updated)
+      const previousStatus = shipment.status;
+      if (previousStatus !== normalizedStatus) {
+        statusChanges.push({
+          shipmentId: shipment.id,
+          orderId: shipment.order_id,
+          waybill: shipment.waybill_number,
+          previousStatus,
+          newStatus: normalizedStatus,
+          recipientName: `${shipment.recipient_first_name} ${shipment.recipient_last_name}`,
+        });
+      }
+
+      const updateResult = await this.updateEcontShipments({
+        selector: { id: shipment.id },
+        data: {
+          status: normalizedStatus,
+          short_status: status.shortDeliveryStatus ?? null,
+          short_status_en: status.shortDeliveryStatusEn ?? null,
+          tracking_events: (status.trackingEvents ?? null) as Record<
+            string,
+            unknown
+          > | null,
+          delivery_attempts: status.deliveryAttemptCount ?? 0,
+          expected_delivery_date: status.expectedDeliveryDate ?? null,
+          // Use type-safe date parsing
+          send_time: parseEcontDate(status.sendTime),
+          delivery_time: parseEcontDate(status.deliveryTime),
+          cod_collected_time: parseEcontDate(status.cdCollectedTime),
+          cod_paid_time: parseEcontDate(status.cdPaidTime),
+          label_url: status.pdfURL ?? shipment.label_url ?? null,
+          raw_response: status as unknown as Record<string, unknown>,
+          last_synced_at: new Date(),
+        },
+      });
+
+      const updated = Array.isArray(updateResult)
+        ? updateResult[0]
+        : updateResult;
+      updatedShipments.push(updated);
     }
 
-    return updatedShipments.length > 0 ? updatedShipments : shipments
+    return {
+      shipments: updatedShipments.length > 0 ? updatedShipments : shipments,
+      statusChanges,
+    };
   }
 
   async cancelShipment(shipmentId: string) {
-    const shipment = await this.retrieveEcontShipment(shipmentId)
+    const shipment = await this.retrieveEcontShipment(shipmentId);
 
     if (!shipment?.waybill_number) {
-      return shipment
+      return shipment;
     }
 
-    await this.client.deleteShipment(shipment.waybill_number)
+    await this.client.deleteShipment(shipment.waybill_number);
 
     const [updated] = await this.updateEcontShipments([
       {
         id: shipmentId,
         status: ECONT_SHIPPING_STATUS.CANCELLED,
       },
-    ])
+    ]);
 
-    return updated
+    return updated;
   }
 
   private mapRemoteStatus(remote: string) {
     if (remote.includes("delivered")) {
-      return ECONT_SHIPPING_STATUS.DELIVERED
+      return ECONT_SHIPPING_STATUS.DELIVERED;
     }
 
     if (remote.includes("cancel")) {
-      return ECONT_SHIPPING_STATUS.CANCELLED
+      return ECONT_SHIPPING_STATUS.CANCELLED;
     }
 
     if (remote.includes("ready") || remote.includes("registered")) {
-      return ECONT_SHIPPING_STATUS.REGISTERED
+      return ECONT_SHIPPING_STATUS.REGISTERED;
     }
 
-    return ECONT_SHIPPING_STATUS.IN_TRANSIT
+    return ECONT_SHIPPING_STATUS.IN_TRANSIT;
   }
 
   /**
@@ -426,22 +497,22 @@ class EcontShippingModuleService extends MedusaService({
    * - "Returned to sender"
    */
   private mapEcontStatus(statusEn: string): string {
-    const status = statusEn.toLowerCase()
+    const status = statusEn.toLowerCase();
 
     if (status.includes("delivered")) {
-      return ECONT_SHIPPING_STATUS.DELIVERED
+      return ECONT_SHIPPING_STATUS.DELIVERED;
     }
 
     if (status.includes("cancelled") || status.includes("cancel")) {
-      return ECONT_SHIPPING_STATUS.CANCELLED
+      return ECONT_SHIPPING_STATUS.CANCELLED;
     }
 
     if (status.includes("return")) {
-      return ECONT_SHIPPING_STATUS.CANCELLED
+      return ECONT_SHIPPING_STATUS.CANCELLED;
     }
 
     if (status.includes("prepared") || status.includes("accepted in econt")) {
-      return ECONT_SHIPPING_STATUS.REGISTERED
+      return ECONT_SHIPPING_STATUS.REGISTERED;
     }
 
     if (
@@ -453,12 +524,11 @@ class EcontShippingModuleService extends MedusaService({
       status.includes("arrived in office") ||
       status.includes("departure from hub")
     ) {
-      return ECONT_SHIPPING_STATUS.IN_TRANSIT
+      return ECONT_SHIPPING_STATUS.IN_TRANSIT;
     }
 
-    return ECONT_SHIPPING_STATUS.IN_TRANSIT
+    return ECONT_SHIPPING_STATUS.IN_TRANSIT;
   }
 }
 
-export default EcontShippingModuleService
-
+export default EcontShippingModuleService;

@@ -1,7 +1,7 @@
 "use client"
 
 import { useWishlist } from "@lib/context/wishlist-context"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 
 type WishlistButtonProps = {
@@ -21,8 +21,15 @@ export default function WishlistButton({
     const { isInWishlist, addToWishlist, removeFromWishlist, items } =
         useWishlist()
     const [isUpdating, setIsUpdating] = useState(false)
+    const [hasMounted, setHasMounted] = useState(false)
 
-    const inWishlist = isInWishlist(productId, variantId)
+    useEffect(() => {
+        setHasMounted(true)
+    }, [])
+
+    // Always render as "not in wishlist" on the server to avoid hydration mismatch.
+    // The real state is applied after mount.
+    const inWishlist = hasMounted && isInWishlist(productId, variantId)
 
     // Find the wishlist item ID if it exists
     const wishlistItem = items.find(

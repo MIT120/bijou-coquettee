@@ -11,18 +11,24 @@ import ErrorMessage from "../error-message"
 type PaymentButtonProps = {
   cart: HttpTypes.StoreCart
   "data-testid": string
+  econtValid?: boolean
+  isLoadingEcont?: boolean
 }
 
 const PaymentButton: React.FC<PaymentButtonProps> = ({
   cart,
   "data-testid": dataTestId,
+  econtValid = true,
+  isLoadingEcont = false,
 }) => {
   const notReady =
     !cart ||
     !cart.shipping_address ||
     !cart.billing_address ||
     !cart.email ||
-    (cart.shipping_methods?.length ?? 0) < 1
+    (cart.shipping_methods?.length ?? 0) < 1 ||
+    !econtValid ||
+    isLoadingEcont
 
   const paymentSession = cart.payment_collection?.payment_sessions?.[0]
 
@@ -33,11 +39,16 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({
           notReady={notReady}
           cart={cart}
           data-testid={dataTestId}
+          isLoadingEcont={isLoadingEcont}
         />
       )
     case isManual(paymentSession?.provider_id):
       return (
-        <ManualTestPaymentButton notReady={notReady} data-testid={dataTestId} />
+        <ManualTestPaymentButton
+          notReady={notReady}
+          data-testid={dataTestId}
+          isLoadingEcont={isLoadingEcont}
+        />
       )
     default:
       return <Button disabled>Select a payment method</Button>
@@ -48,10 +59,12 @@ const StripePaymentButton = ({
   cart,
   notReady,
   "data-testid": dataTestId,
+  isLoadingEcont = false,
 }: {
   cart: HttpTypes.StoreCart
   notReady: boolean
   "data-testid"?: string
+  isLoadingEcont?: boolean
 }) => {
   const [submitting, setSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -151,7 +164,14 @@ const StripePaymentButton = ({
   )
 }
 
-const ManualTestPaymentButton = ({ notReady }: { notReady: boolean }) => {
+const ManualTestPaymentButton = ({
+  notReady,
+  isLoadingEcont = false,
+}: {
+  notReady: boolean
+  "data-testid"?: string
+  isLoadingEcont?: boolean
+}) => {
   const [submitting, setSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 

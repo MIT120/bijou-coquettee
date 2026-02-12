@@ -11,6 +11,14 @@ export type EcontClientConfig = {
   password: string
   clientNumber?: string
   isDemo?: boolean
+  // Sender info (required for label creation)
+  senderName?: string
+  senderPhone?: string
+  senderCity?: string
+  senderPostCode?: string
+  senderStreet?: string
+  senderStreetNum?: string
+  senderOfficeCode?: string
   // COD payout configuration
   cdAgreementNum?: string
   payoutMethod?: "bank" | "office" | "door"
@@ -19,6 +27,7 @@ export type EcontClientConfig = {
 }
 
 export type CDPayOptions = {
+  num?: string
   method: "bank" | "office" | "door"
   IBAN?: string
   BIC?: string
@@ -63,6 +72,29 @@ type EcontStreetResponse = {
     name: string
     nameEn: string
   }>
+}
+
+export type EcontCalculateServicePrice = {
+  type?: string
+  description?: string
+  count?: number
+  paymentSide?: string
+  price?: number
+  currency?: string
+}
+
+export type EcontCalculateResult = {
+  totalPrice?: number
+  currency?: string
+  discountPercent?: number
+  discountAmount?: number
+  discountDescription?: string
+  senderDueAmount?: number
+  receiverDueAmount?: number
+  otherDueAmount?: number
+  services?: EcontCalculateServicePrice[]
+  expectedDeliveryDate?: string
+  warnings?: string
 }
 
 export type EcontTrackingEvent = {
@@ -116,8 +148,14 @@ export class EcontApiClient {
   private buildUrl(service: string, method: string) {
     // Econt API requires a subdirectory matching the service category
     // e.g., NomenclaturesService -> Nomenclatures/NomenclaturesService.getOffices.json
-    //       ShipmentsService -> Shipments/ShipmentsService.create.json
-    const serviceCategory = service.replace("Service", "")
+    //       LabelService -> Shipments/LabelService.createLabel.json
+    //       ShipmentService -> Shipments/ShipmentService.getShipmentStatuses.json
+    const categoryMap: Record<string, string> = {
+      LabelService: "Shipments",
+      ShipmentService: "Shipments",
+    }
+    const serviceCategory =
+      categoryMap[service] ?? service.replace("Service", "")
     return `${this.baseUrl}/${serviceCategory}/${service}.${method}.json`
   }
 
@@ -249,88 +287,187 @@ export class EcontApiClient {
     return payload
   }
 
-  async calculateShipment(payload: CreateShipmentPayload) {
-    return this.request("ShipmentsService", "calculate", {
-      shipment: this.buildShipmentPayload(payload),
-    })
+  async calculateShipment(payload: CreateShipmentPayload): Promise<EcontCalculateResult> {
+    const label: Record<string, unknown> = {
+      senderClient: {
+        clientNumber: this.config.clientNumber,
+      },
+      shipmentType: "pack",
+      packCount: 1,
+      weight: 0.5,
+      receiverClient: {
+        name: `${payload.recipient.firstName} ${payload.recipient.lastName}`,
+        phones: [payload.recipient.phone],
+      },
+    }
+
+    // Sender address is required for Econt to calculate shipping cost
+    if (this.config.senderOfficeCode) {
+      label.senderOfficeCode = this.config.senderOfficeCode
+    } else {
+      label.senderAddress = {
+        city: {
+          name: this.config.senderCity || "София",
+          postCode: this.config.senderPostCode || "1000",
+        },
+      }
+    }
+
+    // COD configuration for calculate
+    if (payload.codAmount && payload.codAmount > 0) {
+      label.services = {
+        cdAmount: payload.codAmount,
+        cdType: "get",
+        cdCurrency: "BGN",
+      }
+    }
+
+    if (payload.deliveryType === "office" && payload.office) {
+      label.receiverOfficeCode = payload.office.officeCode
+    }
+
+    if (payload.deliveryType === "address" && payload.address) {
+      // For calculate, Econt only requires valid city + postCode
+      label.receiverAddress = {
+        city: {
+          name: payload.address.city,
+          postCode: payload.address.postalCode,
+        },
+        street: payload.address.addressLine1 || "",
+        other: [
+          payload.address.entrance ? `вх. ${payload.address.entrance}` : "",
+          payload.address.floor ? `ет. ${payload.address.floor}` : "",
+          payload.address.apartment ? `ап. ${payload.address.apartment}` : "",
+          payload.address.neighborhood || "",
+          payload.address.addressLine2 || "",
+        ].filter(Boolean).join(", ") || undefined,
+      }
+    }
+
+    const result = await this.request<{ label?: EcontCalculateResult }>(
+      "LabelService",
+      "createLabel",
+      {
+        label,
+        mode: "calculate",
+      }
+    )
+
+    return result.label ?? ({} as EcontCalculateResult)
   }
 
   async createShipment(payload: CreateShipmentPayload) {
-    return this.request("ShipmentsService", "create", {
-      shipment: this.buildShipmentPayload(payload),
+    return this.request("LabelService", "createLabel", {
+      label: this.buildShipmentPayload(payload),
+      mode: "create",
     })
   }
 
   async deleteShipment(waybillNumber: string) {
-    return this.request("ShipmentsService", "delete", {
-      shipmentNumber: waybillNumber,
+    return this.request("LabelService", "deleteLabels", {
+      shipmentNumbers: [waybillNumber],
     })
   }
 
   async trackShipment(waybillNumber: string) {
-    return this.request<EcontTrackingResponse>("ShipmentsService", "getShipmentStatuses", {
+    return this.request<EcontTrackingResponse>("ShipmentService", "getShipmentStatuses", {
       shipmentNumbers: [waybillNumber],
       full_tracking: "ON",
     })
   }
 
   async trackMultipleShipments(waybillNumbers: string[]) {
-    return this.request<EcontTrackingResponse>("ShipmentsService", "getShipmentStatuses", {
+    return this.request<EcontTrackingResponse>("ShipmentService", "getShipmentStatuses", {
       shipmentNumbers: waybillNumbers,
       full_tracking: "ON",
     })
   }
 
   private buildShipmentPayload(payload: CreateShipmentPayload) {
-    const base: Record<string, unknown> = {
-      clientNumber: this.config.clientNumber,
-      shipmentType: payload.deliveryType === "office" ? "OFFICE" : "ADDRESS",
-      receiver: {
+    // Demo defaults for when env vars aren't set
+    const senderName = this.config.senderName || (this.config.isDemo ? "Bijou Coquettee" : "")
+    const senderPhone = this.config.senderPhone || (this.config.isDemo ? "0888888888" : "")
+    const senderCity = this.config.senderCity || "София"
+    const senderPostCode = this.config.senderPostCode || "1000"
+    const senderStreet = this.config.senderStreet || (this.config.isDemo ? "Витошка" : "")
+    const senderStreetNum = this.config.senderStreetNum || (this.config.isDemo ? "1" : "")
+
+    const label: Record<string, unknown> = {
+      senderClient: {
+        clientNumber: this.config.clientNumber || undefined,
+        name: senderName,
+        phones: senderPhone ? [senderPhone] : undefined,
+      },
+      shipmentType: "pack",
+      packCount: 1,
+      weight: payload.weight || 0.5,
+      shipmentDescription: payload.shipmentDescription || "Бижута",
+      receiverClient: {
         name: `${payload.recipient.firstName} ${payload.recipient.lastName}`,
-        phones: [{ number: payload.recipient.phone }],
+        phones: [payload.recipient.phone],
         email: payload.recipient.email,
       },
-      metadata: payload.metadata ?? undefined,
+    }
+
+    // Sender address
+    if (this.config.senderOfficeCode) {
+      label.senderOfficeCode = this.config.senderOfficeCode
+    } else {
+      label.senderAddress = {
+        city: {
+          name: senderCity,
+          postCode: senderPostCode,
+        },
+        street: senderStreet,
+        num: senderStreetNum,
+      }
+    }
+
+    // Order reference
+    if (payload.orderId) {
+      label.orderNumber = payload.orderId
     }
 
     // COD (Cash on Delivery / Наложен платеж) configuration
     if (payload.codAmount && payload.codAmount > 0) {
-      base.services = {
-        ...(base.services as object || {}),
+      const services: Record<string, unknown> = {
         cdAmount: payload.codAmount,
-        cdType: "get", // "get" = collect from receiver
+        cdType: "get",
         cdCurrency: "BGN",
       }
 
-      // If we have an agreement number, use it (recommended approach)
-      // Otherwise, specify cdPayOptions for where to send the money
-      if (this.config.cdAgreementNum) {
-        (base.services as Record<string, unknown>).cdAgreementNum = this.config.cdAgreementNum
-      } else if (this.config.payoutIban && this.config.payoutBic) {
-        // Fallback: specify bank details per shipment
-        (base.services as Record<string, unknown>).cdPayOptions = this.buildCdPayOptions()
+      // CDPayOptions with agreement number or bank details
+      const cdPayOptions = this.buildCdPayOptions()
+      if (cdPayOptions) {
+        services.cdPayOptions = cdPayOptions
       }
+
+      label.services = services
     }
 
     if (payload.deliveryType === "office" && payload.office) {
-      base.receiverOfficeCode = payload.office.officeCode
+      label.receiverOfficeCode = payload.office.officeCode
     }
 
     if (payload.deliveryType === "address" && payload.address) {
-      base.receiverAddress = this.buildAddressPayload(payload.address)
+      label.receiverAddress = this.buildAddressPayload(payload.address)
     }
 
-    return base
+    return label
   }
 
   private buildCdPayOptions(): CDPayOptions | undefined {
-    if (!this.config.payoutMethod) return undefined
+    if (!this.config.cdAgreementNum && !this.config.payoutIban) return undefined
 
     const options: CDPayOptions = {
-      method: this.config.payoutMethod,
+      method: this.config.payoutMethod || "bank",
     }
 
-    if (this.config.payoutMethod === "bank") {
+    if (this.config.cdAgreementNum) {
+      options.num = this.config.cdAgreementNum
+    }
+
+    if (this.config.payoutMethod === "bank" && this.config.payoutIban) {
       options.IBAN = this.config.payoutIban
       options.BIC = this.config.payoutBic
       options.bankCurrency = "BGN"
@@ -341,15 +478,18 @@ export class EcontApiClient {
 
   private buildAddressPayload(address: EcontAddressSelection) {
     return {
-      city: address.city,
-      postalCode: address.postalCode,
-      addressLine1: address.addressLine1,
-      addressLine2: address.addressLine2,
-      entrance: address.entrance,
-      floor: address.floor,
-      apartment: address.apartment,
-      neighborhood: address.neighborhood,
-      saturdayDelivery: address.allowSaturdayDelivery ?? false,
+      city: {
+        name: address.city,
+        postCode: address.postalCode,
+      },
+      street: address.addressLine1 || "",
+      other: [
+        address.entrance ? `вх. ${address.entrance}` : "",
+        address.floor ? `ет. ${address.floor}` : "",
+        address.apartment ? `ап. ${address.apartment}` : "",
+        address.neighborhood || "",
+        address.addressLine2 || "",
+      ].filter(Boolean).join(", ") || undefined,
     }
   }
 }

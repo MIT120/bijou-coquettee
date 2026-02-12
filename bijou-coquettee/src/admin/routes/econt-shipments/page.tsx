@@ -57,11 +57,17 @@ type EcontShipment = {
   address_postal_code: string | null
   address_line1: string | null
   address_line2: string | null
+  entrance: string | null
+  floor: string | null
+  apartment: string | null
+  neighborhood: string | null
   recipient_first_name: string
   recipient_last_name: string
   recipient_phone: string
   recipient_email: string | null
   cod_amount: number | null
+  shipping_cost: number | null
+  shipping_cost_currency: string | null
   status: string
   short_status: string | null
   short_status_en: string | null
@@ -91,6 +97,28 @@ type OfficeOption = {
   name: string
   address?: string
   cityName?: string
+}
+
+// Fixed BGN/EUR exchange rate (Bulgarian currency board peg)
+const BGN_TO_EUR = 1.9558
+
+/**
+ * Format a monetary amount showing EUR first, then BGN in parentheses.
+ * If the source currency is already EUR, just show EUR.
+ */
+const formatMoney = (amount: number | null | undefined, sourceCurrency?: string | null): string => {
+  if (amount == null || isNaN(Number(amount))) return "-"
+  const num = Number(amount)
+  const src = (sourceCurrency || "BGN").toUpperCase()
+
+  if (src === "EUR") {
+    const bgn = Math.round(num * BGN_TO_EUR * 100) / 100
+    return `\u20AC${num.toFixed(2)} (${bgn.toFixed(2)} лв.)`
+  }
+
+  // Source is BGN (default)
+  const eur = Math.round((num / BGN_TO_EUR) * 100) / 100
+  return `\u20AC${eur.toFixed(2)} (${num.toFixed(2)} лв.)`
 }
 
 const STATUS_CONFIG: Record<string, { color: "green" | "orange" | "red" | "blue" | "grey"; label: string; labelBg: string }> = {
@@ -197,6 +225,28 @@ const ShipmentDetailsDrawer = ({
         </div>
 
         <div className="p-6 space-y-6">
+          {/* Print Label Banner - prominent for registered shipments */}
+          {shipment.label_url && (shipment.status === "registered" || shipment.status === "in_transit") && (
+            <div className="bg-ui-tag-blue-bg border border-ui-tag-blue-border rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Text className="font-medium text-ui-tag-blue-text">
+                    Етикетът е готов за печат
+                  </Text>
+                  <Text size="small" className="text-ui-fg-muted">
+                    Разпечатайте етикета и залепете го на пратката
+                  </Text>
+                </div>
+                <Button variant="primary" asChild>
+                  <a href={shipment.label_url} target="_blank" rel="noopener noreferrer">
+                    <ArrowDownTray className="mr-2" />
+                    Печат на етикет
+                  </a>
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* Status Progress */}
           <div className="space-y-3">
             <Text className="font-medium">Прогрес на доставката</Text>
@@ -292,8 +342,24 @@ const ShipmentDetailsDrawer = ({
                 <div>
                   <Text size="small" className="text-ui-fg-muted">Адрес</Text>
                   <Text className="mt-1">
-                    {[shipment.address_city, shipment.address_line1].filter(Boolean).join(", ")}
+                    {[shipment.address_city, shipment.address_postal_code].filter(Boolean).join(", ")}
                   </Text>
+                  <Text size="small">{shipment.address_line1}</Text>
+                  {shipment.address_line2 && (
+                    <Text size="small" className="text-ui-fg-muted">{shipment.address_line2}</Text>
+                  )}
+                  {(shipment.entrance || shipment.floor || shipment.apartment) && (
+                    <Text size="small" className="text-ui-fg-muted">
+                      {[
+                        shipment.entrance && `вх. ${shipment.entrance}`,
+                        shipment.floor && `ет. ${shipment.floor}`,
+                        shipment.apartment && `ап. ${shipment.apartment}`,
+                      ].filter(Boolean).join(", ")}
+                    </Text>
+                  )}
+                  {shipment.neighborhood && (
+                    <Text size="small" className="text-ui-fg-muted">кв. {shipment.neighborhood}</Text>
+                  )}
                 </div>
               )}
             </div>
@@ -311,14 +377,27 @@ const ShipmentDetailsDrawer = ({
             </div>
           </div>
 
-          {/* COD */}
-          {shipment.cod_amount && (
+          {/* COD & Shipping Cost */}
+          {(shipment.cod_amount || shipment.shipping_cost) && (
             <div className="space-y-3">
-              <Text className="font-medium">Наложен платеж</Text>
-              <div className="bg-ui-bg-subtle rounded-lg p-3">
-                <Text className="text-lg font-semibold">
-                  {Number(shipment.cod_amount).toFixed(2)} лв.
-                </Text>
+              <Text className="font-medium">Плащания</Text>
+              <div className="bg-ui-bg-subtle rounded-lg p-3 space-y-3">
+                {shipment.cod_amount && (
+                  <div className="flex items-center justify-between">
+                    <Text size="small" className="text-ui-fg-muted">Наложен платеж</Text>
+                    <Text className="font-semibold">
+                      {formatMoney(shipment.cod_amount, "BGN")}
+                    </Text>
+                  </div>
+                )}
+                {shipment.shipping_cost && (
+                  <div className="flex items-center justify-between">
+                    <Text size="small" className="text-ui-fg-muted">Цена за доставка</Text>
+                    <Text className="font-semibold">
+                      {formatMoney(shipment.shipping_cost, shipment.shipping_cost_currency)}
+                    </Text>
+                  </div>
+                )}
                 {shipment.delivery_time && (
                   <Text size="small" className="text-ui-fg-muted">
                     Събран: {new Date(shipment.delivery_time).toLocaleString("bg-BG")}
@@ -334,7 +413,7 @@ const ShipmentDetailsDrawer = ({
               <Button variant="secondary" asChild className="flex-1">
                 <a href={shipment.label_url} target="_blank" rel="noopener noreferrer">
                   <ArrowDownTray className="mr-2" />
-                  Етикет
+                  Печат на етикет
                 </a>
               </Button>
             )}
@@ -377,6 +456,10 @@ const EditShipmentDrawer = ({
     address_postal_code: "",
     address_line1: "",
     address_line2: "",
+    entrance: "",
+    floor: "",
+    apartment: "",
+    neighborhood: "",
     cod_amount: 0,
     allow_saturday: false,
   })
@@ -400,6 +483,10 @@ const EditShipmentDrawer = ({
         address_postal_code: shipment.address_postal_code || "",
         address_line1: shipment.address_line1 || "",
         address_line2: shipment.address_line2 || "",
+        entrance: shipment.entrance || "",
+        floor: shipment.floor || "",
+        apartment: shipment.apartment || "",
+        neighborhood: shipment.neighborhood || "",
         cod_amount: shipment.cod_amount ? Number(shipment.cod_amount) : 0,
         allow_saturday: shipment.allow_saturday || false,
       })
@@ -660,6 +747,50 @@ const EditShipmentDrawer = ({
                   }
                 />
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>Вход</Label>
+                  <Input
+                    value={formData.entrance}
+                    onChange={(e) =>
+                      setFormData({ ...formData, entrance: e.target.value })
+                    }
+                    placeholder="вх."
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Етаж</Label>
+                  <Input
+                    value={formData.floor}
+                    onChange={(e) =>
+                      setFormData({ ...formData, floor: e.target.value })
+                    }
+                    placeholder="ет."
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>Апартамент</Label>
+                  <Input
+                    value={formData.apartment}
+                    onChange={(e) =>
+                      setFormData({ ...formData, apartment: e.target.value })
+                    }
+                    placeholder="ап."
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Квартал</Label>
+                  <Input
+                    value={formData.neighborhood}
+                    onChange={(e) =>
+                      setFormData({ ...formData, neighborhood: e.target.value })
+                    }
+                    placeholder="кв."
+                  />
+                </div>
+              </div>
               <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
@@ -677,7 +808,7 @@ const EditShipmentDrawer = ({
 
           {/* COD Amount */}
           <div className="space-y-2">
-            <Label>Наложен платеж (лв.)</Label>
+            <Label>Наложен платеж (EUR / лв.)</Label>
             <Input
               type="number"
               step="0.01"
@@ -698,6 +829,155 @@ const EditShipmentDrawer = ({
             </Button>
           </div>
         </div>
+      </div>
+    </div>
+  )
+}
+
+// Registered Shipments Info Card - shows where each registered shipment needs to go + print label
+const RegisteredShipmentsCard = ({
+  shipments,
+  onViewDetails,
+  onSync,
+}: {
+  shipments: EcontShipment[]
+  onViewDetails: (shipment: EcontShipment) => void
+  onSync: (shipment: EcontShipment) => void
+}) => {
+  const [syncingId, setSyncingId] = useState<string | null>(null)
+
+  if (shipments.length === 0) return null
+
+  return (
+    <div className="bg-ui-tag-blue-bg border border-ui-tag-blue-border rounded-lg p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <TruckFast className="w-5 h-5 text-ui-tag-blue-icon" />
+        <Heading level="h3" className="text-ui-tag-blue-text">
+          Регистрирани пратки ({shipments.length})
+        </Heading>
+      </div>
+      <Text size="small" className="text-ui-fg-muted mb-4">
+        Тези товарителници са регистрирани в Еконт и чакат да бъдат предадени на куриер.
+        Разпечатайте етикетите и подгответе пратките.
+      </Text>
+      <div className="space-y-3">
+        {shipments.map((shipment) => (
+          <div
+            key={shipment.id}
+            className="bg-ui-bg-base rounded-lg border border-ui-border-base p-4"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <Text className="font-mono font-medium text-ui-fg-base">
+                    #{shipment.waybill_number}
+                  </Text>
+                  <Badge color="blue" size="small">Регистрирана</Badge>
+                </div>
+
+                {/* Delivery destination */}
+                <div className="flex items-center gap-2 mt-2">
+                  {shipment.delivery_type === "office" ? (
+                    <BuildingStorefront className="w-4 h-4 text-ui-fg-subtle flex-shrink-0" />
+                  ) : (
+                    <MapPin className="w-4 h-4 text-ui-fg-subtle flex-shrink-0" />
+                  )}
+                  <div className="min-w-0">
+                    <Text size="small" className="font-medium">
+                      {shipment.delivery_type === "office" ? "До офис" : "До адрес"}:{" "}
+                      <span className="text-ui-fg-base">
+                        {shipment.delivery_type === "office"
+                          ? shipment.office_name || "N/A"
+                          : [
+                              shipment.address_city,
+                              shipment.address_line1,
+                              shipment.address_line2,
+                            ].filter(Boolean).join(", ") || "N/A"}
+                      </span>
+                    </Text>
+                    {shipment.delivery_type === "address" && (shipment.entrance || shipment.floor || shipment.apartment) && (
+                      <Text size="xsmall" className="text-ui-fg-muted">
+                        {[
+                          shipment.entrance && `вх. ${shipment.entrance}`,
+                          shipment.floor && `ет. ${shipment.floor}`,
+                          shipment.apartment && `ап. ${shipment.apartment}`,
+                        ].filter(Boolean).join(", ")}
+                      </Text>
+                    )}
+                  </div>
+                </div>
+
+                {/* Recipient info */}
+                <Text size="small" className="text-ui-fg-muted mt-1">
+                  Получател: {shipment.recipient_first_name} {shipment.recipient_last_name} ({shipment.recipient_phone})
+                  {shipment.cod_amount ? <> • НП: <span className="font-medium">{formatMoney(shipment.cod_amount, "BGN")}</span></> : null}
+                </Text>
+
+                {shipment.expected_delivery_date && (
+                  <Text size="xsmall" className="text-ui-fg-subtle mt-1">
+                    Очаквана доставка: {shipment.expected_delivery_date}
+                  </Text>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center gap-2 ml-4 flex-shrink-0">
+                <IconButton
+                  variant="transparent"
+                  size="small"
+                  onClick={() => onViewDetails(shipment)}
+                >
+                  <Eye className="w-4 h-4" />
+                </IconButton>
+                <IconButton
+                  variant="transparent"
+                  size="small"
+                  disabled={syncingId === shipment.id}
+                  onClick={async () => {
+                    setSyncingId(shipment.id)
+                    await onSync(shipment)
+                    setSyncingId(null)
+                  }}
+                >
+                  <ArrowPath className={clx("w-4 h-4", syncingId === shipment.id && "animate-spin")} />
+                </IconButton>
+                {shipment.label_url && (
+                  <Button size="small" variant="secondary" asChild>
+                    <a
+                      href={shipment.label_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <ArrowDownTray className="w-4 h-4 mr-1" />
+                      Печат
+                    </a>
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+
+        {/* Bulk print all labels */}
+        {shipments.filter(s => s.label_url).length > 1 && (
+          <div className="flex justify-end pt-2">
+            <Button
+              variant="secondary"
+              size="small"
+              onClick={() => {
+                shipments.forEach(s => {
+                  if (s.label_url) {
+                    window.open(s.label_url, "_blank")
+                  }
+                })
+              }}
+            >
+              <ArrowDownTray className="w-4 h-4 mr-1" />
+              Отвори всички етикети ({shipments.filter(s => s.label_url).length})
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -756,7 +1036,10 @@ const DraftShipmentsCard = ({
                 {" • "}
                 {shipment.recipient_phone}
                 {shipment.cod_amount && (
-                  <> • <span className="font-medium">{Number(shipment.cod_amount).toFixed(2)} лв.</span></>
+                  <> • НП: <span className="font-medium">{formatMoney(shipment.cod_amount, "BGN")}</span></>
+                )}
+                {shipment.shipping_cost && (
+                  <> • Доставка: <span className="font-medium">{formatMoney(shipment.shipping_cost, shipment.shipping_cost_currency)}</span></>
                 )}
               </Text>
               {shipment.order_id && (
@@ -928,6 +1211,9 @@ const EcontShipmentsPage = () => {
   // Get draft shipments for the alert card
   const draftShipments = shipments.filter(s => s.status === "draft" || s.status === "ready")
 
+  // Get registered shipments (awaiting courier pickup)
+  const registeredShipments = shipments.filter(s => s.status === "registered")
+
   const filteredShipments = shipments.filter(s => {
     if (!searchQuery) return true
     const q = searchQuery.toLowerCase()
@@ -977,6 +1263,17 @@ const EcontShipmentsPage = () => {
             onEdit={openEditDrawer}
             onConfirm={handleConfirmShipment}
             onViewDetails={openDrawer}
+          />
+        </div>
+      )}
+
+      {/* Registered Shipments - Ready for courier pickup */}
+      {registeredShipments.length > 0 && (
+        <div className="px-6 py-4">
+          <RegisteredShipmentsCard
+            shipments={registeredShipments}
+            onViewDetails={openDrawer}
+            onSync={handleSyncSingle}
           />
         </div>
       )}
@@ -1056,7 +1353,7 @@ const EcontShipmentsPage = () => {
                 <Table.HeaderCell>Прогрес</Table.HeaderCell>
                 <Table.HeaderCell>Получател</Table.HeaderCell>
                 <Table.HeaderCell>Доставка</Table.HeaderCell>
-                <Table.HeaderCell>Наложен платеж</Table.HeaderCell>
+                <Table.HeaderCell>Плащания</Table.HeaderCell>
                 <Table.HeaderCell>Дата</Table.HeaderCell>
                 <Table.HeaderCell></Table.HeaderCell>
               </Table.Row>
@@ -1070,9 +1367,24 @@ const EcontShipmentsPage = () => {
                 >
                   <Table.Cell>
                     <div>
-                      <Text className="font-mono font-medium">
-                        {shipment.waybill_number || "-"}
-                      </Text>
+                      <div className="flex items-center gap-2">
+                        <Text className="font-mono font-medium">
+                          {shipment.waybill_number || "-"}
+                        </Text>
+                        {shipment.label_url && (
+                          <a
+                            href={shipment.label_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="inline-flex items-center gap-1 text-xs text-ui-fg-interactive hover:text-ui-fg-interactive-hover"
+                            title="Печат на етикет"
+                          >
+                            <ArrowDownTray className="w-3 h-3" />
+                            PDF
+                          </a>
+                        )}
+                      </div>
                       {shipment.order_id && (
                         <Text size="xsmall" className="text-ui-fg-muted">
                           Поръчка: {shipment.order_id.slice(0, 8)}...
@@ -1102,27 +1414,42 @@ const EcontShipmentsPage = () => {
                     </div>
                   </Table.Cell>
                   <Table.Cell>
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-start gap-1.5">
                       {shipment.delivery_type === "office" ? (
-                        <BuildingStorefront className="w-4 h-4 text-ui-fg-subtle" />
+                        <BuildingStorefront className="w-4 h-4 text-ui-fg-subtle mt-0.5 flex-shrink-0" />
                       ) : (
-                        <MapPin className="w-4 h-4 text-ui-fg-subtle" />
+                        <MapPin className="w-4 h-4 text-ui-fg-subtle mt-0.5 flex-shrink-0" />
                       )}
-                      <Text size="small">
-                        {shipment.delivery_type === "office"
-                          ? (shipment.office_name || "Офис")
-                          : (shipment.address_city || "Адрес")}
-                      </Text>
+                      <div className="min-w-0">
+                        <Text size="small">
+                          {shipment.delivery_type === "office"
+                            ? (shipment.office_name || "Офис")
+                            : (shipment.address_city || "Адрес")}
+                        </Text>
+                        {shipment.delivery_type === "address" && shipment.address_line1 && (
+                          <Text size="xsmall" className="text-ui-fg-muted truncate max-w-[200px]">
+                            {shipment.address_line1}
+                          </Text>
+                        )}
+                      </div>
                     </div>
                   </Table.Cell>
                   <Table.Cell>
-                    {shipment.cod_amount ? (
-                      <Text size="small" className="font-medium">
-                        {Number(shipment.cod_amount).toFixed(2)} лв.
-                      </Text>
-                    ) : (
-                      <Text size="small" className="text-ui-fg-muted">-</Text>
-                    )}
+                    <div>
+                      {shipment.cod_amount ? (
+                        <Text size="small" className="font-medium">
+                          НП: {formatMoney(shipment.cod_amount, "BGN")}
+                        </Text>
+                      ) : null}
+                      {shipment.shipping_cost ? (
+                        <Text size="xsmall" className="text-ui-fg-muted">
+                          Доставка: {formatMoney(shipment.shipping_cost, shipment.shipping_cost_currency)}
+                        </Text>
+                      ) : null}
+                      {!shipment.cod_amount && !shipment.shipping_cost && (
+                        <Text size="small" className="text-ui-fg-muted">-</Text>
+                      )}
+                    </div>
                   </Table.Cell>
                   <Table.Cell>
                     <Text size="small" className="text-ui-fg-muted">
@@ -1184,7 +1511,7 @@ const EcontShipmentsPage = () => {
                               onClick={(e) => e.stopPropagation()}
                             >
                               <ArrowDownTray className="mr-2" />
-                              Свали етикет
+                              Печат на етикет
                             </a>
                           </DropdownMenu.Item>
                         )}

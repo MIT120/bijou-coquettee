@@ -42,6 +42,10 @@ export async function PATCH(
         address_postal_code?: string
         address_line1?: string
         address_line2?: string
+        entrance?: string
+        floor?: string
+        apartment?: string
+        neighborhood?: string
         recipient_first_name?: string
         recipient_last_name?: string
         recipient_phone?: string
@@ -76,6 +80,10 @@ export async function PATCH(
         if (body.address_postal_code !== undefined) updatePayload.address_postal_code = body.address_postal_code
         if (body.address_line1 !== undefined) updatePayload.address_line1 = body.address_line1
         if (body.address_line2 !== undefined) updatePayload.address_line2 = body.address_line2
+        if (body.entrance !== undefined) updatePayload.entrance = body.entrance
+        if (body.floor !== undefined) updatePayload.floor = body.floor
+        if (body.apartment !== undefined) updatePayload.apartment = body.apartment
+        if (body.neighborhood !== undefined) updatePayload.neighborhood = body.neighborhood
         if (body.recipient_first_name !== undefined) updatePayload.recipient_first_name = body.recipient_first_name
         if (body.recipient_last_name !== undefined) updatePayload.recipient_last_name = body.recipient_last_name
         if (body.recipient_phone !== undefined) updatePayload.recipient_phone = body.recipient_phone

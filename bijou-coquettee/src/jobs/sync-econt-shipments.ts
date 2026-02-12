@@ -2,9 +2,20 @@ import type { MedusaContainer } from "@medusajs/framework/types"
 import type EcontShippingModuleService from "../modules/econt-shipping/service"
 import { ECONT_SHIPPING_STATUS } from "../modules/econt-shipping/constants"
 
+const STATUS_LABELS: Record<string, string> = {
+  draft: "Чернова",
+  ready: "Готова",
+  registered: "Регистрирана",
+  in_transit: "В доставка",
+  delivered: "Доставена",
+  cancelled: "Отменена",
+  error: "Грешка",
+}
+
 /**
  * Scheduled job to automatically sync Econt shipment statuses.
  * Runs every 30 minutes to update tracking information for active shipments.
+ * Logs status transitions prominently so admin can monitor delivery progress.
  */
 export default async function syncEcontShipments(container: MedusaContainer) {
   const logger = container.resolve("logger")
@@ -47,14 +58,24 @@ export default async function syncEcontShipments(container: MedusaContainer) {
     const batchSize = 20
     let syncedCount = 0
     let errorCount = 0
+    const allStatusChanges: Array<{
+      shipmentId: string
+      orderId: string | null
+      waybill: string | null
+      previousStatus: string
+      newStatus: string
+      recipientName: string
+    }> = []
 
     for (let i = 0; i < shipmentsWithWaybill.length; i += batchSize) {
       const batch = shipmentsWithWaybill.slice(i, i + batchSize)
       const shipmentIds = batch.map(s => s.id)
 
       try {
-        await econtService.syncMultipleShipments(shipmentIds)
+        const { statusChanges } = await econtService.syncMultipleShipments(shipmentIds)
         syncedCount += batch.length
+        allStatusChanges.push(...statusChanges)
+
         logger.info(
           `[SyncEcontShipments] Synced batch ${Math.floor(i / batchSize) + 1}: ${batch.length} shipments`
         )
@@ -71,8 +92,35 @@ export default async function syncEcontShipments(container: MedusaContainer) {
       }
     }
 
+    // Log status changes prominently
+    if (allStatusChanges.length > 0) {
+      logger.info(
+        `[SyncEcontShipments] *** ${allStatusChanges.length} STATUS CHANGE(S) DETECTED ***`
+      )
+      for (const change of allStatusChanges) {
+        const fromLabel = STATUS_LABELS[change.previousStatus] || change.previousStatus
+        const toLabel = STATUS_LABELS[change.newStatus] || change.newStatus
+        logger.info(
+          `[SyncEcontShipments] Shipment ${change.waybill || change.shipmentId} ` +
+          `(Order: ${change.orderId || "N/A"}, ${change.recipientName}): ` +
+          `${fromLabel} -> ${toLabel}`
+        )
+
+        // Log critical transitions as warnings for higher visibility
+        if (change.newStatus === "delivered") {
+          logger.warn(
+            `[SyncEcontShipments] DELIVERED: Shipment ${change.waybill} for ${change.recipientName} (Order: ${change.orderId})`
+          )
+        } else if (change.newStatus === "cancelled") {
+          logger.warn(
+            `[SyncEcontShipments] CANCELLED: Shipment ${change.waybill} for ${change.recipientName} (Order: ${change.orderId})`
+          )
+        }
+      }
+    }
+
     logger.info(
-      `[SyncEcontShipments] Sync complete. Synced: ${syncedCount}, Errors: ${errorCount}`
+      `[SyncEcontShipments] Sync complete. Synced: ${syncedCount}, Errors: ${errorCount}, Status changes: ${allStatusChanges.length}`
     )
   } catch (error) {
     logger.error(

@@ -1,10 +1,15 @@
 "use client"
 
 import { useEffect, useMemo, useState, useCallback, useRef } from "react"
+import { useRouter } from "next/navigation"
 import { HttpTypes } from "@medusajs/types"
 import { Button, Heading, Text, Input, clx } from "@medusajs/ui"
 import { convertToLocale } from "@lib/util/money"
 import { noDivisionCurrencies } from "@lib/constants"
+import { setShippingMethod } from "@lib/data/cart"
+
+// Fixed BGN/EUR exchange rate (Bulgarian currency board peg)
+const BGN_TO_EUR = 1.9558
 
 type CityOption = {
   id: number
@@ -29,6 +34,7 @@ type OfficeOption = {
 
 type EcontShippingFormProps = {
   cart: HttpTypes.StoreCart
+  availableShippingMethods?: HttpTypes.StoreCartShippingOption[] | null
 }
 
 // Searchable dropdown component
@@ -65,7 +71,10 @@ const SearchableDropdown = <T extends { id?: number | string }>({
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false)
       }
     }
@@ -102,20 +111,35 @@ const SearchableDropdown = <T extends { id?: number | string }>({
         className={clx(
           "w-full border rounded-md px-3 py-2 text-left text-small-regular bg-white",
           "flex items-center justify-between",
-          disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:border-ui-border-interactive",
-          isOpen && "border-ui-border-interactive ring-1 ring-ui-border-interactive"
+          disabled
+            ? "opacity-50 cursor-not-allowed"
+            : "cursor-pointer hover:border-ui-border-interactive",
+          isOpen &&
+            "border-ui-border-interactive ring-1 ring-ui-border-interactive"
         )}
       >
         <span className={value ? "text-ui-fg-base" : "text-ui-fg-muted"}>
-          {value ? (renderSelected ? renderSelected(value) : renderOption(value)) : placeholder}
+          {value
+            ? renderSelected
+              ? renderSelected(value)
+              : renderOption(value)
+            : placeholder}
         </span>
         <svg
-          className={clx("w-4 h-4 transition-transform", isOpen && "rotate-180")}
+          className={clx(
+            "w-4 h-4 transition-transform",
+            isOpen && "rotate-180"
+          )}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
         >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M19 9l-7 7-7-7"
+          />
         </svg>
       </button>
 
@@ -170,23 +194,29 @@ const SearchableDropdown = <T extends { id?: number | string }>({
  * Validates Bulgarian phone number format.
  * Accepts formats: +359XXXXXXXXX, 0XXXXXXXXX, 08XXXXXXXX, 359XXXXXXXXX
  */
-const validateBulgarianPhone = (phone: string): { valid: boolean; formatted: string; error?: string } => {
+const validateBulgarianPhone = (
+  phone: string
+): { valid: boolean; formatted: string; error?: string } => {
   // Remove spaces, dashes, and parentheses
   const cleaned = phone.replace(/[\s\-\(\)]/g, "")
 
   // Check if empty
   if (!cleaned) {
-    return { valid: false, formatted: phone, error: "Моля, въведете телефонен номер" }
+    return {
+      valid: false,
+      formatted: phone,
+      error: "Моля, въведете телефонен номер",
+    }
   }
 
   // Bulgarian mobile patterns
   const patterns = [
     /^(\+359|00359|359)(8[789]\d{7})$/, // +359 8X XXX XXXX (mobile)
-    /^0(8[789]\d{7})$/,                  // 08X XXX XXXX (mobile, local format)
-    /^(\+359|00359|359)(2\d{7})$/,       // +359 2 XXX XXXX (Sofia landline)
-    /^0(2\d{7})$/,                        // 02 XXX XXXX (Sofia landline, local)
+    /^0(8[789]\d{7})$/, // 08X XXX XXXX (mobile, local format)
+    /^(\+359|00359|359)(2\d{7})$/, // +359 2 XXX XXXX (Sofia landline)
+    /^0(2\d{7})$/, // 02 XXX XXXX (Sofia landline, local)
     /^(\+359|00359|359)([3-9]\d{7,8})$/, // Other landlines
-    /^0([3-9]\d{7,8})$/,                  // Other landlines, local format
+    /^0([3-9]\d{7,8})$/, // Other landlines, local format
   ]
 
   for (const pattern of patterns) {
@@ -207,18 +237,22 @@ const validateBulgarianPhone = (phone: string): { valid: boolean; formatted: str
   return {
     valid: false,
     formatted: phone,
-    error: "Невалиден телефонен номер. Използвайте формат: +359 8XX XXX XXX или 08XX XXX XXX"
+    error:
+      "Невалиден телефонен номер. Използвайте формат: +359 8XX XXX XXX или 08XX XXX XXX",
   }
 }
 
-const EcontShippingForm = ({ cart }: EcontShippingFormProps) => {
+const EcontShippingForm = ({ cart, availableShippingMethods }: EcontShippingFormProps) => {
+  const router = useRouter()
   const countryCode =
     cart.shipping_address?.country_code?.toLowerCase() ||
     cart.region?.countries?.[0]?.iso_2?.toLowerCase()
 
   const isBulgaria = countryCode === "bg"
 
-  const [deliveryType, setDeliveryType] = useState<"office" | "address">("office")
+  const [deliveryType, setDeliveryType] = useState<"office" | "address">(
+    "office"
+  )
 
   // City state
   const [cities, setCities] = useState<CityOption[]>([])
@@ -227,21 +261,41 @@ const EcontShippingForm = ({ cart }: EcontShippingFormProps) => {
 
   // Office state
   const [offices, setOffices] = useState<OfficeOption[]>([])
-  const [selectedOffice, setSelectedOffice] = useState<OfficeOption | null>(null)
+  const [selectedOffice, setSelectedOffice] = useState<OfficeOption | null>(
+    null
+  )
   const [loadingOffices, setLoadingOffices] = useState(false)
 
   // Address state (for address delivery)
-  const [addressCity, setAddressCity] = useState(cart.shipping_address?.city || "")
-  const [addressPostal, setAddressPostal] = useState(cart.shipping_address?.postal_code || "")
-  const [addressLine1, setAddressLine1] = useState(cart.shipping_address?.address_1 || "")
-  const [addressLine2, setAddressLine2] = useState(cart.shipping_address?.address_2 || "")
+  const [addressCity, setAddressCity] = useState(
+    cart.shipping_address?.city || ""
+  )
+  const [addressPostal, setAddressPostal] = useState(
+    cart.shipping_address?.postal_code || ""
+  )
+  const [addressLine1, setAddressLine1] = useState(
+    cart.shipping_address?.address_1 || ""
+  )
+  const [addressLine2, setAddressLine2] = useState(
+    cart.shipping_address?.address_2 || ""
+  )
   const [allowSaturday, setAllowSaturday] = useState(false)
 
-  // Recipient state
-  const [firstName, setFirstName] = useState(cart.shipping_address?.first_name || "")
-  const [lastName, setLastName] = useState(cart.shipping_address?.last_name || "")
-  const [phone, setPhone] = useState(cart.shipping_address?.phone || "")
-  const [email, setEmail] = useState(cart.email || "")
+  // Recipient derived from cart shipping address (collected in the address step)
+  const firstName = cart.shipping_address?.first_name || ""
+  const lastName = cart.shipping_address?.last_name || ""
+  const phone = cart.shipping_address?.phone || ""
+  const email = cart.email || ""
+
+  // Shipping cost calculation state
+  const [shippingCost, setShippingCost] = useState<{
+    totalPrice: number | null
+    currency: string
+    receiverDueAmount: number | null
+    senderDueAmount: number | null
+    expectedDeliveryDate: string | null
+  } | null>(null)
+  const [isCalculating, setIsCalculating] = useState(false)
 
   // Form state
   const [isSaving, setIsSaving] = useState(false)
@@ -249,7 +303,6 @@ const EcontShippingForm = ({ cart }: EcontShippingFormProps) => {
   const [error, setError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [hasSavedPreference, setHasSavedPreference] = useState(false)
-  const [phoneError, setPhoneError] = useState<string | null>(null)
 
   // Ref to store saved preference for restoring selections after data loads
   const savedPreferenceRef = useRef<{
@@ -273,31 +326,52 @@ const EcontShippingForm = ({ cart }: EcontShippingFormProps) => {
     return match ? match[1].trim() : null
   }, [cart.shipping_address?.address_1])
 
-  // Calculate the total COD amount including shipping (in decimal format for API)
-  // cart.total = subtotal + shipping_total + tax_total - discount_total - gift_card_total
+  // Calculate the total COD amount including Econt shipping (in decimal format for API)
+  // When Econt shipping is calculated, replace Medusa's default shipping with the real cost
   const codAmount = useMemo(() => {
     const currencyCode = cart.region?.currency_code?.toLowerCase() || "eur"
     const divisor = noDivisionCurrencies.includes(currencyCode) ? 1 : 100
 
+    const itemSubtotal = (cart.item_subtotal || cart.subtotal || 0) / divisor
+    const discountTotal = (cart.discount_total || 0) / divisor
+
+    if (shippingCost?.totalPrice != null) {
+      // Convert Econt shipping (BGN) to cart currency if needed
+      const econtCurrency = (shippingCost.currency || "BGN").toLowerCase()
+      let econtShipping = shippingCost.totalPrice
+      if (econtCurrency === "bgn" && currencyCode === "eur") {
+        econtShipping = Math.round((econtShipping / BGN_TO_EUR) * 100) / 100
+      } else if (econtCurrency === "eur" && currencyCode === "bgn") {
+        econtShipping = Math.round(econtShipping * BGN_TO_EUR * 100) / 100
+      }
+      return Math.round((itemSubtotal - discountTotal + econtShipping) * 100) / 100
+    }
+
+    // Fallback: use cart.total as-is (includes default shipping)
     if (cart.total !== undefined && cart.total !== null) {
       return cart.total / divisor
     }
-    // Fallback: calculate from components if total is not available
-    const subtotal = cart.subtotal || 0
-    const shippingTotal = cart.shipping_total || 0
-    const taxTotal = cart.tax_total || 0
-    const discountTotal = cart.discount_total || 0
-    return (subtotal + shippingTotal + taxTotal - discountTotal) / divisor
-  }, [cart.total, cart.subtotal, cart.shipping_total, cart.tax_total, cart.discount_total, cart.region?.currency_code])
+    const shippingTotal = (cart.shipping_total || 0) / divisor
+    const taxTotal = (cart.tax_total || 0) / divisor
+    return itemSubtotal + shippingTotal + taxTotal - discountTotal
+  }, [
+    shippingCost,
+    cart.total,
+    cart.item_subtotal,
+    cart.subtotal,
+    cart.shipping_total,
+    cart.tax_total,
+    cart.discount_total,
+    cart.region?.currency_code,
+  ])
 
   // Formatted COD amount for display
   const formattedCodAmount = useMemo(() => {
-    const total = cart.total ?? 0
     return convertToLocale({
-      amount: total,
+      amount: codAmount,
       currency_code: cart.region?.currency_code || "eur",
     })
-  }, [cart.total, cart.region?.currency_code])
+  }, [codAmount, cart.region?.currency_code])
 
   const recipient = useMemo(
     () => ({
@@ -309,6 +383,69 @@ const EcontShippingForm = ({ cart }: EcontShippingFormProps) => {
     [firstName, lastName, phone, email]
   )
 
+  // Calculate shipping cost from Econt API
+  const calculateShippingCost = useCallback(async () => {
+    if (!cart.id) return
+
+    setIsCalculating(true)
+    try {
+      const response = await fetch("/api/econt/calculate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cart_id: cart.id }),
+      })
+
+      let data: Record<string, unknown>
+      try {
+        data = await response.json()
+      } catch {
+        console.warn("Failed to parse calculate response as JSON")
+        return
+      }
+
+      if (response.ok && data.calculation) {
+        const calc = data.calculation as {
+          totalPrice: number | null
+          currency: string
+          receiverDueAmount: number | null
+          senderDueAmount: number | null
+          expectedDeliveryDate: string | null
+        }
+        setShippingCost(calc)
+        // Persist to localStorage so CartTotals can read it on mount
+        // (solves timing issues with CustomEvent)
+        if (calc.totalPrice != null) {
+          try {
+            localStorage.setItem(
+              "econt-shipping-cost",
+              JSON.stringify({
+                totalPrice: calc.totalPrice,
+                currency: calc.currency,
+              })
+            )
+          } catch {
+            // Ignore localStorage errors
+          }
+        }
+        // Also dispatch CustomEvent for immediate in-page updates
+        window.dispatchEvent(
+          new CustomEvent("econt-shipping-calculated", {
+            detail: { totalPrice: calc.totalPrice, currency: calc.currency },
+          })
+        )
+      } else {
+        console.warn(
+          "Shipping cost calculation failed:",
+          (data as { message?: string }).message
+        )
+      }
+    } catch (err) {
+      console.warn("Failed to calculate shipping cost:", err)
+    } finally {
+      setIsCalculating(false)
+    }
+  }, [cart.id])
+
   // Fetch saved preference
   const fetchSavedPreference = useCallback(async () => {
     if (!cart.id) return null
@@ -318,7 +455,7 @@ const EcontShippingForm = ({ cart }: EcontShippingFormProps) => {
       const response = await fetch(`/api/econt/preferences?cart_id=${cart.id}`)
 
       // Handle non-JSON responses gracefully
-      let data: Record<string, unknown>
+      let data: { preference?: Record<string, any> }
       try {
         data = await response.json()
       } catch {
@@ -329,15 +466,11 @@ const EcontShippingForm = ({ cart }: EcontShippingFormProps) => {
       if (response.ok && data.preference) {
         const pref = data.preference
         setHasSavedPreference(true)
+        // If preference already exists, calculate shipping cost
+        calculateShippingCost()
 
         // Restore delivery type
         setDeliveryType(pref.delivery_type || "office")
-
-        // Restore recipient info
-        if (pref.recipient_first_name) setFirstName(pref.recipient_first_name)
-        if (pref.recipient_last_name) setLastName(pref.recipient_last_name)
-        if (pref.recipient_phone) setPhone(pref.recipient_phone)
-        if (pref.recipient_email) setEmail(pref.recipient_email)
 
         // Restore address fields (for address delivery)
         if (pref.address_city) setAddressCity(pref.address_city)
@@ -364,7 +497,7 @@ const EcontShippingForm = ({ cart }: EcontShippingFormProps) => {
     } finally {
       setIsLoadingPreference(false)
     }
-  }, [cart.id])
+  }, [cart.id, calculateShippingCost])
 
   // Fetch cities
   const fetchCities = useCallback(async () => {
@@ -378,7 +511,9 @@ const EcontShippingForm = ({ cart }: EcontShippingFormProps) => {
       try {
         data = await response.json()
       } catch {
-        throw new Error("Сървърът върна невалиден отговор. Моля, опитайте отново.")
+        throw new Error(
+          "Сървърът върна невалиден отговор. Моля, опитайте отново."
+        )
       }
 
       if (!response.ok) {
@@ -397,7 +532,6 @@ const EcontShippingForm = ({ cart }: EcontShippingFormProps) => {
     }
   }, [])
 
-
   // Load saved preference and cities on mount
   useEffect(() => {
     if (!isBulgaria) return
@@ -413,7 +547,8 @@ const EcontShippingForm = ({ cart }: EcontShippingFormProps) => {
       if (prefRef?.city && loadedCities.length > 0) {
         // Find the city by name from saved preference
         const city = loadedCities.find(
-          (c: CityOption) => c.name === prefRef.city || c.nameEn === prefRef.city
+          (c: CityOption) =>
+            c.name === prefRef.city || c.nameEn === prefRef.city
         )
         if (city) {
           setSelectedCity(city)
@@ -459,7 +594,15 @@ const EcontShippingForm = ({ cart }: EcontShippingFormProps) => {
       }
     }
     loadData()
-  }, [fetchSavedPreference, fetchCities, cart.id, isBulgaria, cart.shipping_address?.city, extractOfficeCodeFromAddress, extractOfficeNameFromAddress])
+  }, [
+    fetchSavedPreference,
+    fetchCities,
+    cart.id,
+    isBulgaria,
+    cart.shipping_address?.city,
+    extractOfficeCodeFromAddress,
+    extractOfficeNameFromAddress,
+  ])
 
   // Load offices when city changes and restore office selection
   useEffect(() => {
@@ -470,7 +613,9 @@ const EcontShippingForm = ({ cart }: EcontShippingFormProps) => {
           const params = new URLSearchParams({ type: "office" })
           params.set("cityId", String(selectedCity.id))
 
-          const response = await fetch(`/api/econt/locations?${params.toString()}`)
+          const response = await fetch(
+            `/api/econt/locations?${params.toString()}`
+          )
 
           // Handle non-JSON responses gracefully
           let data: Record<string, unknown>
@@ -488,7 +633,10 @@ const EcontShippingForm = ({ cart }: EcontShippingFormProps) => {
 
             // Try to restore office selection from saved preference ref
             const savedPref = savedPreferenceRef.current
-            if (loadedOffices.length > 0 && (savedPref?.office_code || savedPref?.office_name)) {
+            if (
+              loadedOffices.length > 0 &&
+              (savedPref?.office_code || savedPref?.office_name)
+            ) {
               let office: OfficeOption | undefined
 
               // First try to match by office code
@@ -502,9 +650,14 @@ const EcontShippingForm = ({ cart }: EcontShippingFormProps) => {
               if (!office && savedPref.office_name) {
                 office = loadedOffices.find(
                   (o: OfficeOption) =>
-                    o.name.toLowerCase() === savedPref.office_name?.toLowerCase() ||
-                    o.name.toLowerCase().includes(savedPref.office_name?.toLowerCase() || "") ||
-                    savedPref.office_name?.toLowerCase().includes(o.name.toLowerCase())
+                    o.name.toLowerCase() ===
+                      savedPref.office_name?.toLowerCase() ||
+                    o.name
+                      .toLowerCase()
+                      .includes(savedPref.office_name?.toLowerCase() || "") ||
+                    savedPref.office_name
+                      ?.toLowerCase()
+                      .includes(o.name.toLowerCase())
                 )
               }
 
@@ -543,7 +696,7 @@ const EcontShippingForm = ({ cart }: EcontShippingFormProps) => {
 
     if (!recipient.first_name || !recipient.last_name || !recipient.phone) {
       setError(
-        "Моля, попълнете име, фамилия и телефон за получаване."
+        'Моля, попълнете име, фамилия и телефон в секция "Адрес за доставка".'
       )
       return
     }
@@ -551,7 +704,6 @@ const EcontShippingForm = ({ cart }: EcontShippingFormProps) => {
     // Validate phone number
     const phoneValidation = validateBulgarianPhone(recipient.phone)
     if (!phoneValidation.valid) {
-      setPhoneError(phoneValidation.error || "Невалиден телефонен номер")
       setError(phoneValidation.error || "Невалиден телефонен номер")
       return
     }
@@ -610,13 +762,42 @@ const EcontShippingForm = ({ cart }: EcontShippingFormProps) => {
 
       setSuccessMessage("Econt shipping preference saved!")
       setHasSavedPreference(true)
+
+      // Calculate shipping cost after saving, then re-set shipping method
+      // so Medusa recalculates cart totals with the real Econt price
+      await calculateShippingCost()
+
+      // Find the Econt shipping option ID to re-set it, triggering Medusa
+      // to recalculate via EcontFulfillmentService.calculatePrice()
+      const shippingOptionId =
+        cart.shipping_methods?.at(-1)?.shipping_option_id ||
+        availableShippingMethods?.find((sm) => sm.price_type === "calculated")?.id ||
+        availableShippingMethods?.[0]?.id
+      if (shippingOptionId) {
+        try {
+          await setShippingMethod({
+            cartId: cart.id,
+            shippingMethodId: shippingOptionId,
+          })
+          // Force the page to re-render so Server Components re-fetch
+          // the cart with the updated shipping_subtotal from Econt
+          router.refresh()
+        } catch (e) {
+          console.warn("[Econt] Failed to refresh shipping method:", e)
+        }
+      }
     } catch (err) {
       console.error(err)
-      setError(err instanceof Error ? err.message : "Unable to save preference.")
+      setError(
+        err instanceof Error ? err.message : "Unable to save preference."
+      )
     } finally {
       setIsSaving(false)
     }
   }
+
+  // Determine if form should be disabled (while saving)
+  const isFormDisabled = isSaving
 
   const renderOfficeSelector = () => (
     <div className="flex flex-col gap-y-4">
@@ -632,6 +813,7 @@ const EcontShippingForm = ({ cart }: EcontShippingFormProps) => {
           placeholder="Изберете град..."
           searchPlaceholder="Търсене по име на град, пощенски код или област..."
           loading={loadingCities}
+          disabled={isFormDisabled}
           getKey={(city) => city.id}
           renderOption={(city) => (
             <div className="flex flex-col">
@@ -642,7 +824,9 @@ const EcontShippingForm = ({ cart }: EcontShippingFormProps) => {
             </div>
           )}
           renderSelected={(city) => (
-            <span>{city.name} ({city.postCode})</span>
+            <span>
+              {city.name} ({city.postCode})
+            </span>
           )}
           emptyMessage="Няма намерени градове. Опитайте друго търсене."
         />
@@ -688,7 +872,7 @@ const EcontShippingForm = ({ cart }: EcontShippingFormProps) => {
               placeholder="Изберете офис..."
               searchPlaceholder="Търсене по име на офис или адрес..."
               loading={loadingOffices}
-              disabled={!selectedCity}
+              disabled={!selectedCity || isFormDisabled}
               getKey={(office) => office.code}
               renderOption={(office) => (
                 <div className="flex flex-col gap-0.5">
@@ -701,7 +885,9 @@ const EcontShippingForm = ({ cart }: EcontShippingFormProps) => {
                 </div>
               )}
               renderSelected={(office) => office.name}
-              emptyMessage={`Няма намерени офиси в ${selectedCity?.name || 'този град'}.`}
+              emptyMessage={`Няма намерени офиси в ${
+                selectedCity?.name || "този град"
+              }.`}
             />
 
             {/* Selected office details */}
@@ -709,47 +895,92 @@ const EcontShippingForm = ({ cart }: EcontShippingFormProps) => {
               <div className="bg-white border rounded-lg p-4 space-y-3">
                 <div className="flex items-start gap-3">
                   <div className="flex-shrink-0 w-10 h-10 bg-ui-bg-subtle rounded-full flex items-center justify-center">
-                    <svg className="w-5 h-5 text-ui-fg-subtle" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <svg
+                      className="w-5 h-5 text-ui-fg-subtle"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
                     </svg>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <Text size="small" weight="plus" className="text-ui-fg-base">
+                    <Text
+                      size="small"
+                      weight="plus"
+                      className="text-ui-fg-base"
+                    >
                       {selectedOffice.name}
                     </Text>
-                    {selectedOffice.nameEn && selectedOffice.nameEn !== selectedOffice.name && (
-                      <Text size="small" className="text-ui-fg-muted">
-                        {selectedOffice.nameEn}
-                      </Text>
-                    )}
+                    {selectedOffice.nameEn &&
+                      selectedOffice.nameEn !== selectedOffice.name && (
+                        <Text size="small" className="text-ui-fg-muted">
+                          {selectedOffice.nameEn}
+                        </Text>
+                      )}
                   </div>
                 </div>
 
                 <div className="border-t pt-3 space-y-2">
                   <div className="flex items-start gap-2">
-                    <svg className="w-4 h-4 text-ui-fg-subtle mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    <svg
+                      className="w-4 h-4 text-ui-fg-subtle mt-0.5 flex-shrink-0"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                      />
                     </svg>
                     <div>
-                      <Text size="small" className="text-ui-fg-subtle">Адрес</Text>
+                      <Text size="small" className="text-ui-fg-subtle">
+                        Адрес
+                      </Text>
                       <Text size="small" className="text-ui-fg-base">
                         {selectedOffice.address || "Адресът не е наличен"}
                       </Text>
-                      {selectedOffice.addressEn && selectedOffice.addressEn !== selectedOffice.address && (
-                        <Text size="small" className="text-ui-fg-muted">
-                          {selectedOffice.addressEn}
-                        </Text>
-                      )}
+                      {selectedOffice.addressEn &&
+                        selectedOffice.addressEn !== selectedOffice.address && (
+                          <Text size="small" className="text-ui-fg-muted">
+                            {selectedOffice.addressEn}
+                          </Text>
+                        )}
                     </div>
                   </div>
 
                   <div className="flex items-start gap-2">
-                    <svg className="w-4 h-4 text-ui-fg-subtle mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
+                    <svg
+                      className="w-4 h-4 text-ui-fg-subtle mt-0.5 flex-shrink-0"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"
+                      />
                     </svg>
                     <div>
-                      <Text size="small" className="text-ui-fg-subtle">Код на офис</Text>
+                      <Text size="small" className="text-ui-fg-subtle">
+                        Код на офис
+                      </Text>
                       <Text size="small" className="text-ui-fg-base font-mono">
                         {selectedOffice.code}
                       </Text>
@@ -758,16 +989,33 @@ const EcontShippingForm = ({ cart }: EcontShippingFormProps) => {
 
                   {selectedOffice.cityName && (
                     <div className="flex items-start gap-2">
-                      <svg className="w-4 h-4 text-ui-fg-subtle mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      <svg
+                        className="w-4 h-4 text-ui-fg-subtle mt-0.5 flex-shrink-0"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                        />
                       </svg>
                       <div>
-                        <Text size="small" className="text-ui-fg-subtle">Град</Text>
+                        <Text size="small" className="text-ui-fg-subtle">
+                          Град
+                        </Text>
                         <Text size="small" className="text-ui-fg-base">
                           {selectedOffice.cityName}
-                          {selectedOffice.cityNameEn && selectedOffice.cityNameEn !== selectedOffice.cityName && (
-                            <span className="text-ui-fg-muted"> ({selectedOffice.cityNameEn})</span>
-                          )}
+                          {selectedOffice.cityNameEn &&
+                            selectedOffice.cityNameEn !==
+                              selectedOffice.cityName && (
+                              <span className="text-ui-fg-muted">
+                                {" "}
+                                ({selectedOffice.cityNameEn})
+                              </span>
+                            )}
                         </Text>
                       </div>
                     </div>
@@ -779,7 +1027,8 @@ const EcontShippingForm = ({ cart }: EcontShippingFormProps) => {
             {/* Office count */}
             {offices.length > 0 && (
               <Text size="small" className="text-ui-fg-muted">
-                {offices.length} {offices.length === 1 ? "офис" : "офиса"} в {selectedCity.name}
+                {offices.length} {offices.length === 1 ? "офис" : "офиса"} в{" "}
+                {selectedCity.name}
               </Text>
             )}
           </>
@@ -792,44 +1041,64 @@ const EcontShippingForm = ({ cart }: EcontShippingFormProps) => {
     <div className="grid grid-cols-1 gap-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="grid grid-cols-1 gap-2">
-          <label className="text-ui-fg-base text-small-regular font-medium">Град *</label>
+          <label className="text-ui-fg-base text-small-regular font-medium">
+            Град *
+          </label>
           <Input
             value={addressCity}
             onChange={(e) => setAddressCity(e.target.value)}
             placeholder="София, Пловдив..."
+            disabled={isFormDisabled}
           />
         </div>
         <div className="grid grid-cols-1 gap-2">
-          <label className="text-ui-fg-base text-small-regular font-medium">Пощенски код</label>
+          <label className="text-ui-fg-base text-small-regular font-medium">
+            Пощенски код
+          </label>
           <Input
             value={addressPostal}
             onChange={(e) => setAddressPostal(e.target.value)}
             placeholder="1000"
+            disabled={isFormDisabled}
           />
         </div>
       </div>
       <div className="grid grid-cols-1 gap-2">
-        <label className="text-ui-fg-base text-small-regular font-medium">Адрес *</label>
+        <label className="text-ui-fg-base text-small-regular font-medium">
+          Адрес *
+        </label>
         <Input
           value={addressLine1}
           onChange={(e) => setAddressLine1(e.target.value)}
           placeholder="Улица, номер на сграда"
+          disabled={isFormDisabled}
         />
       </div>
       <div className="grid grid-cols-1 gap-2">
-        <label className="text-ui-fg-base text-small-regular font-medium">Допълнителна информация</label>
+        <label className="text-ui-fg-base text-small-regular font-medium">
+          Допълнителна информация
+        </label>
         <Input
           value={addressLine2}
           onChange={(e) => setAddressLine2(e.target.value)}
           placeholder="Апартамент, вход, етаж..."
+          disabled={isFormDisabled}
         />
       </div>
-      <label className="flex items-center gap-3 text-small-regular text-ui-fg-base bg-white border rounded-lg p-3 cursor-pointer hover:bg-ui-bg-subtle transition-colors">
+      <label
+        className={clx(
+          "flex items-center gap-3 text-small-regular text-ui-fg-base bg-white border rounded-lg p-3 transition-colors",
+          isFormDisabled
+            ? "opacity-50 cursor-not-allowed"
+            : "cursor-pointer hover:bg-ui-bg-subtle"
+        )}
+      >
         <input
           type="checkbox"
           checked={allowSaturday}
           onChange={(e) => setAllowSaturday(e.target.checked)}
           className="rounded border-ui-border-strong w-4 h-4"
+          disabled={isFormDisabled}
         />
         <div>
           <span className="font-medium">Доставка в събота</span>
@@ -866,15 +1135,19 @@ const EcontShippingForm = ({ cart }: EcontShippingFormProps) => {
           {hasSavedPreference && (
             <span className="text-ui-fg-success text-small-regular flex items-center gap-1">
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clipRule="evenodd"
+                />
               </svg>
               Запазено
             </span>
           )}
         </div>
         <Text size="small" className="text-ui-fg-subtle">
-          Изберете дали искате да получите пратката в офис на Econt или на адрес.
-          Всички доставки са с наложен платеж.
+          Изберете дали искате да получите пратката в офис на Econt или на
+          адрес. Всички доставки са с наложен платеж.
         </Text>
       </div>
 
@@ -887,35 +1160,72 @@ const EcontShippingForm = ({ cart }: EcontShippingFormProps) => {
           {/* Office Pickup Option */}
           <button
             type="button"
-            onClick={() => setDeliveryType("office")}
+            onClick={() => {
+              if (!isFormDisabled) {
+                setDeliveryType("office")
+                setShippingCost(null)
+                try { localStorage.removeItem("econt-shipping-cost") } catch {}
+              }
+            }}
+            disabled={isFormDisabled}
             className={clx(
               "relative flex flex-col items-start p-4 rounded-lg border-2 transition-all duration-200 text-left",
               deliveryType === "office"
                 ? "border-ui-border-interactive bg-white shadow-sm"
-                : "border-ui-border-base bg-white hover:border-ui-border-strong hover:shadow-sm"
+                : "border-ui-border-base bg-white hover:border-ui-border-strong hover:shadow-sm",
+              isFormDisabled && "opacity-50 cursor-not-allowed"
             )}
           >
             {/* Selection indicator */}
-            <div className={clx(
-              "absolute top-3 right-3 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors",
-              deliveryType === "office"
-                ? "border-ui-border-interactive bg-ui-bg-interactive"
-                : "border-ui-border-base"
-            )}>
+            <div
+              className={clx(
+                "absolute top-3 right-3 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors",
+                deliveryType === "office"
+                  ? "border-ui-border-interactive bg-ui-bg-interactive"
+                  : "border-ui-border-base"
+              )}
+            >
               {deliveryType === "office" && (
-                <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                <svg
+                  className="w-3 h-3 text-white"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               )}
             </div>
 
             {/* Icon */}
-            <div className={clx(
-              "w-10 h-10 rounded-lg flex items-center justify-center mb-3",
-              deliveryType === "office" ? "bg-ui-bg-interactive-pressed" : "bg-ui-bg-subtle"
-            )}>
-              <svg className={clx("w-5 h-5", deliveryType === "office" ? "text-ui-fg-on-color" : "text-ui-fg-subtle")} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            <div
+              className={clx(
+                "w-10 h-10 rounded-lg flex items-center justify-center mb-3",
+                deliveryType === "office"
+                  ? "bg-ui-bg-interactive-pressed"
+                  : "bg-ui-bg-subtle"
+              )}
+            >
+              <svg
+                className={clx(
+                  "w-5 h-5",
+                  deliveryType === "office"
+                    ? "text-ui-fg-on-color"
+                    : "text-ui-fg-subtle"
+                )}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                />
               </svg>
             </div>
 
@@ -930,35 +1240,72 @@ const EcontShippingForm = ({ cart }: EcontShippingFormProps) => {
           {/* Address Delivery Option */}
           <button
             type="button"
-            onClick={() => setDeliveryType("address")}
+            onClick={() => {
+              if (!isFormDisabled) {
+                setDeliveryType("address")
+                setShippingCost(null)
+                try { localStorage.removeItem("econt-shipping-cost") } catch {}
+              }
+            }}
+            disabled={isFormDisabled}
             className={clx(
               "relative flex flex-col items-start p-4 rounded-lg border-2 transition-all duration-200 text-left",
               deliveryType === "address"
                 ? "border-ui-border-interactive bg-white shadow-sm"
-                : "border-ui-border-base bg-white hover:border-ui-border-strong hover:shadow-sm"
+                : "border-ui-border-base bg-white hover:border-ui-border-strong hover:shadow-sm",
+              isFormDisabled && "opacity-50 cursor-not-allowed"
             )}
           >
             {/* Selection indicator */}
-            <div className={clx(
-              "absolute top-3 right-3 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors",
-              deliveryType === "address"
-                ? "border-ui-border-interactive bg-ui-bg-interactive"
-                : "border-ui-border-base"
-            )}>
+            <div
+              className={clx(
+                "absolute top-3 right-3 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors",
+                deliveryType === "address"
+                  ? "border-ui-border-interactive bg-ui-bg-interactive"
+                  : "border-ui-border-base"
+              )}
+            >
               {deliveryType === "address" && (
-                <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                <svg
+                  className="w-3 h-3 text-white"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               )}
             </div>
 
             {/* Icon */}
-            <div className={clx(
-              "w-10 h-10 rounded-lg flex items-center justify-center mb-3",
-              deliveryType === "address" ? "bg-ui-bg-interactive-pressed" : "bg-ui-bg-subtle"
-            )}>
-              <svg className={clx("w-5 h-5", deliveryType === "address" ? "text-ui-fg-on-color" : "text-ui-fg-subtle")} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            <div
+              className={clx(
+                "w-10 h-10 rounded-lg flex items-center justify-center mb-3",
+                deliveryType === "address"
+                  ? "bg-ui-bg-interactive-pressed"
+                  : "bg-ui-bg-subtle"
+              )}
+            >
+              <svg
+                className={clx(
+                  "w-5 h-5",
+                  deliveryType === "address"
+                    ? "text-ui-fg-on-color"
+                    : "text-ui-fg-subtle"
+                )}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                />
               </svg>
             </div>
 
@@ -974,67 +1321,36 @@ const EcontShippingForm = ({ cart }: EcontShippingFormProps) => {
 
       {/* Location Selection Section */}
       <div className="border-t pt-6">
-        {deliveryType === "office" ? renderOfficeSelector() : renderAddressForm()}
+        {deliveryType === "office"
+          ? renderOfficeSelector()
+          : renderAddressForm()}
       </div>
 
-      {/* Recipient Information */}
+      {/* Recipient Summary (from shipping address step) */}
       <div className="border-t pt-6">
-        <Text weight="plus" className="text-ui-fg-base mb-4">Данни за получател</Text>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="grid grid-cols-1 gap-2">
-            <label className="text-ui-fg-base text-small-regular">Име *</label>
-            <Input
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              placeholder="Въведете име"
-              required
-            />
-          </div>
-          <div className="grid grid-cols-1 gap-2">
-            <label className="text-ui-fg-base text-small-regular">Фамилия *</label>
-            <Input
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-              placeholder="Въведете фамилия"
-              required
-            />
-          </div>
-          <div className="grid grid-cols-1 gap-2">
-            <label className="text-ui-fg-base text-small-regular">Телефон *</label>
-            <Input
-              value={phone}
-              onChange={(e) => {
-                setPhone(e.target.value)
-                setPhoneError(null) // Clear error on change
-              }}
-              onBlur={() => {
-                // Validate on blur
-                if (phone) {
-                  const validation = validateBulgarianPhone(phone)
-                  if (!validation.valid) {
-                    setPhoneError(validation.error || null)
-                  } else {
-                    setPhoneError(null)
-                  }
-                }
-              }}
-              placeholder="+359 888 123 456"
-              required
-              className={phoneError ? "border-red-500" : ""}
-            />
-            {phoneError && (
-              <Text size="small" className="text-red-600">{phoneError}</Text>
+        <Text weight="plus" className="text-ui-fg-base mb-3">
+          Данни за получател
+        </Text>
+        <div className="bg-white border rounded-lg p-4">
+          <div className="grid grid-cols-2 gap-y-2 text-small-regular">
+            <div>
+              <Text size="small" className="text-ui-fg-muted">Име</Text>
+              <Text>{firstName} {lastName}</Text>
+            </div>
+            <div>
+              <Text size="small" className="text-ui-fg-muted">Телефон</Text>
+              <Text>{phone || "—"}</Text>
+            </div>
+            {email && (
+              <div className="col-span-2">
+                <Text size="small" className="text-ui-fg-muted">Имейл</Text>
+                <Text>{email}</Text>
+              </div>
             )}
           </div>
-          <div className="grid grid-cols-1 gap-2">
-            <label className="text-ui-fg-base text-small-regular">Имейл</label>
-            <Input
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="email@example.com"
-              type="email"
-            />
-          </div>
+          <Text size="small" className="text-ui-fg-muted mt-3">
+            За промяна на данните, редактирайте „Адрес за доставка".
+          </Text>
         </div>
       </div>
 
@@ -1068,10 +1384,85 @@ const EcontShippingForm = ({ cart }: EcontShippingFormProps) => {
         </Text>
       </div>
 
+      {/* Shipping Cost Display */}
+      {isCalculating && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center gap-3">
+          <div className="animate-spin h-5 w-5 border-2 border-blue-300 border-t-blue-600 rounded-full flex-shrink-0"></div>
+          <Text size="small" className="text-blue-800">
+            Изчисляване на цена за доставка...
+          </Text>
+        </div>
+      )}
+
+      {shippingCost && !isCalculating && shippingCost.totalPrice != null && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <svg
+                className="w-6 h-6 text-blue-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12"
+                />
+              </svg>
+              <div>
+                <Text size="small" className="text-blue-800 font-medium">
+                  Цена за доставка с Econt
+                </Text>
+                <Text size="small" className="text-blue-700">
+                  {deliveryType === "office" ? "До офис" : "До адрес"}
+                </Text>
+              </div>
+            </div>
+            <Text weight="plus" className="text-xl text-blue-800">
+              {shippingCost.totalPrice.toFixed(2)} {shippingCost.currency || "BGN"}
+            </Text>
+          </div>
+          {shippingCost.expectedDeliveryDate && (
+            <div className="border-t border-blue-200 pt-2 mt-2">
+              <Text size="small" className="text-blue-700">
+                Очаквана дата на доставка:{" "}
+                {(() => {
+                  const val = shippingCost.expectedDeliveryDate!
+                  const ts = Number(val)
+                  if (!isNaN(ts) && ts > 1e12) {
+                    return new Date(ts).toLocaleDateString("bg-BG", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })
+                  }
+                  const d = new Date(val)
+                  return isNaN(d.getTime()) ? val : d.toLocaleDateString("bg-BG", {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  })
+                })()}
+              </Text>
+            </div>
+          )}
+        </div>
+      )}
+
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
-          <svg className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+          <svg
+            className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path
+              fillRule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+              clipRule="evenodd"
+            />
           </svg>
           <Text className="text-red-800 text-small-regular">{error}</Text>
         </div>
@@ -1079,10 +1470,20 @@ const EcontShippingForm = ({ cart }: EcontShippingFormProps) => {
 
       {successMessage && (
         <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3">
-          <svg className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+          <svg
+            className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path
+              fillRule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+              clipRule="evenodd"
+            />
           </svg>
-          <Text className="text-green-800 text-small-regular">{successMessage}</Text>
+          <Text className="text-green-800 text-small-regular">
+            {successMessage}
+          </Text>
         </div>
       )}
 

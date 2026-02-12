@@ -37,5 +37,20 @@ module.exports = defineConfig({
       resolve: "./src/modules/email-campaign",
       options: {},
     },
+    {
+      resolve: "@medusajs/medusa/fulfillment",
+      options: {
+        providers: [
+          {
+            resolve: "@medusajs/medusa/fulfillment-manual",
+            id: "manual",
+          },
+          {
+            resolve: "./src/modules/econt-fulfillment",
+            id: "econt",
+          },
+        ],
+      },
+    },
   ],
 })

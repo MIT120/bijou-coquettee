@@ -19,12 +19,17 @@ export async function POST(
     )
 
     try {
-        const shipment = await econtService.syncShipmentStatus({
+        const result = await econtService.syncShipmentStatus({
             shipmentId: id,
             refreshTracking: body?.force ?? false,
         })
 
-        res.json({ shipment })
+        res.json({
+            shipment: result.shipment,
+            statusChanged: result.statusChanged,
+            previousStatus: result.previousStatus,
+            newStatus: result.newStatus,
+        })
     } catch (error) {
         console.error("[Admin Econt Shipment] Error syncing shipment:", error)
         res.status(500).json({
