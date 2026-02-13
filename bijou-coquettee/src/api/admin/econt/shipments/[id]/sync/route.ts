@@ -1,5 +1,6 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import type EcontShippingModuleService from "../../../../../../modules/econt-shipping/service"
+import { sendShipmentStatusEmail, buildDestinationString } from "../../../../../../modules/econt-shipping/email-service"
 
 type RouteParams = { id: string }
 
@@ -23,6 +24,27 @@ export async function POST(
             shipmentId: id,
             refreshTracking: body?.force ?? false,
         })
+
+        // Send email notification if status changed
+        if (result.statusChanged && result.newStatus) {
+            const emailStatus = result.newStatus as "registered" | "in_transit" | "delivered" | "cancelled"
+            if (["registered", "in_transit", "delivered", "cancelled"].includes(emailStatus)) {
+                const shipment = result.shipment
+                try {
+                    await sendShipmentStatusEmail({
+                        status: emailStatus,
+                        recipientEmail: shipment.recipient_email ?? "",
+                        recipientName: `${shipment.recipient_first_name} ${shipment.recipient_last_name}`,
+                        waybillNumber: shipment.waybill_number ?? "",
+                        destination: buildDestinationString(shipment),
+                        orderId: shipment.order_id,
+                        expectedDeliveryDate: shipment.expected_delivery_date ?? null,
+                    })
+                } catch (emailError) {
+                    console.error("[Admin Econt Shipment] Failed to send status email:", emailError)
+                }
+            }
+        }
 
         res.json({
             shipment: result.shipment,

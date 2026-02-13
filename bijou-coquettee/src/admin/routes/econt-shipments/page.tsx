@@ -12,6 +12,7 @@ import {
   IconButton,
   DropdownMenu,
   Label,
+  Checkbox,
   clx,
   toast,
 } from "@medusajs/ui"
@@ -28,7 +29,6 @@ import {
   ArrowDownTray,
   Eye,
   PencilSquare,
-  ExclamationCircle,
   RocketLaunch,
 } from "@medusajs/icons"
 
@@ -212,23 +212,23 @@ const ShipmentDetailsDrawer = ({
     <div className="fixed inset-0 z-50 flex">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
       <div className="relative ml-auto w-full max-w-lg bg-ui-bg-base shadow-xl overflow-y-auto">
-        <div className="sticky top-0 bg-ui-bg-base border-b border-ui-border-base px-6 py-4 flex items-center justify-between">
-          <div>
-            <Heading level="h2">Товарителница #{shipment.waybill_number || "N/A"}</Heading>
+        <div className="sticky top-0 bg-ui-bg-base border-b border-ui-border-base px-4 sm:px-6 py-4 flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <Heading level="h2" className="truncate">Товарителница #{shipment.waybill_number || "N/A"}</Heading>
             <Text size="small" className="text-ui-fg-muted">
               {shipment.short_status_en || STATUS_CONFIG[shipment.status]?.label}
             </Text>
           </div>
-          <Button variant="secondary" size="small" onClick={onClose}>
+          <Button variant="secondary" size="small" onClick={onClose} className="flex-shrink-0">
             Затвори
           </Button>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="p-4 sm:p-6 space-y-6">
           {/* Print Label Banner - prominent for registered shipments */}
           {shipment.label_url && (shipment.status === "registered" || shipment.status === "in_transit") && (
             <div className="bg-ui-tag-blue-bg border border-ui-tag-blue-border rounded-lg p-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <Text className="font-medium text-ui-tag-blue-text">
                     Етикетът е готов за печат
@@ -237,7 +237,7 @@ const ShipmentDetailsDrawer = ({
                     Разпечатайте етикета и залепете го на пратката
                   </Text>
                 </div>
-                <Button variant="primary" asChild>
+                <Button variant="primary" asChild className="w-full sm:w-auto flex-shrink-0">
                   <a href={shipment.label_url} target="_blank" rel="noopener noreferrer">
                     <ArrowDownTray className="mr-2" />
                     Печат на етикет
@@ -386,7 +386,7 @@ const ShipmentDetailsDrawer = ({
                   <div className="flex items-center justify-between">
                     <Text size="small" className="text-ui-fg-muted">Наложен платеж</Text>
                     <Text className="font-semibold">
-                      {formatMoney(shipment.cod_amount, "BGN")}
+                      {formatMoney(shipment.cod_amount, "EUR")}
                     </Text>
                   </div>
                 )}
@@ -570,19 +570,19 @@ const EditShipmentDrawer = ({
     <div className="fixed inset-0 z-50 flex">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
       <div className="relative ml-auto w-full max-w-lg bg-ui-bg-base shadow-xl overflow-y-auto">
-        <div className="sticky top-0 bg-ui-bg-base border-b border-ui-border-base px-6 py-4 flex items-center justify-between">
-          <div>
+        <div className="sticky top-0 bg-ui-bg-base border-b border-ui-border-base px-4 sm:px-6 py-4 flex items-center justify-between gap-3">
+          <div className="min-w-0">
             <Heading level="h2">Редактиране на товарителница</Heading>
             <Text size="small" className="text-ui-fg-muted">
               Редактирайте данните преди изпращане към Econt
             </Text>
           </div>
-          <Button variant="secondary" size="small" onClick={onClose}>
+          <Button variant="secondary" size="small" onClick={onClose} className="flex-shrink-0">
             Затвори
           </Button>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="p-4 sm:p-6 space-y-6">
           {/* Delivery Type */}
           <div className="space-y-2">
             <Label>Тип доставка</Label>
@@ -834,267 +834,20 @@ const EditShipmentDrawer = ({
   )
 }
 
-// Registered Shipments Info Card - shows where each registered shipment needs to go + print label
-const RegisteredShipmentsCard = ({
-  shipments,
-  onViewDetails,
-  onSync,
-}: {
-  shipments: EcontShipment[]
-  onViewDetails: (shipment: EcontShipment) => void
-  onSync: (shipment: EcontShipment) => void
-}) => {
-  const [syncingId, setSyncingId] = useState<string | null>(null)
-
-  if (shipments.length === 0) return null
-
-  return (
-    <div className="bg-ui-tag-blue-bg border border-ui-tag-blue-border rounded-lg p-4">
-      <div className="flex items-center gap-2 mb-3">
-        <TruckFast className="w-5 h-5 text-ui-tag-blue-icon" />
-        <Heading level="h3" className="text-ui-tag-blue-text">
-          Регистрирани пратки ({shipments.length})
-        </Heading>
-      </div>
-      <Text size="small" className="text-ui-fg-muted mb-4">
-        Тези товарителници са регистрирани в Еконт и чакат да бъдат предадени на куриер.
-        Разпечатайте етикетите и подгответе пратките.
-      </Text>
-      <div className="space-y-3">
-        {shipments.map((shipment) => (
-          <div
-            key={shipment.id}
-            className="bg-ui-bg-base rounded-lg border border-ui-border-base p-4"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <Text className="font-mono font-medium text-ui-fg-base">
-                    #{shipment.waybill_number}
-                  </Text>
-                  <Badge color="blue" size="small">Регистрирана</Badge>
-                </div>
-
-                {/* Delivery destination */}
-                <div className="flex items-center gap-2 mt-2">
-                  {shipment.delivery_type === "office" ? (
-                    <BuildingStorefront className="w-4 h-4 text-ui-fg-subtle flex-shrink-0" />
-                  ) : (
-                    <MapPin className="w-4 h-4 text-ui-fg-subtle flex-shrink-0" />
-                  )}
-                  <div className="min-w-0">
-                    <Text size="small" className="font-medium">
-                      {shipment.delivery_type === "office" ? "До офис" : "До адрес"}:{" "}
-                      <span className="text-ui-fg-base">
-                        {shipment.delivery_type === "office"
-                          ? shipment.office_name || "N/A"
-                          : [
-                              shipment.address_city,
-                              shipment.address_line1,
-                              shipment.address_line2,
-                            ].filter(Boolean).join(", ") || "N/A"}
-                      </span>
-                    </Text>
-                    {shipment.delivery_type === "address" && (shipment.entrance || shipment.floor || shipment.apartment) && (
-                      <Text size="xsmall" className="text-ui-fg-muted">
-                        {[
-                          shipment.entrance && `вх. ${shipment.entrance}`,
-                          shipment.floor && `ет. ${shipment.floor}`,
-                          shipment.apartment && `ап. ${shipment.apartment}`,
-                        ].filter(Boolean).join(", ")}
-                      </Text>
-                    )}
-                  </div>
-                </div>
-
-                {/* Recipient info */}
-                <Text size="small" className="text-ui-fg-muted mt-1">
-                  Получател: {shipment.recipient_first_name} {shipment.recipient_last_name} ({shipment.recipient_phone})
-                  {shipment.cod_amount ? <> • НП: <span className="font-medium">{formatMoney(shipment.cod_amount, "BGN")}</span></> : null}
-                </Text>
-
-                {shipment.expected_delivery_date && (
-                  <Text size="xsmall" className="text-ui-fg-subtle mt-1">
-                    Очаквана доставка: {shipment.expected_delivery_date}
-                  </Text>
-                )}
-              </div>
-
-              {/* Actions */}
-              <div className="flex items-center gap-2 ml-4 flex-shrink-0">
-                <IconButton
-                  variant="transparent"
-                  size="small"
-                  onClick={() => onViewDetails(shipment)}
-                >
-                  <Eye className="w-4 h-4" />
-                </IconButton>
-                <IconButton
-                  variant="transparent"
-                  size="small"
-                  disabled={syncingId === shipment.id}
-                  onClick={async () => {
-                    setSyncingId(shipment.id)
-                    await onSync(shipment)
-                    setSyncingId(null)
-                  }}
-                >
-                  <ArrowPath className={clx("w-4 h-4", syncingId === shipment.id && "animate-spin")} />
-                </IconButton>
-                {shipment.label_url && (
-                  <Button size="small" variant="secondary" asChild>
-                    <a
-                      href={shipment.label_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <ArrowDownTray className="w-4 h-4 mr-1" />
-                      Печат
-                    </a>
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
-        ))}
-
-        {/* Bulk print all labels */}
-        {shipments.filter(s => s.label_url).length > 1 && (
-          <div className="flex justify-end pt-2">
-            <Button
-              variant="secondary"
-              size="small"
-              onClick={() => {
-                shipments.forEach(s => {
-                  if (s.label_url) {
-                    window.open(s.label_url, "_blank")
-                  }
-                })
-              }}
-            >
-              <ArrowDownTray className="w-4 h-4 mr-1" />
-              Отвори всички етикети ({shipments.filter(s => s.label_url).length})
-            </Button>
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-// Draft Shipments Alert Card
-const DraftShipmentsCard = ({
-  drafts,
-  onEdit,
-  onConfirm,
-  onViewDetails,
-}: {
-  drafts: EcontShipment[]
-  onEdit: (shipment: EcontShipment) => void
-  onConfirm: (shipment: EcontShipment) => void
-  onViewDetails: (shipment: EcontShipment) => void
-}) => {
-  const [confirmingId, setConfirmingId] = useState<string | null>(null)
-
-  if (drafts.length === 0) return null
-
-  return (
-    <div className="bg-ui-tag-orange-bg border border-ui-tag-orange-border rounded-lg p-4">
-      <div className="flex items-center gap-2 mb-3">
-        <ExclamationCircle className="w-5 h-5 text-ui-tag-orange-icon" />
-        <Heading level="h3" className="text-ui-tag-orange-text">
-          Чакащи потвърждение ({drafts.length})
-        </Heading>
-      </div>
-      <Text size="small" className="text-ui-fg-muted mb-4">
-        Тези товарителници са създадени от клиенти, но още не са изпратени към Еконт.
-        Прегледайте данните и потвърдете за да генерирате товарителница.
-      </Text>
-      <div className="space-y-3">
-        {drafts.map((shipment) => (
-          <div
-            key={shipment.id}
-            className="bg-ui-bg-base rounded-lg border border-ui-border-base p-4 flex items-center justify-between"
-          >
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-1">
-                {shipment.delivery_type === "office" ? (
-                  <BuildingStorefront className="w-4 h-4 text-ui-fg-subtle" />
-                ) : (
-                  <MapPin className="w-4 h-4 text-ui-fg-subtle" />
-                )}
-                <Text className="font-medium">
-                  {shipment.recipient_first_name} {shipment.recipient_last_name}
-                </Text>
-                <Badge color="grey" size="small">Чернова</Badge>
-              </div>
-              <Text size="small" className="text-ui-fg-muted">
-                {shipment.delivery_type === "office"
-                  ? shipment.office_name || "Офис не е избран"
-                  : shipment.address_city || "Адрес не е въведен"}
-                {" • "}
-                {shipment.recipient_phone}
-                {shipment.cod_amount && (
-                  <> • НП: <span className="font-medium">{formatMoney(shipment.cod_amount, "BGN")}</span></>
-                )}
-                {shipment.shipping_cost && (
-                  <> • Доставка: <span className="font-medium">{formatMoney(shipment.shipping_cost, shipment.shipping_cost_currency)}</span></>
-                )}
-              </Text>
-              {shipment.order_id && (
-                <Text size="xsmall" className="text-ui-fg-subtle mt-1">
-                  Поръчка: {shipment.order_id.slice(0, 8)}...
-                </Text>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              <IconButton
-                variant="transparent"
-                size="small"
-                onClick={() => onViewDetails(shipment)}
-              >
-                <Eye className="w-4 h-4" />
-              </IconButton>
-              <IconButton
-                variant="transparent"
-                size="small"
-                onClick={() => onEdit(shipment)}
-              >
-                <PencilSquare className="w-4 h-4" />
-              </IconButton>
-              <Button
-                size="small"
-                disabled={confirmingId === shipment.id}
-                onClick={async () => {
-                  setConfirmingId(shipment.id)
-                  await onConfirm(shipment)
-                  setConfirmingId(null)
-                }}
-              >
-                {confirmingId === shipment.id ? (
-                  <ArrowPath className="w-4 h-4 animate-spin mr-1" />
-                ) : (
-                  <RocketLaunch className="w-4 h-4 mr-1" />
-                )}
-                Изпрати
-              </Button>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
+const PAGE_SIZE = 20
 
 const EcontShipmentsPage = () => {
   const [shipments, setShipments] = useState<EcontShipment[]>([])
+  const [totalCount, setTotalCount] = useState(0)
+  const [currentPage, setCurrentPage] = useState(0)
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
   const [selectedShipment, setSelectedShipment] = useState<EcontShipment | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [editDrawerOpen, setEditDrawerOpen] = useState(false)
   const [editingShipment, setEditingShipment] = useState<EcontShipment | null>(null)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [bulkRegistering, setBulkRegistering] = useState(false)
 
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>("all")
@@ -1107,22 +860,29 @@ const EcontShipmentsPage = () => {
       if (statusFilter !== "all") {
         params.set("status", statusFilter)
       }
-      params.set("limit", "100")
+      params.set("limit", String(PAGE_SIZE))
+      params.set("offset", String(currentPage * PAGE_SIZE))
 
       const response = await fetch(`/admin/econt/shipments?${params.toString()}`)
       const data = await response.json()
       setShipments(data.shipments || [])
+      setTotalCount(data.count ?? 0)
     } catch (error) {
       console.error("Failed to fetch shipments:", error)
       toast.error("Неуспешно зареждане на товарителници")
     } finally {
       setLoading(false)
     }
-  }, [statusFilter])
+  }, [statusFilter, currentPage])
 
   useEffect(() => {
     fetchShipments()
   }, [fetchShipments])
+
+  // Clear selection when data changes
+  useEffect(() => {
+    setSelectedIds(new Set())
+  }, [shipments])
 
   const handleSyncAll = async () => {
     const registered = shipments.filter(s =>
@@ -1208,12 +968,6 @@ const EcontShipmentsPage = () => {
     }
   }
 
-  // Get draft shipments for the alert card
-  const draftShipments = shipments.filter(s => s.status === "draft" || s.status === "ready")
-
-  // Get registered shipments (awaiting courier pickup)
-  const registeredShipments = shipments.filter(s => s.status === "registered")
-
   const filteredShipments = shipments.filter(s => {
     if (!searchQuery) return true
     const q = searchQuery.toLowerCase()
@@ -1226,18 +980,115 @@ const EcontShipmentsPage = () => {
     )
   })
 
-  // Group by status for summary
-  const statusCounts = shipments.reduce((acc, s) => {
-    acc[s.status] = (acc[s.status] || 0) + 1
-    return acc
-  }, {} as Record<string, number>)
+  // Selection helpers
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredShipments.length) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(filteredShipments.map(s => s.id)))
+    }
+  }
+
+  const selectedShipments = filteredShipments.filter(s => selectedIds.has(s.id))
+
+  // Bulk: register selected draft/ready shipments with Econt
+  const handleBulkRegister = async () => {
+    const registerable = selectedShipments.filter(
+      s => s.status === "draft" || s.status === "ready"
+    )
+    if (registerable.length === 0) {
+      toast.error("Няма избрани товарителници за изпращане (само чернови/готови)")
+      return
+    }
+
+    setBulkRegistering(true)
+    let success = 0
+    let failed = 0
+    for (const s of registerable) {
+      try {
+        const response = await fetch(`/admin/econt/shipments/${s.id}/register`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        })
+        if (response.ok) success++
+        else failed++
+      } catch {
+        failed++
+      }
+    }
+    setBulkRegistering(false)
+    setSelectedIds(new Set())
+    await fetchShipments()
+    if (failed === 0) {
+      toast.success(`${success} товарителници изпратени към Еконт`)
+    } else {
+      toast.warning(`Изпратени: ${success}, Грешки: ${failed}`)
+    }
+  }
+
+  // Bulk: merge selected label PDFs into one and open for printing
+  const [bulkPrinting, setBulkPrinting] = useState(false)
+  const handleBulkPrintLabels = async () => {
+    const withLabels = selectedShipments.filter(s => s.label_url)
+    if (withLabels.length === 0) {
+      toast.error("Няма избрани товарителници с етикети за печат")
+      return
+    }
+
+    setBulkPrinting(true)
+    try {
+      const response = await fetch("/admin/econt/shipments/labels", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ shipment_ids: withLabels.map(s => s.id) }),
+      })
+
+      if (!response.ok) {
+        const text = await response.text()
+        let message = "Грешка при генериране на PDF"
+        try {
+          const data = JSON.parse(text)
+          message = data.message || message
+        } catch {
+          // not JSON
+        }
+        console.error("[BulkPrint] Error:", response.status, text)
+        toast.error(message)
+        return
+      }
+
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      window.open(url, "_blank")
+      toast.success(`${withLabels.length} етикета обединени в един PDF`)
+    } catch (err) {
+      console.error("[BulkPrint] Fetch error:", err)
+      toast.error("Грешка при генериране на PDF")
+    } finally {
+      setBulkPrinting(false)
+    }
+  }
+
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE)
+  const canPreviousPage = currentPage > 0
+  const canNextPage = currentPage < totalPages - 1
 
   return (
     <Container className="divide-y p-0">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-4">
         <div className="flex items-center gap-3">
-          <TruckFast className="text-ui-fg-subtle w-6 h-6" />
+          <TruckFast className="text-ui-fg-subtle w-6 h-6 flex-shrink-0" />
           <div>
             <Heading level="h1">Econt Товарителници</Heading>
             <Text size="small" className="text-ui-fg-muted">
@@ -1249,76 +1100,28 @@ const EcontShipmentsPage = () => {
           variant="secondary"
           onClick={handleSyncAll}
           disabled={syncing}
+          className="w-full sm:w-auto"
         >
           <ArrowPath className={clx("mr-2", syncing && "animate-spin")} />
           Синхронизирай всички
         </Button>
       </div>
 
-      {/* Draft Shipments Alert */}
-      {draftShipments.length > 0 && (
-        <div className="px-6 py-4">
-          <DraftShipmentsCard
-            drafts={draftShipments}
-            onEdit={openEditDrawer}
-            onConfirm={handleConfirmShipment}
-            onViewDetails={openDrawer}
-          />
-        </div>
-      )}
-
-      {/* Registered Shipments - Ready for courier pickup */}
-      {registeredShipments.length > 0 && (
-        <div className="px-6 py-4">
-          <RegisteredShipmentsCard
-            shipments={registeredShipments}
-            onViewDetails={openDrawer}
-            onSync={handleSyncSingle}
-          />
-        </div>
-      )}
-
-      {/* Status Summary Cards */}
-      <div className="px-6 py-4 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-        {Object.entries(STATUS_CONFIG).map(([key, config]) => (
-          <button
-            key={key}
-            onClick={() => setStatusFilter(statusFilter === key ? "all" : key)}
-            className={clx(
-              "flex items-center gap-2 p-3 rounded-lg border transition-colors",
-              statusFilter === key
-                ? "border-ui-border-interactive bg-ui-bg-interactive"
-                : "border-ui-border-base hover:border-ui-border-strong"
-            )}
-          >
-            <StatusIcon status={key} />
-            <div className="text-left">
-              <Text size="small" className="font-medium">
-                {statusCounts[key] || 0}
-              </Text>
-              <Text size="xsmall" className="text-ui-fg-muted">
-                {config.label}
-              </Text>
-            </div>
-          </button>
-        ))}
-      </div>
-
       {/* Filters */}
-      <div className="px-6 py-4 flex items-center gap-4">
-        <div className="flex-1 max-w-sm">
+      <div className="px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+        <div className="flex-1 sm:max-w-sm">
           <div className="relative">
             <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 text-ui-fg-muted w-4 h-4" />
             <Input
-              placeholder="Търси по номер, получател, телефон..."
+              placeholder="Търси по номер, получател..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9"
             />
           </div>
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <Select.Trigger className="w-48">
+        <Select value={statusFilter} onValueChange={(val) => { setStatusFilter(val); setCurrentPage(0) }}>
+          <Select.Trigger className="w-full sm:w-48">
             <Select.Value placeholder="Всички статуси" />
           </Select.Trigger>
           <Select.Content>
@@ -1332,8 +1135,43 @@ const EcontShipmentsPage = () => {
         </Select>
       </div>
 
-      {/* Table */}
-      <div className="px-6 py-4">
+      {/* Bulk Actions Bar */}
+      {selectedIds.size > 0 && (
+        <div className="px-4 sm:px-6 py-3 bg-ui-bg-subtle flex flex-wrap items-center gap-2 sm:gap-3">
+          <Text size="small" className="font-medium">
+            {selectedIds.size} избрани
+          </Text>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              size="small"
+              onClick={handleBulkRegister}
+              disabled={bulkRegistering}
+            >
+              <RocketLaunch className="mr-1.5" />
+              {bulkRegistering ? "Изпращане..." : "Изпрати към Еконт"}
+            </Button>
+            <Button
+              variant="secondary"
+              size="small"
+              onClick={handleBulkPrintLabels}
+              disabled={bulkPrinting}
+            >
+              <ArrowDownTray className="mr-1.5" />
+              {bulkPrinting ? "Генериране..." : "Печат на етикети"}
+            </Button>
+          </div>
+          <button
+            className="ml-auto text-sm text-ui-fg-muted hover:text-ui-fg-base"
+            onClick={() => setSelectedIds(new Set())}
+          >
+            Премахни избора
+          </button>
+        </div>
+      )}
+
+      {/* Table / Cards */}
+      <div className="px-4 sm:px-6 py-4">
         {loading ? (
           <div className="text-center py-12">
             <ArrowPath className="w-8 h-8 mx-auto animate-spin text-ui-fg-muted" />
@@ -1345,118 +1183,254 @@ const EcontShipmentsPage = () => {
             <Text className="text-ui-fg-muted">Няма намерени товарителници</Text>
           </div>
         ) : (
-          <Table>
-            <Table.Header>
-              <Table.Row>
-                <Table.HeaderCell>Товарителница</Table.HeaderCell>
-                <Table.HeaderCell>Статус</Table.HeaderCell>
-                <Table.HeaderCell>Прогрес</Table.HeaderCell>
-                <Table.HeaderCell>Получател</Table.HeaderCell>
-                <Table.HeaderCell>Доставка</Table.HeaderCell>
-                <Table.HeaderCell>Плащания</Table.HeaderCell>
-                <Table.HeaderCell>Дата</Table.HeaderCell>
-                <Table.HeaderCell></Table.HeaderCell>
-              </Table.Row>
-            </Table.Header>
-            <Table.Body>
-              {filteredShipments.map((shipment) => (
-                <Table.Row
+          <>
+            {/* Desktop Table — hidden on mobile */}
+            <div className="hidden md:block">
+              <Table>
+                <Table.Header>
+                  <Table.Row>
+                    <Table.HeaderCell className="w-10">
+                      <Checkbox
+                        checked={filteredShipments.length > 0 && selectedIds.size === filteredShipments.length}
+                        onCheckedChange={toggleSelectAll}
+                      />
+                    </Table.HeaderCell>
+                    <Table.HeaderCell>Товарителница</Table.HeaderCell>
+                    <Table.HeaderCell>Статус</Table.HeaderCell>
+                    <Table.HeaderCell>Прогрес</Table.HeaderCell>
+                    <Table.HeaderCell>Получател</Table.HeaderCell>
+                    <Table.HeaderCell>Доставка</Table.HeaderCell>
+                    <Table.HeaderCell>Плащания</Table.HeaderCell>
+                    <Table.HeaderCell>Дата</Table.HeaderCell>
+                    <Table.HeaderCell></Table.HeaderCell>
+                  </Table.Row>
+                </Table.Header>
+                <Table.Body>
+                  {filteredShipments.map((shipment: EcontShipment) => (
+                    <Table.Row
+                      key={shipment.id}
+                      className={clx(
+                        "cursor-pointer hover:bg-ui-bg-subtle",
+                        selectedIds.has(shipment.id) && "bg-ui-bg-subtle-hover"
+                      )}
+                      onClick={() => openDrawer(shipment)}
+                    >
+                      <Table.Cell onClick={(e) => e.stopPropagation()}>
+                        <Checkbox
+                          checked={selectedIds.has(shipment.id)}
+                          onCheckedChange={() => toggleSelect(shipment.id)}
+                        />
+                      </Table.Cell>
+                      <Table.Cell>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <Text className="font-mono font-medium">
+                              {shipment.waybill_number || "-"}
+                            </Text>
+                            {shipment.label_url && (
+                              <a
+                                href={shipment.label_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="inline-flex items-center gap-1 text-xs text-ui-fg-interactive hover:text-ui-fg-interactive-hover"
+                                title="Печат на етикет"
+                              >
+                                <ArrowDownTray className="w-3 h-3" />
+                                PDF
+                              </a>
+                            )}
+                          </div>
+                          {shipment.order_id && (
+                            <Text size="xsmall" className="text-ui-fg-muted">
+                              Поръчка: {shipment.order_id.slice(0, 8)}...
+                            </Text>
+                          )}
+                        </div>
+                      </Table.Cell>
+                      <Table.Cell>
+                        <div className="flex items-center gap-2">
+                          <StatusIcon status={shipment.status} />
+                          <Badge color={STATUS_CONFIG[shipment.status]?.color || "grey"} size="small">
+                            {shipment.short_status || STATUS_CONFIG[shipment.status]?.label}
+                          </Badge>
+                        </div>
+                      </Table.Cell>
+                      <Table.Cell>
+                        <ProgressIndicator status={shipment.status} />
+                      </Table.Cell>
+                      <Table.Cell>
+                        <div>
+                          <Text size="small">
+                            {shipment.recipient_first_name} {shipment.recipient_last_name}
+                          </Text>
+                          <Text size="xsmall" className="text-ui-fg-muted">
+                            {shipment.recipient_phone}
+                          </Text>
+                        </div>
+                      </Table.Cell>
+                      <Table.Cell>
+                        <div className="flex items-start gap-1.5">
+                          {shipment.delivery_type === "office" ? (
+                            <BuildingStorefront className="w-4 h-4 text-ui-fg-subtle mt-0.5 flex-shrink-0" />
+                          ) : (
+                            <MapPin className="w-4 h-4 text-ui-fg-subtle mt-0.5 flex-shrink-0" />
+                          )}
+                          <div className="min-w-0">
+                            <Text size="small">
+                              {shipment.delivery_type === "office"
+                                ? (shipment.office_name || "Офис")
+                                : (shipment.address_city || "Адрес")}
+                            </Text>
+                            {shipment.delivery_type === "address" && shipment.address_line1 && (
+                              <Text size="xsmall" className="text-ui-fg-muted truncate max-w-[200px]">
+                                {shipment.address_line1}
+                              </Text>
+                            )}
+                          </div>
+                        </div>
+                      </Table.Cell>
+                      <Table.Cell>
+                        <div>
+                          {shipment.cod_amount ? (
+                            <Text size="small" className="font-medium">
+                              НП: {formatMoney(shipment.cod_amount, "EUR")}
+                            </Text>
+                          ) : null}
+                          {shipment.shipping_cost ? (
+                            <Text size="xsmall" className="text-ui-fg-muted">
+                              Доставка: {formatMoney(shipment.shipping_cost, shipment.shipping_cost_currency)}
+                            </Text>
+                          ) : null}
+                          {!shipment.cod_amount && !shipment.shipping_cost && (
+                            <Text size="small" className="text-ui-fg-muted">-</Text>
+                          )}
+                        </div>
+                      </Table.Cell>
+                      <Table.Cell>
+                        <Text size="small" className="text-ui-fg-muted">
+                          {new Date(shipment.created_at).toLocaleDateString("bg-BG")}
+                        </Text>
+                      </Table.Cell>
+                      <Table.Cell>
+                        <DropdownMenu>
+                          <DropdownMenu.Trigger asChild>
+                            <IconButton
+                              variant="transparent"
+                              size="small"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <EllipsisHorizontal />
+                            </IconButton>
+                          </DropdownMenu.Trigger>
+                          <DropdownMenu.Content align="end">
+                            <DropdownMenu.Item onClick={(e) => {
+                              e.stopPropagation()
+                              openDrawer(shipment)
+                            }}>
+                              <Eye className="mr-2" />
+                              Детайли
+                            </DropdownMenu.Item>
+                            {(shipment.status === "draft" || shipment.status === "ready") && (
+                              <>
+                                <DropdownMenu.Item onClick={(e) => {
+                                  e.stopPropagation()
+                                  openEditDrawer(shipment)
+                                }}>
+                                  <PencilSquare className="mr-2" />
+                                  Редактирай
+                                </DropdownMenu.Item>
+                                <DropdownMenu.Item onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleConfirmShipment(shipment)
+                                }}>
+                                  <RocketLaunch className="mr-2" />
+                                  Изпрати към Еконт
+                                </DropdownMenu.Item>
+                              </>
+                            )}
+                            {shipment.waybill_number && (
+                              <DropdownMenu.Item onClick={(e) => {
+                                e.stopPropagation()
+                                handleSyncSingle(shipment)
+                              }}>
+                                <ArrowPath className="mr-2" />
+                                Синхронизирай
+                              </DropdownMenu.Item>
+                            )}
+                            {shipment.label_url && (
+                              <DropdownMenu.Item asChild>
+                                <a
+                                  href={shipment.label_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <ArrowDownTray className="mr-2" />
+                                  Печат на етикет
+                                </a>
+                              </DropdownMenu.Item>
+                            )}
+                            {shipment.order_id && (
+                              <DropdownMenu.Item asChild>
+                                <a
+                                  href={`/app/orders/${shipment.order_id}`}
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <Eye className="mr-2" />
+                                  Виж поръчка
+                                </a>
+                              </DropdownMenu.Item>
+                            )}
+                          </DropdownMenu.Content>
+                        </DropdownMenu>
+                      </Table.Cell>
+                    </Table.Row>
+                  ))}
+                </Table.Body>
+              </Table>
+            </div>
+
+            {/* Mobile Cards — hidden on desktop */}
+            <div className="md:hidden space-y-3">
+              {/* Select all on mobile */}
+              <div className="flex items-center justify-between pb-2">
+                <button
+                  className="flex items-center gap-2 text-sm text-ui-fg-muted hover:text-ui-fg-base"
+                  onClick={toggleSelectAll}
+                >
+                  <Checkbox
+                    checked={filteredShipments.length > 0 && selectedIds.size === filteredShipments.length}
+                    onCheckedChange={toggleSelectAll}
+                  />
+                  Избери всички
+                </button>
+                <Text size="xsmall" className="text-ui-fg-muted">
+                  {filteredShipments.length} резултата
+                </Text>
+              </div>
+
+              {filteredShipments.map((shipment: EcontShipment) => (
+                <div
                   key={shipment.id}
-                  className="cursor-pointer hover:bg-ui-bg-subtle"
+                  className={clx(
+                    "border border-ui-border-base rounded-lg p-3 cursor-pointer active:bg-ui-bg-subtle-hover transition-colors",
+                    selectedIds.has(shipment.id) && "bg-ui-bg-subtle-hover border-ui-border-strong"
+                  )}
                   onClick={() => openDrawer(shipment)}
                 >
-                  <Table.Cell>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <Text className="font-mono font-medium">
-                          {shipment.waybill_number || "-"}
-                        </Text>
-                        {shipment.label_url && (
-                          <a
-                            href={shipment.label_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            className="inline-flex items-center gap-1 text-xs text-ui-fg-interactive hover:text-ui-fg-interactive-hover"
-                            title="Печат на етикет"
-                          >
-                            <ArrowDownTray className="w-3 h-3" />
-                            PDF
-                          </a>
-                        )}
-                      </div>
-                      {shipment.order_id && (
-                        <Text size="xsmall" className="text-ui-fg-muted">
-                          Поръчка: {shipment.order_id.slice(0, 8)}...
-                        </Text>
-                      )}
-                    </div>
-                  </Table.Cell>
-                  <Table.Cell>
-                    <div className="flex items-center gap-2">
+                  {/* Card Top Row: Checkbox + Status + Actions */}
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                      <Checkbox
+                        checked={selectedIds.has(shipment.id)}
+                        onCheckedChange={() => toggleSelect(shipment.id)}
+                      />
                       <StatusIcon status={shipment.status} />
                       <Badge color={STATUS_CONFIG[shipment.status]?.color || "grey"} size="small">
                         {shipment.short_status || STATUS_CONFIG[shipment.status]?.label}
                       </Badge>
                     </div>
-                  </Table.Cell>
-                  <Table.Cell>
-                    <ProgressIndicator status={shipment.status} />
-                  </Table.Cell>
-                  <Table.Cell>
-                    <div>
-                      <Text size="small">
-                        {shipment.recipient_first_name} {shipment.recipient_last_name}
-                      </Text>
-                      <Text size="xsmall" className="text-ui-fg-muted">
-                        {shipment.recipient_phone}
-                      </Text>
-                    </div>
-                  </Table.Cell>
-                  <Table.Cell>
-                    <div className="flex items-start gap-1.5">
-                      {shipment.delivery_type === "office" ? (
-                        <BuildingStorefront className="w-4 h-4 text-ui-fg-subtle mt-0.5 flex-shrink-0" />
-                      ) : (
-                        <MapPin className="w-4 h-4 text-ui-fg-subtle mt-0.5 flex-shrink-0" />
-                      )}
-                      <div className="min-w-0">
-                        <Text size="small">
-                          {shipment.delivery_type === "office"
-                            ? (shipment.office_name || "Офис")
-                            : (shipment.address_city || "Адрес")}
-                        </Text>
-                        {shipment.delivery_type === "address" && shipment.address_line1 && (
-                          <Text size="xsmall" className="text-ui-fg-muted truncate max-w-[200px]">
-                            {shipment.address_line1}
-                          </Text>
-                        )}
-                      </div>
-                    </div>
-                  </Table.Cell>
-                  <Table.Cell>
-                    <div>
-                      {shipment.cod_amount ? (
-                        <Text size="small" className="font-medium">
-                          НП: {formatMoney(shipment.cod_amount, "BGN")}
-                        </Text>
-                      ) : null}
-                      {shipment.shipping_cost ? (
-                        <Text size="xsmall" className="text-ui-fg-muted">
-                          Доставка: {formatMoney(shipment.shipping_cost, shipment.shipping_cost_currency)}
-                        </Text>
-                      ) : null}
-                      {!shipment.cod_amount && !shipment.shipping_cost && (
-                        <Text size="small" className="text-ui-fg-muted">-</Text>
-                      )}
-                    </div>
-                  </Table.Cell>
-                  <Table.Cell>
-                    <Text size="small" className="text-ui-fg-muted">
-                      {new Date(shipment.created_at).toLocaleDateString("bg-BG")}
-                    </Text>
-                  </Table.Cell>
-                  <Table.Cell>
                     <DropdownMenu>
                       <DropdownMenu.Trigger asChild>
                         <IconButton
@@ -1528,11 +1502,101 @@ const EcontShipmentsPage = () => {
                         )}
                       </DropdownMenu.Content>
                     </DropdownMenu>
-                  </Table.Cell>
-                </Table.Row>
+                  </div>
+
+                  {/* Card Body */}
+                  <div className="space-y-2">
+                    {/* Recipient Name + Waybill */}
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <Text className="font-medium text-sm">
+                          {shipment.recipient_first_name} {shipment.recipient_last_name}
+                        </Text>
+                        <Text size="xsmall" className="text-ui-fg-muted">
+                          {shipment.recipient_phone}
+                        </Text>
+                      </div>
+                      <div className="text-right">
+                        <Text className="font-mono text-xs text-ui-fg-muted">
+                          {shipment.waybill_number || "-"}
+                        </Text>
+                        <Text size="xsmall" className="text-ui-fg-muted">
+                          {new Date(shipment.created_at).toLocaleDateString("bg-BG")}
+                        </Text>
+                      </div>
+                    </div>
+
+                    {/* Delivery + Payments row */}
+                    <div className="flex items-center justify-between pt-1 border-t border-ui-border-base">
+                      <div className="flex items-center gap-1.5">
+                        {shipment.delivery_type === "office" ? (
+                          <BuildingStorefront className="w-3.5 h-3.5 text-ui-fg-subtle flex-shrink-0" />
+                        ) : (
+                          <MapPin className="w-3.5 h-3.5 text-ui-fg-subtle flex-shrink-0" />
+                        )}
+                        <Text size="xsmall" className="truncate max-w-[180px]">
+                          {shipment.delivery_type === "office"
+                            ? (shipment.office_name || "Офис")
+                            : (shipment.address_city || "Адрес")}
+                        </Text>
+                      </div>
+                      <div className="text-right">
+                        {shipment.cod_amount ? (
+                          <Text size="xsmall" className="font-medium">
+                            НП: {formatMoney(shipment.cod_amount, "EUR")}
+                          </Text>
+                        ) : shipment.shipping_cost ? (
+                          <Text size="xsmall" className="text-ui-fg-muted">
+                            {formatMoney(shipment.shipping_cost, shipment.shipping_cost_currency)}
+                          </Text>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    {/* Progress */}
+                    <div className="pt-1">
+                      <ProgressIndicator status={shipment.status} />
+                    </div>
+                  </div>
+                </div>
               ))}
-            </Table.Body>
-          </Table>
+            </div>
+          </>
+        )}
+
+        {/* Pagination */}
+        {!loading && totalCount > 0 && (
+          <div className="flex items-center justify-between pt-4">
+            <Text size="small" className="text-ui-fg-muted hidden sm:block">
+              {currentPage * PAGE_SIZE + 1}-{Math.min((currentPage + 1) * PAGE_SIZE, totalCount)} от {totalCount}
+            </Text>
+            <Text size="small" className="text-ui-fg-muted sm:hidden">
+              {currentPage + 1}/{totalPages}
+            </Text>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="secondary"
+                size="small"
+                disabled={!canPreviousPage}
+                onClick={() => setCurrentPage(currentPage - 1)}
+              >
+                <span className="hidden sm:inline">Предишна</span>
+                <span className="sm:hidden">&larr;</span>
+              </Button>
+              <Text size="small" className="text-ui-fg-muted px-2 hidden sm:block">
+                {currentPage + 1} / {totalPages}
+              </Text>
+              <Button
+                variant="secondary"
+                size="small"
+                disabled={!canNextPage}
+                onClick={() => setCurrentPage(currentPage + 1)}
+              >
+                <span className="hidden sm:inline">Следваща</span>
+                <span className="sm:hidden">&rarr;</span>
+              </Button>
+            </div>
+          </div>
         )}
       </div>
 

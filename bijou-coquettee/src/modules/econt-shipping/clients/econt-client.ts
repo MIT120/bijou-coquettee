@@ -1,4 +1,4 @@
-import { ECONT_DEFAULT_BASE_URL } from "../constants"
+import { ECONT_DEFAULT_BASE_URL, EUR_TO_BGN } from "../constants"
 import type {
   CreateShipmentPayload,
   EcontAddressSelection,
@@ -314,9 +314,11 @@ export class EcontApiClient {
     }
 
     // COD configuration for calculate
+    // codAmount is in EUR (store currency), convert to BGN for Econt API
     if (payload.codAmount && payload.codAmount > 0) {
+      const cdAmountBgn = Math.round(payload.codAmount * EUR_TO_BGN * 100) / 100
       label.services = {
-        cdAmount: payload.codAmount,
+        cdAmount: cdAmountBgn,
         cdType: "get",
         cdCurrency: "BGN",
       }
@@ -429,9 +431,11 @@ export class EcontApiClient {
     }
 
     // COD (Cash on Delivery / Наложен платеж) configuration
+    // codAmount is in EUR (store currency), convert to BGN for Econt API
     if (payload.codAmount && payload.codAmount > 0) {
+      const cdAmountBgn = Math.round(payload.codAmount * EUR_TO_BGN * 100) / 100
       const services: Record<string, unknown> = {
-        cdAmount: payload.codAmount,
+        cdAmount: cdAmountBgn,
         cdType: "get",
         cdCurrency: "BGN",
       }

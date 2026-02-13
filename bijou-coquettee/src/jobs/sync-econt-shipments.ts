@@ -1,6 +1,7 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
 import type EcontShippingModuleService from "../modules/econt-shipping/service"
 import { ECONT_SHIPPING_STATUS } from "../modules/econt-shipping/constants"
+import { sendShipmentStatusEmail, buildDestinationString } from "../modules/econt-shipping/email-service"
 
 const STATUS_LABELS: Record<string, string> = {
   draft: "Чернова",
@@ -92,11 +93,20 @@ export default async function syncEcontShipments(container: MedusaContainer) {
       }
     }
 
-    // Log status changes prominently
+    // Log status changes prominently and send email notifications
     if (allStatusChanges.length > 0) {
       logger.info(
         `[SyncEcontShipments] *** ${allStatusChanges.length} STATUS CHANGE(S) DETECTED ***`
       )
+
+      // Fetch full shipment data for email notifications
+      const changedIds = allStatusChanges.map(c => c.shipmentId)
+      const changedShipments = await econtService.listEcontShipments(
+        { id: changedIds },
+        { take: changedIds.length }
+      )
+      const shipmentMap = new Map(changedShipments.map(s => [s.id, s]))
+
       for (const change of allStatusChanges) {
         const fromLabel = STATUS_LABELS[change.previousStatus] || change.previousStatus
         const toLabel = STATUS_LABELS[change.newStatus] || change.newStatus
@@ -115,6 +125,27 @@ export default async function syncEcontShipments(container: MedusaContainer) {
           logger.warn(
             `[SyncEcontShipments] CANCELLED: Shipment ${change.waybill} for ${change.recipientName} (Order: ${change.orderId})`
           )
+        }
+
+        // Send email notification for status change
+        const emailStatus = change.newStatus as "registered" | "in_transit" | "delivered" | "cancelled"
+        if (["registered", "in_transit", "delivered", "cancelled"].includes(emailStatus)) {
+          const shipment = shipmentMap.get(change.shipmentId)
+          try {
+            await sendShipmentStatusEmail({
+              status: emailStatus,
+              recipientEmail: shipment?.recipient_email ?? "",
+              recipientName: change.recipientName,
+              waybillNumber: change.waybill || "",
+              destination: shipment ? buildDestinationString(shipment) : "N/A",
+              orderId: change.orderId,
+              expectedDeliveryDate: shipment?.expected_delivery_date ?? null,
+            })
+          } catch (emailError) {
+            logger.error(
+              `[SyncEcontShipments] Failed to send email for shipment ${change.waybill}: ${emailError instanceof Error ? emailError.message : "Unknown error"}`
+            )
+          }
         }
       }
     }

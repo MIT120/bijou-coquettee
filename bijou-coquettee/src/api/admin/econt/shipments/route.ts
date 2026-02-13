@@ -25,14 +25,20 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
             "econtShippingModuleService"
         )
 
-    const shipments = await econtService.listEcontShipments(filter, {
-        skip: typeof offset === "string" ? Number(offset) : 0,
-        take: typeof limit === "string" ? Number(limit) : 50,
+    const take = typeof limit === "string" ? Number(limit) : 20
+    const skip = typeof offset === "string" ? Number(offset) : 0
+
+    const [shipments, count] = await econtService.listAndCountEcontShipments(filter, {
+        skip,
+        take,
         order: { created_at: "DESC" },
     })
 
     res.json({
         shipments,
+        count,
+        offset: skip,
+        limit: take,
     })
 }
 

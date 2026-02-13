@@ -38,6 +38,10 @@ module.exports = defineConfig({
       options: {},
     },
     {
+      resolve: "./src/modules/invoice",
+      options: {},
+    },
+    {
       resolve: "@medusajs/medusa/fulfillment",
       options: {
         providers: [

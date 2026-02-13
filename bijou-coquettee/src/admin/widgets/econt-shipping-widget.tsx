@@ -15,6 +15,7 @@ import {
 } from "@medusajs/ui"
 import {
   ArrowPath,
+  ArrowDownTray,
   PencilSquare,
   Trash,
   Plus,
@@ -644,7 +645,7 @@ const EcontShippingWidget = ({ data: order }: OrderDetailWidgetProps) => {
                 <div className="space-y-1">
                   <Text size="small" className="text-ui-fg-muted">COD Amount</Text>
                   <Text className="font-medium">
-                    {formatMoney(shipment.cod_amount, "BGN")}
+                    {formatMoney(shipment.cod_amount, "EUR")}
                   </Text>
                 </div>
               )}
@@ -673,17 +674,19 @@ const EcontShippingWidget = ({ data: order }: OrderDetailWidgetProps) => {
               )}
             </div>
 
-            {/* Label URL */}
+            {/* Print Label */}
             {shipment.label_url && (
-              <div className="pt-2">
-                <a
-                  href={shipment.label_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-ui-fg-interactive hover:underline text-small"
-                >
-                  Download Shipping Label
-                </a>
+              <div className="pt-2 border-t border-ui-border-base">
+                <Button variant="secondary" asChild className="w-full">
+                  <a
+                    href={shipment.label_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <ArrowDownTray className="mr-2" />
+                    Печат на етикет
+                  </a>
+                </Button>
               </div>
             )}
           </div>
