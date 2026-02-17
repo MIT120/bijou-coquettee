@@ -102,7 +102,6 @@ export default async function fixInventoryAvailability({ container }: ExecArgs) 
                 {
                     id: level.id,
                     stocked_quantity: stockedQty,
-                    reserved_quantity: reservedQty,
                 }
             ]);
             updatedCount++;
@@ -119,7 +118,7 @@ export default async function fixInventoryAvailability({ container }: ExecArgs) 
     const { data: products } = await query.graph({
         entity: "product",
         fields: ["id", "title", "variants.id", "variants.sku", "variants.inventory_quantity"],
-        limit: 3,
+        pagination: { take: 3 },
     });
 
     for (const product of products || []) {

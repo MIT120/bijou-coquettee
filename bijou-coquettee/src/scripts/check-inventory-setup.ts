@@ -75,7 +75,7 @@ export default async function checkInventorySetup({ container }: ExecArgs) {
     const { data: products } = await query.graph({
         entity: "product",
         fields: ["id", "title"],
-        limit: 5,
+        pagination: { take: 5 },
     });
 
     if (products && products.length > 0) {

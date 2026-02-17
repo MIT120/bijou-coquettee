@@ -35,7 +35,7 @@ export default async function createPublishableKey({ container }: ExecArgs) {
 
     // Try to link to default sales channel if it exists
     try {
-      const salesChannels = await query.graph({
+      const { data: salesChannels } = await query.graph({
         entity: "sales_channel",
         fields: ["id", "name"],
         filters: {
@@ -57,8 +57,7 @@ export default async function createPublishableKey({ container }: ExecArgs) {
       }
     } catch (error) {
       logger.warn(
-        "Could not link to sales channel (this is optional). Error:",
-        error
+        `Could not link to sales channel (this is optional). Error: ${error instanceof Error ? error.message : error}`
       )
     }
 

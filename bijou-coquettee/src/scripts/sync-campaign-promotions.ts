@@ -6,9 +6,15 @@
 import { ExecArgs } from "@medusajs/framework/types"
 import { Modules } from "@medusajs/framework/utils"
 
+type EmailCampaignService = {
+    listEmailCampaigns: (filter: Record<string, unknown>) => Promise<Array<Record<string, any>>>
+    listEmailSubscriptions: (filter: Record<string, unknown>) => Promise<Array<Record<string, any>>>
+    updateEmailSubscriptions: (data: Array<Record<string, unknown>>) => Promise<void>
+}
+
 export default async function syncCampaignPromotions({ container }: ExecArgs) {
     const logger = container.resolve("logger")
-    const emailCampaignService = container.resolve("emailCampaignModuleService")
+    const emailCampaignService = container.resolve("emailCampaignModuleService") as EmailCampaignService
     const promotionService = container.resolve(Modules.PROMOTION)
 
     logger.info("Starting campaign promotions sync...")

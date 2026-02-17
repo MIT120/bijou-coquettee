@@ -130,12 +130,6 @@ export default async function createEcontShippingOption({ container }: ExecArgs)
           description: "Econt courier delivery for Bulgaria (office or address)",
           code: "econt-express",
         },
-        prices: [
-          {
-            currency_code: "eur",
-            amount: 0,
-          },
-        ],
         rules: [
           {
             attribute: "enabled_in_store",
