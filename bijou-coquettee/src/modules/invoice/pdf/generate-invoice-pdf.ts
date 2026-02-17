@@ -1,4 +1,5 @@
 import { PDFDocument, PDFFont, PDFPage, rgb } from "pdf-lib"
+import fontkit from "@pdf-lib/fontkit"
 import * as fs from "fs"
 import * as path from "path"
 import type { InvoiceLineItem } from "../types"
@@ -73,6 +74,8 @@ function formatDate(dateStr: string): string {
 }
 
 async function loadFonts(doc: PDFDocument) {
+  doc.registerFontkit(fontkit)
+
   const fontsDir = path.resolve(process.cwd(), "static", "fonts")
 
   const regularPath = path.join(fontsDir, "Inter-Regular.ttf")
@@ -369,15 +372,16 @@ export async function generateInvoicePdf(
 
   // ── Total ──
   drawLine(lastPage, summaryLabelX, y + 4, PAGE_WIDTH - MARGIN, y + 4, 1)
-  y -= 4
-  drawText(lastPage, "ОБЩА СУМА ЗА ПЛАЩАНЕ:", summaryLabelX, y, medium, 11)
+  y -= 6
+  drawText(lastPage, "ОБЩА СУМА ЗА ПЛАЩАНЕ:", summaryLabelX, y, medium, 10)
+  y -= 16
   drawTextRight(
     lastPage,
     formatAmount(data.total, data.currency_code),
     summaryValueX,
     y,
     medium,
-    11
+    14
   )
   y -= 24
 

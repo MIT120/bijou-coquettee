@@ -87,8 +87,9 @@ class InvoiceModuleService extends MedusaService({ Invoice }) {
       input.vat_rate_override ?? settings.defaultVatRate
 
     // Build line items from order
+    // Medusa v2 graph query returns amounts in major units (e.g. 65.00 EUR)
     const lineItems: InvoiceLineItem[] = input.order_items.map((item) => {
-      const unitPrice = item.unit_price / 100 // Convert from minor units
+      const unitPrice = item.unit_price
       const lineTotal = unitPrice * item.quantity
       const vatAmount =
         Math.round(((lineTotal * vatRate) / 100) * 100) / 100
@@ -105,7 +106,7 @@ class InvoiceModuleService extends MedusaService({ Invoice }) {
 
     // Add shipping as a line item if applicable
     if (input.order_shipping_total > 0) {
-      const shippingTotal = input.order_shipping_total / 100
+      const shippingTotal = input.order_shipping_total
       const shippingVat =
         Math.round(((shippingTotal * vatRate) / 100) * 100) / 100
 

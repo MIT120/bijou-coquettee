@@ -69,16 +69,20 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     "invoiceModuleService"
   )
 
-  // Check for existing invoice for this order
-  const [existing] = await invoiceService.listInvoices(
+  // Check for existing non-cancelled invoice for this order
+  const existingInvoices = await invoiceService.listInvoices(
     { order_id: body.order_id },
-    { take: 1 }
+    { take: 10 }
   )
 
-  if (existing) {
+  const activeInvoice = (existingInvoices as Array<Record<string, unknown>>).find(
+    (inv) => inv.status !== "cancelled"
+  )
+
+  if (activeInvoice) {
     res.status(400).json({
       message: "Вече съществува фактура за тази поръчка.",
-      invoice: existing,
+      invoice: activeInvoice,
     })
     return
   }

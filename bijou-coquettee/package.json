@@ -27,6 +27,7 @@
     "@medusajs/cli": "2.11.1",
     "@medusajs/framework": "2.11.1",
     "@medusajs/medusa": "2.11.1",
+    "@pdf-lib/fontkit": "^1.1.1",
     "pdf-lib": "^1.17.1",
     "resend": "^6.9.2"
   },
