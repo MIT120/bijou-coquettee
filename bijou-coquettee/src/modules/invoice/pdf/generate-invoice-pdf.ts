@@ -3,6 +3,7 @@ import fontkit from "@pdf-lib/fontkit"
 import * as fs from "fs"
 import * as path from "path"
 import type { InvoiceLineItem } from "../types"
+import { EUR_TO_BGN_RATE, eurToBgn } from "../constants"
 
 // A4 dimensions in points (595.28 x 841.89)
 const PAGE_WIDTH = 595.28
@@ -49,15 +50,18 @@ type InvoiceData = {
   footer_note: string | null
 }
 
-const CURRENCY_SYMBOLS: Record<string, string> = {
-  BGN: "лв.",
-  EUR: "EUR",
-  USD: "USD",
+function formatEur(amount: number): string {
+  return `${amount.toFixed(2)} EUR`
 }
 
-function formatAmount(amount: number, currency: string): string {
-  const sym = CURRENCY_SYMBOLS[currency] || currency
-  return `${amount.toFixed(2)} ${sym}`
+function formatBgn(amount: number): string {
+  return `${amount.toFixed(2)} лв.`
+}
+
+/** Format amount in EUR with BGN equivalent in parentheses */
+function formatDual(eurAmount: number): string {
+  const bgnAmount = eurToBgn(eurAmount)
+  return `${formatEur(eurAmount)} (${formatBgn(bgnAmount)})`
 }
 
 function formatDate(dateStr: string): string {
@@ -247,24 +251,39 @@ export async function generateInvoicePdf(
     y -= 12
   }
 
-  y -= 10
+  y -= 6
+
+  // ── Exchange rate note ──
+  const rateNote = `Валутен курс / Exchange rate: 1 EUR = ${EUR_TO_BGN_RATE} BGN (фиксиран)`
+  const rateNoteWidth = regular.widthOfTextAtSize(rateNote, 7.5)
+  drawText(
+    page,
+    rateNote,
+    (PAGE_WIDTH - rateNoteWidth) / 2,
+    y,
+    regular,
+    7.5,
+    rgb(0.4, 0.4, 0.4)
+  )
+  y -= 14
+
   drawLine(page, MARGIN, y, PAGE_WIDTH - MARGIN, y, 1)
   y -= 20
 
   // ── Items Table Header ──
   const colNo = MARGIN
   const colDesc = MARGIN + 30
-  const colQty = MARGIN + CONTENT_WIDTH - 200
-  const colPrice = MARGIN + CONTENT_WIDTH - 150
-  const colVat = MARGIN + CONTENT_WIDTH - 80
+  const colQty = MARGIN + CONTENT_WIDTH - 250
+  const colPrice = MARGIN + CONTENT_WIDTH - 200
+  const colVat = MARGIN + CONTENT_WIDTH - 120
   const colTotal = PAGE_WIDTH - MARGIN
 
   drawText(page, "No", colNo, y, medium, 8, rgb(0.4, 0.4, 0.4))
   drawText(page, "Описание", colDesc, y, medium, 8, rgb(0.4, 0.4, 0.4))
   drawText(page, "Кол.", colQty, y, medium, 8, rgb(0.4, 0.4, 0.4))
-  drawText(page, "Ед. цена", colPrice, y, medium, 8, rgb(0.4, 0.4, 0.4))
+  drawText(page, "Ед. цена (EUR)", colPrice, y, medium, 8, rgb(0.4, 0.4, 0.4))
   drawText(page, "ДДС%", colVat, y, medium, 8, rgb(0.4, 0.4, 0.4))
-  drawTextRight(page, "Стойност", colTotal, y, medium, 8, rgb(0.4, 0.4, 0.4))
+  drawTextRight(page, "Стойност (EUR)", colTotal, y, medium, 8, rgb(0.4, 0.4, 0.4))
   y -= 8
   drawLine(page, MARGIN, y, PAGE_WIDTH - MARGIN, y, 0.5)
   y -= 14
@@ -277,13 +296,13 @@ export async function generateInvoicePdf(
     if (y < MARGIN + 120) {
       const newPage = doc.addPage([PAGE_WIDTH, PAGE_HEIGHT])
       y = PAGE_HEIGHT - MARGIN
-      // Re-draw header on new page (simplified)
+      // Re-draw header on new page
       drawText(newPage, "No", colNo, y, medium, 8, rgb(0.4, 0.4, 0.4))
       drawText(newPage, "Описание", colDesc, y, medium, 8, rgb(0.4, 0.4, 0.4))
       drawText(newPage, "Кол.", colQty, y, medium, 8, rgb(0.4, 0.4, 0.4))
-      drawText(newPage, "Ед. цена", colPrice, y, medium, 8, rgb(0.4, 0.4, 0.4))
+      drawText(newPage, "Ед. цена (EUR)", colPrice, y, medium, 8, rgb(0.4, 0.4, 0.4))
       drawText(newPage, "ДДС%", colVat, y, medium, 8, rgb(0.4, 0.4, 0.4))
-      drawTextRight(newPage, "Стойност", colTotal, y, medium, 8, rgb(0.4, 0.4, 0.4))
+      drawTextRight(newPage, "Стойност (EUR)", colTotal, y, medium, 8, rgb(0.4, 0.4, 0.4))
       y -= 8
       drawLine(newPage, MARGIN, y, PAGE_WIDTH - MARGIN, y, 0.5)
       y -= 14
@@ -303,7 +322,7 @@ export async function generateInvoicePdf(
     drawText(currentPage, String(item.quantity), colQty, y, regular, 9)
     drawText(
       currentPage,
-      formatAmount(item.unit_price, data.currency_code),
+      formatEur(item.unit_price),
       colPrice,
       y,
       regular,
@@ -312,7 +331,7 @@ export async function generateInvoicePdf(
     drawText(currentPage, `${item.vat_rate}%`, colVat, y, regular, 9)
     drawTextRight(
       currentPage,
-      formatAmount(item.line_total, data.currency_code),
+      formatEur(item.line_total),
       colTotal,
       y,
       regular,
@@ -331,13 +350,14 @@ export async function generateInvoicePdf(
   drawLine(lastPage, MARGIN, y, PAGE_WIDTH - MARGIN, y, 1)
   y -= 18
 
-  const summaryLabelX = MARGIN + CONTENT_WIDTH - 200
+  const summaryLabelX = MARGIN + CONTENT_WIDTH - 250
   const summaryValueX = PAGE_WIDTH - MARGIN
 
+  // Subtotal in EUR
   drawText(lastPage, "Данъчна основа:", summaryLabelX, y, regular, 9)
   drawTextRight(
     lastPage,
-    formatAmount(data.subtotal, data.currency_code),
+    formatDual(data.subtotal),
     summaryValueX,
     y,
     medium,
@@ -361,7 +381,7 @@ export async function generateInvoicePdf(
     )
     drawTextRight(
       lastPage,
-      formatAmount(Number(amount), data.currency_code),
+      formatDual(Number(amount)),
       summaryValueX,
       y,
       regular,
@@ -374,16 +394,31 @@ export async function generateInvoicePdf(
   drawLine(lastPage, summaryLabelX, y + 4, PAGE_WIDTH - MARGIN, y + 4, 1)
   y -= 6
   drawText(lastPage, "ОБЩА СУМА ЗА ПЛАЩАНЕ:", summaryLabelX, y, medium, 10)
-  y -= 16
+  y -= 18
+
+  // Total in EUR (large)
   drawTextRight(
     lastPage,
-    formatAmount(data.total, data.currency_code),
+    formatEur(data.total),
     summaryValueX,
     y,
     medium,
     14
   )
-  y -= 24
+  y -= 16
+
+  // Total in BGN (secondary, slightly smaller)
+  const bgnTotal = eurToBgn(data.total)
+  drawTextRight(
+    lastPage,
+    `(${formatBgn(bgnTotal)})`,
+    summaryValueX,
+    y,
+    regular,
+    10,
+    rgb(0.35, 0.35, 0.35)
+  )
+  y -= 22
 
   // ── Payment method ──
   if (data.payment_method) {

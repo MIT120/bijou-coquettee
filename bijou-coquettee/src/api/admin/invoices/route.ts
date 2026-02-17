@@ -7,7 +7,12 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
   const filter: Record<string, unknown> = {}
 
   if (query.status && typeof query.status === "string" && query.status !== "all") {
-    filter.status = query.status
+    // Support comma-separated statuses e.g. "draft,issued"
+    if (query.status.includes(",")) {
+      filter.status = query.status.split(",")
+    } else {
+      filter.status = query.status
+    }
   }
   if (query.order_id && typeof query.order_id === "string") {
     filter.order_id = query.order_id

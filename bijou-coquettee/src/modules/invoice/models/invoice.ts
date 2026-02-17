@@ -5,7 +5,7 @@ const Invoice = model.define("invoice", {
   id: model.id().primaryKey(),
 
   // Sequential invoice number (unique per Bulgarian law)
-  invoice_number: model.text(),
+  invoice_number: model.text().unique(),
   invoice_date: model.dateTime(),
 
   // Link to Medusa order
@@ -43,7 +43,7 @@ const Invoice = model.define("invoice", {
   total_vat: model.bigNumber(),
   total: model.bigNumber(),
 
-  currency_code: model.text().default("BGN"),
+  currency_code: model.text().default("EUR"),
   payment_method: model.text().nullable(),
 
   // Status
@@ -53,6 +53,9 @@ const Invoice = model.define("invoice", {
 
   // PDF (base64-encoded)
   pdf_data: model.text().nullable(),
+
+  // Link to Econt shipment (if applicable)
+  econt_shipment_id: model.text().nullable(),
 
   // Metadata
   notes: model.text().nullable(),

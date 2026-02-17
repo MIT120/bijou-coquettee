@@ -5,8 +5,8 @@ import { convertToLocale } from "@lib/util/money"
 import React, { useEffect, useState } from "react"
 import { getLocale, t } from "@lib/util/translations"
 
-// Fixed BGN/EUR exchange rate (Bulgarian currency board peg)
-const BGN_TO_EUR = 1.9558
+// Fixed BGN/EUR exchange rate (Bulgarian currency board peg: 1 EUR = 1.95583 BGN)
+const BGN_TO_EUR = 1.95583
 const ECONT_STORAGE_KEY = "econt-shipping-cost"
 
 function convertEcontPrice(

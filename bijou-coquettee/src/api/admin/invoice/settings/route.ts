@@ -1,116 +1,20 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import * as fs from "fs"
-import * as path from "path"
-
-const SETTINGS_FILE = path.resolve(process.cwd(), "invoice-settings.json")
-
-export type InvoiceSettings = {
-  // Seller / Company info
-  companyName: string
-  eik: string
-  vatNumber: string
-  mol: string
-  address: string
-  city: string
-  postalCode: string
-  country: string
-  phone: string
-  email: string
-  // Bank details
-  bankName: string
-  iban: string
-  bic: string
-  // Invoice numbering
-  invoiceNumberPrefix: string
-  nextInvoiceNumber: number
-  invoiceNumberPadding: number
-  // Defaults
-  defaultVatRate: number
-  defaultCurrency: string
-  // Optional
-  logoUrl: string
-  footerNote: string
-}
-
-const DEFAULT_SETTINGS: InvoiceSettings = {
-  companyName: "",
-  eik: "",
-  vatNumber: "",
-  mol: "",
-  address: "",
-  city: "",
-  postalCode: "",
-  country: "България",
-  phone: "",
-  email: "",
-  bankName: "",
-  iban: "",
-  bic: "",
-  invoiceNumberPrefix: "",
-  nextInvoiceNumber: 1,
-  invoiceNumberPadding: 10,
-  defaultVatRate: 20,
-  defaultCurrency: "BGN",
-  logoUrl: "",
-  footerNote: "",
-}
-
-export function readInvoiceSettingsFile(): Partial<InvoiceSettings> {
-  try {
-    if (fs.existsSync(SETTINGS_FILE)) {
-      const raw = fs.readFileSync(SETTINGS_FILE, "utf-8")
-      return JSON.parse(raw) as Partial<InvoiceSettings>
-    }
-  } catch {
-    // Ignore file read errors
-  }
-  return {}
-}
-
-export function writeInvoiceSettingsFile(
-  settings: Partial<InvoiceSettings>
-): void {
-  fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2), "utf-8")
-}
-
-export function getEffectiveInvoiceSettings(): InvoiceSettings {
-  const file = readInvoiceSettingsFile()
-  return {
-    companyName: file.companyName ?? DEFAULT_SETTINGS.companyName,
-    eik: file.eik ?? DEFAULT_SETTINGS.eik,
-    vatNumber: file.vatNumber ?? DEFAULT_SETTINGS.vatNumber,
-    mol: file.mol ?? DEFAULT_SETTINGS.mol,
-    address: file.address ?? DEFAULT_SETTINGS.address,
-    city: file.city ?? DEFAULT_SETTINGS.city,
-    postalCode: file.postalCode ?? DEFAULT_SETTINGS.postalCode,
-    country: file.country ?? DEFAULT_SETTINGS.country,
-    phone: file.phone ?? DEFAULT_SETTINGS.phone,
-    email: file.email ?? DEFAULT_SETTINGS.email,
-    bankName: file.bankName ?? DEFAULT_SETTINGS.bankName,
-    iban: file.iban ?? DEFAULT_SETTINGS.iban,
-    bic: file.bic ?? DEFAULT_SETTINGS.bic,
-    invoiceNumberPrefix:
-      file.invoiceNumberPrefix ?? DEFAULT_SETTINGS.invoiceNumberPrefix,
-    nextInvoiceNumber:
-      file.nextInvoiceNumber ?? DEFAULT_SETTINGS.nextInvoiceNumber,
-    invoiceNumberPadding:
-      file.invoiceNumberPadding ?? DEFAULT_SETTINGS.invoiceNumberPadding,
-    defaultVatRate: file.defaultVatRate ?? DEFAULT_SETTINGS.defaultVatRate,
-    defaultCurrency: file.defaultCurrency ?? DEFAULT_SETTINGS.defaultCurrency,
-    logoUrl: file.logoUrl ?? DEFAULT_SETTINGS.logoUrl,
-    footerNote: file.footerNote ?? DEFAULT_SETTINGS.footerNote,
-  }
-}
+import type InvoiceModuleService from "../../../../modules/invoice/service"
+import type { InvoiceSettingsData } from "../../../../modules/invoice/service"
 
 /** GET /admin/invoice/settings */
-export async function GET(_req: MedusaRequest, res: MedusaResponse) {
-  const settings = getEffectiveInvoiceSettings()
+export async function GET(req: MedusaRequest, res: MedusaResponse) {
+  const invoiceService = req.scope.resolve<InvoiceModuleService>(
+    "invoiceModuleService"
+  )
+
+  const settings = await invoiceService.getSettings()
   res.json({ settings })
 }
 
 /** POST /admin/invoice/settings */
 export async function POST(req: MedusaRequest, res: MedusaResponse) {
-  const body = req.body as Partial<InvoiceSettings>
+  const body = req.body as Partial<InvoiceSettingsData>
 
   if (!body || typeof body !== "object") {
     res.status(400).json({ message: "Invalid settings payload." })
@@ -118,42 +22,35 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
   }
 
   try {
-    const existing = readInvoiceSettingsFile()
-    const updated: Partial<InvoiceSettings> = { ...existing }
+    const invoiceService = req.scope.resolve<InvoiceModuleService>(
+      "invoiceModuleService"
+    )
 
-    // Merge only sent fields
-    const fields: (keyof InvoiceSettings)[] = [
-      "companyName",
-      "eik",
-      "vatNumber",
-      "mol",
-      "address",
-      "city",
-      "postalCode",
-      "country",
-      "phone",
-      "email",
-      "bankName",
-      "iban",
-      "bic",
-      "invoiceNumberPrefix",
-      "nextInvoiceNumber",
-      "invoiceNumberPadding",
-      "defaultVatRate",
-      "defaultCurrency",
-      "logoUrl",
-      "footerNote",
-    ]
+    // Validate invoice number prefix if provided
+    if (
+      body.invoiceNumberPrefix !== undefined &&
+      body.invoiceNumberPrefix !== "" &&
+      !/^[A-Za-z0-9-]*$/.test(body.invoiceNumberPrefix)
+    ) {
+      res.status(400).json({
+        message:
+          "Префиксът може да съдържа само букви, цифри и тире (A-Z, 0-9, -).",
+      })
+      return
+    }
 
-    for (const field of fields) {
-      if (body[field] !== undefined) {
-        ;(updated as Record<string, unknown>)[field] = body[field]
+    // Validate nextInvoiceNumber is not going backwards
+    if (body.nextInvoiceNumber !== undefined) {
+      const current = await invoiceService.getSettings()
+      if (body.nextInvoiceNumber < current.nextInvoiceNumber) {
+        res.status(400).json({
+          message: `Следващият номер не може да бъде по-малък от текущия (${current.nextInvoiceNumber}). Това би създало дублирани номера.`,
+        })
+        return
       }
     }
 
-    writeInvoiceSettingsFile(updated)
-
-    const effective = getEffectiveInvoiceSettings()
+    const effective = await invoiceService.saveSettings(body)
     res.json({
       settings: effective,
       message: "Настройките са запазени успешно.",

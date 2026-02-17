@@ -77,14 +77,13 @@ const StatusIcon = ({ status }: { status: string }) => {
   }
 }
 
-const CURRENCY_SYMBOLS: Record<string, string> = {
-  BGN: "лв.",
-  EUR: "EUR",
-}
+// Official fixed exchange rate: 1 EUR = 1.95583 BGN (Bulgarian currency board peg)
+const EUR_TO_BGN_RATE = 1.95583
 
-const formatMoney = (amount: number, currency: string): string => {
-  const sym = CURRENCY_SYMBOLS[currency] || currency
-  return `${Number(amount).toFixed(2)} ${sym}`
+const formatMoney = (amount: number, _currency: string): string => {
+  const eur = Number(amount)
+  const bgn = Math.round(eur * EUR_TO_BGN_RATE * 100) / 100
+  return `${eur.toFixed(2)} EUR (${bgn.toFixed(2)} лв.)`
 }
 
 const formatDate = (dateStr: string): string => {
@@ -335,18 +334,51 @@ const InvoicesPage = () => {
   const [loading, setLoading] = useState(true)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
-  // Filters
-  const [statusFilter, setStatusFilter] = useState<string>("all")
+  // Filters — default to "active" to hide cancelled invoices
+  const [statusFilter, setStatusFilter] = useState<string>("active")
   const [searchQuery, setSearchQuery] = useState("")
 
   // Drawers
   const [createDrawerOpen, setCreateDrawerOpen] = useState(false)
 
+  // Gap detection
+  const [gapResult, setGapResult] = useState<{
+    gaps: string[]
+    total_invoices: number
+    first_number: string | null
+    last_number: string | null
+  } | null>(null)
+  const [gapLoading, setGapLoading] = useState(false)
+
+  const handleCheckGaps = async () => {
+    setGapLoading(true)
+    try {
+      const response = await fetch("/admin/invoices/gaps", {
+        credentials: "include",
+      })
+      const data = await response.json()
+      if (response.ok) {
+        setGapResult(data)
+        if (data.gaps.length === 0) {
+          toast.success("Няма пропуснати номера на фактури")
+        }
+      } else {
+        toast.error(data.message || "Грешка при проверка")
+      }
+    } catch {
+      toast.error("Грешка при проверка на номерацията")
+    } finally {
+      setGapLoading(false)
+    }
+  }
+
   const fetchInvoices = useCallback(async () => {
     setLoading(true)
     try {
       const params = new URLSearchParams()
-      if (statusFilter !== "all") {
+      if (statusFilter === "active") {
+        params.set("status", "draft,issued")
+      } else if (statusFilter !== "all") {
         params.set("status", statusFilter)
       }
       params.set("limit", String(PAGE_SIZE))
@@ -482,11 +514,48 @@ const InvoicesPage = () => {
             </Text>
           </div>
         </div>
-        <Button onClick={() => setCreateDrawerOpen(true)} className="w-full sm:w-auto">
-          <Plus className="mr-2" />
-          Нова фактура
-        </Button>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Button
+            variant="secondary"
+            onClick={handleCheckGaps}
+            disabled={gapLoading}
+            className="w-full sm:w-auto"
+          >
+            {gapLoading ? "Проверка..." : "Проверка номерация"}
+          </Button>
+          <Button onClick={() => setCreateDrawerOpen(true)} className="w-full sm:w-auto">
+            <Plus className="mr-2" />
+            Нова фактура
+          </Button>
+        </div>
       </div>
+
+      {/* Gap Detection Result */}
+      {gapResult && gapResult.gaps.length > 0 && (
+        <div className="px-4 sm:px-6 py-3 bg-ui-tag-orange-bg border-b border-ui-border-base">
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <Text className="font-medium text-ui-tag-orange-text">
+                Открити {gapResult.gaps.length} пропуснати номера
+              </Text>
+              <Text size="small" className="text-ui-tag-orange-text mt-1">
+                {gapResult.gaps.slice(0, 10).join(", ")}
+                {gapResult.gaps.length > 10 && ` и още ${gapResult.gaps.length - 10}...`}
+              </Text>
+              <Text size="xsmall" className="text-ui-fg-muted mt-1">
+                Обхват: {gapResult.first_number} - {gapResult.last_number} ({gapResult.total_invoices} фактури)
+              </Text>
+            </div>
+            <Button
+              variant="transparent"
+              size="small"
+              onClick={() => setGapResult(null)}
+            >
+              <XCircle className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
@@ -512,6 +581,7 @@ const InvoicesPage = () => {
             <Select.Value placeholder="Всички статуси" />
           </Select.Trigger>
           <Select.Content>
+            <Select.Item value="active">Активни (чернови + издадени)</Select.Item>
             <Select.Item value="all">Всички статуси</Select.Item>
             {Object.entries(STATUS_CONFIG).map(([key, config]) => (
               <Select.Item key={key} value={key}>
@@ -576,7 +646,9 @@ const InvoicesPage = () => {
                       className={clx(
                         "cursor-pointer hover:bg-ui-bg-subtle",
                         selectedIds.has(invoice.id) &&
-                          "bg-ui-bg-subtle-hover"
+                          "bg-ui-bg-subtle-hover",
+                        invoice.status === "cancelled" &&
+                          "opacity-50"
                       )}
                       onClick={() => handleDownloadPdf(invoice)}
                     >
@@ -757,7 +829,9 @@ const InvoicesPage = () => {
                   className={clx(
                     "border border-ui-border-base rounded-lg p-3 cursor-pointer active:bg-ui-bg-subtle-hover transition-colors",
                     selectedIds.has(invoice.id) &&
-                      "bg-ui-bg-subtle-hover border-ui-border-strong"
+                      "bg-ui-bg-subtle-hover border-ui-border-strong",
+                    invoice.status === "cancelled" &&
+                      "opacity-50"
                   )}
                   onClick={() => handleDownloadPdf(invoice)}
                 >

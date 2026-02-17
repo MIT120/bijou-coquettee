@@ -49,6 +49,9 @@ type InvoiceSummary = {
   buyer_company_name: string | null
 }
 
+// Official fixed exchange rate: 1 EUR = 1.95583 BGN (Bulgarian currency board peg)
+const EUR_TO_BGN_RATE = 1.95583
+
 const STATUS_CONFIG: Record<string, { color: "green" | "red" | "grey"; label: string }> = {
   draft: { color: "grey", label: "Чернова" },
   issued: { color: "green", label: "Издадена" },
@@ -207,8 +210,9 @@ const InvoiceWidget = ({ data: order }: OrderDetailWidgetProps) => {
     )
   }
 
-  // Invoice exists
-  const sym = invoice.currency_code === "EUR" ? "EUR" : "лв."
+  // Invoice exists — show dual currency (EUR primary, BGN equivalent)
+  const eurTotal = Number(invoice.total)
+  const bgnTotal = Math.round(eurTotal * EUR_TO_BGN_RATE * 100) / 100
 
   return (
     <Container className="p-6">
@@ -251,9 +255,14 @@ const InvoiceWidget = ({ data: order }: OrderDetailWidgetProps) => {
           <Text size="small" className="text-ui-fg-muted">
             Сума
           </Text>
-          <Text className="font-medium">
-            {Number(invoice.total).toFixed(2)} {sym}
-          </Text>
+          <div className="text-right">
+            <Text className="font-medium">
+              {eurTotal.toFixed(2)} EUR
+            </Text>
+            <Text size="xsmall" className="text-ui-fg-muted">
+              ({bgnTotal.toFixed(2)} лв.)
+            </Text>
+          </div>
         </div>
         <div className="flex items-center justify-between">
           <Text size="small" className="text-ui-fg-muted">

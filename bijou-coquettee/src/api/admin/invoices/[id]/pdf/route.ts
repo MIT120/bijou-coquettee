@@ -24,11 +24,12 @@ export async function GET(
     )
     const invoiceNumber =
       (invoice as Record<string, unknown>)?.invoice_number || id
+    const safeFilename = String(invoiceNumber).replace(/[^a-zA-Z0-9_-]/g, "_")
 
     res.writeHead(200, {
       "Content-Type": "application/pdf",
       "Content-Length": buffer.length,
-      "Content-Disposition": `inline; filename="faktura-${invoiceNumber}.pdf"`,
+      "Content-Disposition": `inline; filename="faktura-${safeFilename}.pdf"`,
     })
     res.end(buffer)
   } catch (error) {

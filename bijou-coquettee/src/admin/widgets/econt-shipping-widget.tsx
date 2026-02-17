@@ -94,8 +94,8 @@ type OfficeOption = {
   cityName?: string
 }
 
-// Fixed BGN/EUR exchange rate (Bulgarian currency board peg)
-const BGN_TO_EUR = 1.9558
+// Fixed BGN/EUR exchange rate (Bulgarian currency board peg: 1 EUR = 1.95583 BGN)
+const BGN_TO_EUR = 1.95583
 
 const formatMoney = (amount: number | null | undefined, sourceCurrency?: string | null): string => {
   if (amount == null || isNaN(Number(amount))) return "-"

@@ -53,7 +53,7 @@ const DEFAULT_SETTINGS: InvoiceSettings = {
   nextInvoiceNumber: 1,
   invoiceNumberPadding: 10,
   defaultVatRate: 20,
-  defaultCurrency: "BGN",
+  defaultCurrency: "EUR",
   logoUrl: "",
   footerNote: "",
 }

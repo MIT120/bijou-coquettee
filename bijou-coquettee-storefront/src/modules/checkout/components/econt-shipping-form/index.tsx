@@ -8,8 +8,8 @@ import { convertToLocale } from "@lib/util/money"
 import { noDivisionCurrencies } from "@lib/constants"
 import { setShippingMethod } from "@lib/data/cart"
 
-// Fixed BGN/EUR exchange rate (Bulgarian currency board peg)
-const BGN_TO_EUR = 1.9558
+// Fixed BGN/EUR exchange rate (Bulgarian currency board peg: 1 EUR = 1.95583 BGN)
+const BGN_TO_EUR = 1.95583
 
 type CityOption = {
   id: number

@@ -20,7 +20,7 @@ import type EcontShippingModuleService from "../econt-shipping/service"
  * Bulgaria's currency board pegs BGN to EUR at this rate since 1999.
  * This rate is guaranteed by law and will remain fixed until Bulgaria adopts the EUR.
  */
-const BGN_EUR_RATE = 1.9558
+const BGN_EUR_RATE = 1.95583
 
 type InjectedDependencies = {
   logger: Logger

@@ -14,8 +14,8 @@ import EcontShippingForm from "../econt-shipping-form"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useState } from "react"
 
-// Fixed BGN/EUR exchange rate (Bulgarian currency board peg)
-const BGN_TO_EUR = 1.9558
+// Fixed BGN/EUR exchange rate (Bulgarian currency board peg: 1 EUR = 1.95583 BGN)
+const BGN_TO_EUR = 1.95583
 const ECONT_STORAGE_KEY = "econt-shipping-cost"
 
 const PICKUP_OPTION_ON = "__PICKUP_ON"
