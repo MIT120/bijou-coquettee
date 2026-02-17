@@ -100,7 +100,8 @@ export default async function fixInventoryAvailability({ container }: ExecArgs) 
             // Update the inventory level to trigger recalculation
             await inventoryModuleService.updateInventoryLevels([
                 {
-                    id: level.id,
+                    inventory_item_id: level.inventory_item_id,
+                    location_id: level.location_id,
                     stocked_quantity: stockedQty,
                 }
             ]);
