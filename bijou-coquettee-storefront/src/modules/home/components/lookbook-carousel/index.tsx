@@ -12,61 +12,47 @@ import type { Locale } from "@/i18n/locale"
 
 const lookbookSlides = [
   {
-    id: "halo-cascade",
-    chapter: "Celestial Sculpt",
-    title: "Halo Cascade Set",
-    detail: "Pavé diamond collar paired with luminous drop earrings.",
-    palette: "Champagne · Ice",
-    badge: "Limited 12",
-    image:
-      "https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=900&q=80",
+    id: "invisible-necklace",
+    chapter: "Swarovski Collection",
+    title: "Invisible Thread Necklace",
+    detail: "A single Swarovski crystal floating delicately on invisible thread.",
+    palette: "Crystal · Silver",
+    badge: "Bestseller",
+    image: "/591584938_1156724146529006_9094936061071654546_n.jpg",
   },
   {
-    id: "atelier-veil",
-    chapter: "Atelier Veil",
-    title: "Mirage Sautoir",
-    detail: "Hand-knotted pearls, mirrored links, midnight silk tassel.",
-    palette: "Opal · Noir",
-    badge: "Runway edit",
-    image:
-      "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=900&q=80",
-  },
-  {
-    id: "nocturne",
-    chapter: "Nocturne Metals",
-    title: "Lunar Serpentine",
-    detail: "Fluid platinum cuff orbiting a smoky quartz cabochon.",
-    palette: "Platinum · Smoke",
-    badge: "Made-to-order",
-    image:
-      "https://images.unsplash.com/photo-1518544889280-37f4ca38e4b4?auto=format&fit=crop&w=900&q=80",
-  },
-  {
-    id: "solstice",
-    chapter: "Solstice Bloom",
-    title: "Aurora Petal Studs",
-    detail: "Iridescent mother-of-pearl petals hugging diamond cores.",
-    palette: "Rose · Opaline",
+    id: "gold-crystal-bracelet",
+    chapter: "Crystal Bracelets",
+    title: "Golden Crystal Bracelet",
+    detail: "Champagne Swarovski crystals on invisible thread with silver clasp.",
+    palette: "Champagne · Gold",
     badge: "New arrival",
-    image:
-      "https://images.unsplash.com/photo-1509365465985-25d11c17e812?auto=format&fit=crop&w=900&q=80",
+    image: "/476497969_1392647638852240_3397655176834990255_n.jpg",
   },
   {
-    id: "atelier-lustre",
-    chapter: "Lustre Atelier",
-    title: "Gilded Column Choker",
-    detail: "Architectural silhouette with brushed satin panels.",
-    palette: "Gilt · Porcelain",
-    badge: "Bespoke",
-    image:
-      "https://images.unsplash.com/photo-1521119989659-a83eee488004?auto=format&fit=crop&w=900&q=80",
+    id: "tennis-bracelet",
+    chapter: "Statement Pieces",
+    title: "Crystal Tennis Bracelet",
+    detail: "Bezel-set Swarovski crystals in polished silver setting.",
+    palette: "Crystal · Silver",
+    badge: "Popular",
+    image: "/589758115_1839941379994791_4987365088989408098_n.jpg",
+  },
+  {
+    id: "gift-set",
+    chapter: "Gift Collection",
+    title: "Crystal Bracelet Gift Set",
+    detail: "Beautifully packaged in pink velvet pouch with satin ribbon.",
+    palette: "Rose · Crystal",
+    badge: "Gift ready",
+    image: "/590257172_1575048736863680_2302007701388531458_n.jpg",
   },
 ]
 
 const capsuleNotes = [
-  { label: "Textures", value: "Hammered satin · Mirror link · Silk cord" },
-  { label: "Settings", value: "Invisible micro pavé · Floating claw" },
-  { label: "Palette", value: "Champagne · Noir · Opaline" },
+  { label: "Materials", value: "Swarovski crystals · Sterling silver · Invisible thread" },
+  { label: "Styles", value: "Tennis bracelet · Floating crystal · Gift set" },
+  { label: "Palette", value: "Crystal · Champagne · Rose" },
 ]
 
 const LookbookCarousel = ({ locale: initialLocale }: { locale: Locale }) => {
@@ -83,16 +69,16 @@ const LookbookCarousel = ({ locale: initialLocale }: { locale: Locale }) => {
   }
 
   return (
-    <section id="lookbook" className="bg-[#fefcf8] py-12 small:py-28">
+    <section id="lookbook" className="bg-cream-100 py-12 small:py-28">
       <div className="content-container space-y-10">
         <div className="flex flex-col gap-6 large:flex-row large:items-end large:justify-between">
           <div className="space-y-4 max-w-2xl">
-            <span className="text-[0.65rem] uppercase tracking-[0.4em] text-amber-500">
+            <span className="font-sans text-[0.65rem] uppercase tracking-[0.22em] text-soft-gold font-normal">
               {t("lookbook.subtitle", locale)}
             </span>
             <Heading
               level="h2"
-              className="text-3xl small:text-4xl large:text-5xl text-grey-90 font-light leading-tight"
+              className="font-display text-3xl small:text-4xl large:text-5xl text-grey-90 font-light leading-tight"
             >
               {t("lookbook.title", locale)}
             </Heading>
@@ -129,7 +115,7 @@ const LookbookCarousel = ({ locale: initialLocale }: { locale: Locale }) => {
               key={slide.id}
               className="relative w-[260px] shrink-0 snap-start small:w-[320px] large:w-[360px]"
             >
-              <div className="relative aspect-[3/4] overflow-hidden rounded-[32px] border border-white/40 bg-white shadow-[0_20px_60px_rgba(27,23,20,.15)]">
+              <div className="relative aspect-[3/4] overflow-hidden rounded-[32px] border border-white/40 bg-white shadow-warm-lg">
                 <Image
                   src={slide.image}
                   alt={slide.title}
@@ -138,16 +124,16 @@ const LookbookCarousel = ({ locale: initialLocale }: { locale: Locale }) => {
                   className="object-cover transition-transform duration-700 hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/30 to-transparent" />
-                <span className="absolute left-6 top-6 rounded-full bg-white/90 px-4 py-1 text-xs uppercase tracking-[0.3em] text-grey-80">
+                <span className="absolute left-6 top-6 rounded-full bg-white/90 px-4 py-1 font-sans text-xs uppercase tracking-[0.18em] text-grey-80 font-normal">
                   {slide.badge}
                 </span>
                 <div className="absolute inset-x-0 bottom-0 p-6 text-white">
-                  <p className="text-[0.6rem] uppercase tracking-[0.4em] text-white/70">
+                  <p className="font-sans text-[0.6rem] uppercase tracking-[0.22em] text-white/70 font-normal">
                     {slide.chapter}
                   </p>
-                  <p className="text-2xl font-light">{slide.title}</p>
+                  <p className="font-display text-2xl font-light">{slide.title}</p>
                   <p className="text-sm text-white/80">{slide.detail}</p>
-                  <p className="mt-3 text-[0.65rem] uppercase tracking-[0.35em] text-white/60">
+                  <p className="mt-3 font-sans text-[0.65rem] uppercase tracking-[0.18em] text-white/60 font-normal">
                     {slide.palette}
                   </p>
                 </div>
@@ -160,7 +146,7 @@ const LookbookCarousel = ({ locale: initialLocale }: { locale: Locale }) => {
           <LocalizedClientLink href="/store">
             <Button
               size="large"
-              className="rounded-full border border-grey-90 bg-grey-90 px-10 py-4 text-xs font-light uppercase tracking-[0.4em] text-white hover:bg-black"
+              className="rounded-full border border-grey-90 bg-grey-90 px-10 py-4 text-xs font-sans font-medium uppercase tracking-[0.12em] text-white hover:bg-grey-80"
             >
               {t("lookbook.cta", locale)}
             </Button>
@@ -168,7 +154,7 @@ const LookbookCarousel = ({ locale: initialLocale }: { locale: Locale }) => {
           <div className="grid grid-cols-1 gap-4 small:grid-cols-3 small:gap-8">
             {capsuleNotes.map((note) => (
               <div key={note.label}>
-                <p className="text-[0.6rem] uppercase tracking-[0.35em] text-grey-40">
+                <p className="font-sans text-[0.6rem] uppercase tracking-[0.18em] text-grey-40 font-normal">
                   {note.label}
                 </p>
                 <p className="text-sm text-grey-80">{note.value}</p>

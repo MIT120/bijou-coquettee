@@ -26,13 +26,13 @@ const CareGuide = () => {
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-8 small:mb-16">
           <div className="inline-block mb-3 small:mb-4">
-            <span className="text-xs small:text-sm tracking-[0.3em] uppercase text-grey-60 font-light">
+            <span className="font-sans text-xs small:text-sm tracking-[0.18em] uppercase text-grey-60 font-normal">
               Care Guide
             </span>
           </div>
           <Heading
             level="h2"
-            className="text-2xl small:text-4xl text-grey-90 font-light tracking-tight mb-3 small:mb-4"
+            className="font-display text-2xl small:text-4xl text-grey-90 font-light tracking-tight mb-3 small:mb-4"
           >
             Caring for Your Jewelry
           </Heading>
@@ -47,12 +47,12 @@ const CareGuide = () => {
               key={index}
               className="bg-white p-6 small:p-8 border border-grey-10 hover:border-grey-20 transition-all duration-300 group"
             >
-              <div className="text-2xl small:text-3xl text-grey-90 font-light mb-4 group-hover:translate-y-[-2px] transition-transform duration-300">
+              <div className="font-display text-3xl small:text-4xl text-grey-90 font-light mb-4 group-hover:translate-y-[-2px] transition-transform duration-300">
                 {String(index + 1).padStart(2, "0")}
               </div>
               <Heading
                 level="h3"
-                className="text-lg text-grey-90 font-light mb-3"
+                className="font-display text-lg text-grey-90 font-light mb-3"
               >
                 {tip.title}
               </Heading>
@@ -66,7 +66,7 @@ const CareGuide = () => {
         <div className="text-center">
           <LocalizedClientLink
             href="/size-guide"
-            className="inline-block text-sm uppercase tracking-wider text-grey-60 hover:text-grey-90 transition-colors duration-200 font-light border-b border-transparent hover:border-grey-60 pb-1"
+            className="inline-block font-sans text-sm uppercase tracking-[0.12em] text-grey-60 hover:text-grey-90 transition-colors duration-200 font-medium border-b border-transparent hover:border-grey-50 pb-1"
           >
             View Size Guide →
           </LocalizedClientLink>

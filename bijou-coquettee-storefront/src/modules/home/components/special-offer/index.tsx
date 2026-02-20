@@ -10,7 +10,7 @@ const SpecialOffer = () => {
   if (!isVisible) return null
 
   return (
-    <section className="content-container py-12 small:py-16 border-t border-grey-10 bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-50">
+    <section className="content-container py-12 small:py-16 border-t border-grey-10 bg-gradient-to-r from-gold-50 via-cream-100 to-gold-50">
       <div className="max-w-4xl mx-auto text-center space-y-4 relative">
         <button
           onClick={() => setIsVisible(false)}
@@ -33,13 +33,13 @@ const SpecialOffer = () => {
         </button>
         
         <div className="inline-block mb-2">
-          <span className="text-xs small:text-sm tracking-[0.3em] uppercase text-grey-70 font-light">
+          <span className="font-sans text-xs small:text-sm tracking-[0.18em] uppercase text-grey-60 font-normal">
             Limited Time Offer
           </span>
         </div>
         <Heading
           level="h2"
-          className="text-2xl small:text-3xl text-grey-90 font-light tracking-tight"
+          className="font-display text-2xl small:text-3xl text-grey-90 font-light tracking-tight"
         >
           Free Shipping on Orders Over $100
         </Heading>
@@ -50,7 +50,7 @@ const SpecialOffer = () => {
           <LocalizedClientLink href="/store">
             <Button
               size="small"
-              className="bg-grey-90 hover:bg-grey-80 text-white px-6 py-2 rounded-none border border-grey-90 hover:border-grey-80 transition-all duration-300 font-light tracking-wide uppercase text-xs"
+              className="bg-grey-90 hover:bg-grey-80 text-white px-6 py-2 rounded-none border border-grey-90 hover:border-grey-80 transition-all duration-300 font-sans font-medium tracking-[0.12em] uppercase text-xs"
             >
               Shop Now
             </Button>

@@ -7,25 +7,25 @@ const GiftGuide = () => {
       title: "For Her",
       description: "Elegant pieces that celebrate her unique style",
       link: "/store?gift=her",
-      gradient: "from-pink-50 to-rose-50",
+      gradient: "from-rose-50 to-rose-100",
     },
     {
       title: "For Him",
       description: "Sophisticated designs for the modern gentleman",
       link: "/store?gift=him",
-      gradient: "from-blue-50 to-indigo-50",
+      gradient: "from-cream-100 to-cream-300",
     },
     {
       title: "Anniversary",
       description: "Timeless symbols of love and commitment",
       link: "/store?gift=anniversary",
-      gradient: "from-amber-50 to-yellow-50",
+      gradient: "from-gold-50 to-gold-100",
     },
     {
       title: "Special Occasions",
       description: "Make every moment memorable",
       link: "/store?gift=occasions",
-      gradient: "from-purple-50 to-violet-50",
+      gradient: "from-rose-100 to-gold-50",
     },
   ]
 
@@ -34,13 +34,13 @@ const GiftGuide = () => {
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-8 small:mb-16">
           <div className="inline-block mb-3 small:mb-4">
-            <span className="text-xs small:text-sm tracking-[0.3em] uppercase text-grey-60 font-light">
+            <span className="font-sans text-xs small:text-sm tracking-[0.18em] uppercase text-grey-60 font-normal">
               Gift Guide
             </span>
           </div>
           <Heading
             level="h2"
-            className="text-2xl small:text-4xl text-grey-90 font-light tracking-tight mb-3 small:mb-4"
+            className="font-display text-2xl small:text-4xl text-grey-90 font-light tracking-tight mb-3 small:mb-4"
           >
             Find the Perfect Gift
           </Heading>
@@ -60,14 +60,14 @@ const GiftGuide = () => {
               <div className="absolute inset-0 flex flex-col justify-center items-center p-8 small:p-12 text-center z-10">
                 <Heading
                   level="h3"
-                  className="text-2xl small:text-3xl text-grey-90 font-light mb-3 group-hover:translate-y-[-4px] transition-transform duration-300"
+                  className="font-display text-2xl small:text-3xl text-grey-90 font-light mb-3 group-hover:translate-y-[-4px] transition-transform duration-300"
                 >
                   {category.title}
                 </Heading>
                 <Text className="text-sm small:text-base text-grey-70 font-light mb-6 max-w-md">
                   {category.description}
                 </Text>
-                <span className="text-xs uppercase tracking-wider text-grey-60 group-hover:text-grey-90 transition-colors duration-200 font-light border-b border-transparent group-hover:border-grey-60 pb-1">
+                <span className="font-sans text-xs uppercase tracking-[0.12em] text-grey-60 group-hover:text-grey-90 transition-colors duration-200 font-medium border-b border-transparent group-hover:border-grey-60 pb-1">
                   Shop Now →
                 </span>
               </div>
@@ -79,7 +79,7 @@ const GiftGuide = () => {
           <LocalizedClientLink href="/store">
             <Button
               variant="secondary"
-              className="bg-transparent hover:bg-grey-90 hover:text-white text-grey-90 px-8 py-3 rounded-none border border-grey-30 hover:border-grey-90 transition-all duration-300 font-light tracking-wide uppercase text-sm"
+              className="bg-transparent hover:bg-grey-90 hover:text-white text-grey-90 px-8 py-3 rounded-none border border-grey-30 hover:border-grey-90 transition-all duration-300 font-sans font-medium tracking-[0.12em] uppercase text-sm"
             >
               View All Gifts
             </Button>

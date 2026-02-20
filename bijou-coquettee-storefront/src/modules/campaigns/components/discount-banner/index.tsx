@@ -175,7 +175,7 @@ export default function DiscountBanner() {
     return (
         <div
             className={clx(
-                "relative w-full bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 text-white",
+                "relative w-full bg-gradient-to-r from-grey-90 via-grey-80 to-grey-90 text-white",
                 "transition-all duration-300 ease-out overflow-hidden",
                 isClosing ? "max-h-0 opacity-0" : "max-h-24 opacity-100"
             )}
@@ -185,7 +185,7 @@ export default function DiscountBanner() {
                     {/* Main content */}
                     <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-6 flex-1">
                         {/* Discount badge */}
-                        <div className="hidden md:flex items-center gap-2 bg-amber-500 text-neutral-900 px-3 py-1 rounded-full">
+                        <div className="hidden md:flex items-center gap-2 bg-soft-gold text-white px-3 py-1 rounded-full">
                             <span className="text-sm font-bold">
                                 {campaign.discount_percent}% OFF
                             </span>
@@ -193,7 +193,7 @@ export default function DiscountBanner() {
 
                         {/* Banner text */}
                         <p className="text-sm sm:text-base font-medium text-center sm:text-left">
-                            <span className="md:hidden font-bold text-amber-400">
+                            <span className="md:hidden font-bold text-soft-gold">
                                 {campaign.discount_percent}% OFF -{" "}
                             </span>
                             {bannerText}
@@ -206,7 +206,7 @@ export default function DiscountBanner() {
 
                         <LocalizedClientLink
                             href={ctaLink}
-                            className="bg-white text-neutral-900 px-4 py-1.5 rounded-full text-sm font-semibold hover:bg-neutral-100 transition-colors whitespace-nowrap"
+                            className="bg-white text-grey-90 px-4 py-1.5 rounded-full text-sm font-semibold hover:bg-grey-5 transition-colors whitespace-nowrap"
                         >
                             {ctaText}
                         </LocalizedClientLink>

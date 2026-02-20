@@ -11,44 +11,39 @@ import type { Locale } from "@/i18n/locale"
 
 const heroSlides = [
   {
-    id: "aurora-column",
-    image:
-      "https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?auto=format&fit=crop&w=1200&q=80",
-    label: "Maison Capsule 01",
-    title: "Aurora Column Ring",
-    caption: "Sculpted in recycled 18k gold with hand-set diamonds.",
+    id: "crystal-necklace",
+    image: "/591584938_1156724146529006_9094936061071654546_n.jpg",
+    label: "Swarovski Collection",
+    title: "Invisible Thread Necklace",
+    caption: "Delicate Swarovski crystal floating on invisible thread.",
   },
   {
-    id: "noir-riviere",
-    image:
-      "https://images.unsplash.com/photo-1518544801958-efcbf8a7ec10?auto=format&fit=crop&w=1200&q=80",
-    label: "Midnight Reverie",
-    title: "Noir Rivière Necklace",
-    caption: "Suspended black opals that glow under evening light.",
+    id: "tennis-bracelet",
+    image: "/589758115_1839941379994791_4987365088989408098_n.jpg",
+    label: "Statement Pieces",
+    title: "Crystal Tennis Bracelet",
+    caption: "Silver bezel-set Swarovski crystals in timeless design.",
   },
   {
-    id: "atelier-robe",
-    image:
-      "https://images.unsplash.com/photo-1518544889280-37f4ca38e4b4?auto=format&fit=crop&w=1200&q=80",
-    label: "Atelier Atelier",
-    title: "Lumière Draped Cuff",
-    caption: "Liquid metal silhouette with couture tailoring.",
+    id: "gift-collection",
+    image: "/590257172_1575048736863680_2302007701388531458_n.jpg",
+    label: "Gift Ready",
+    title: "Crystal Bracelet Gift Set",
+    caption: "Beautifully packaged Swarovski crystal bracelet.",
   },
 ]
 
 const accentImages = [
   {
-    id: "atelier-detail",
-    image:
-      "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=500&q=80",
-    alt: "Artisan shaping gold cuff",
+    id: "gold-bracelet",
+    image: "/476497969_1392647638852240_3397655176834990255_n.jpg",
+    alt: "Gold Swarovski crystal bracelet",
     position: "top-6 -left-4",
   },
   {
-    id: "model-portrait",
-    image:
-      "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=500&q=80",
-    alt: "Model wearing statement earrings",
+    id: "necklace-detail",
+    image: "/591584938_1156724146529006_9094936061071654546_n.jpg",
+    alt: "Crystal necklace on model",
     position: "-bottom-8 -right-6",
   },
 ]
@@ -72,18 +67,18 @@ const Hero = ({ locale: initialLocale }: { locale: Locale }) => {
   ]
 
   return (
-    <section className="relative overflow-hidden bg-[#f7f3ed]">
+    <section className="relative overflow-hidden bg-cream-200">
       <div className="absolute inset-0 bg-gradient-to-br from-white via-transparent to-transparent" />
       <div className="absolute inset-y-0 right-0 w-1/2 bg-gradient-to-l from-white/70 to-transparent pointer-events-none" />
       <div className="content-container relative z-10 flex flex-col gap-8 small:gap-16 py-10 small:py-24 large:flex-row large:items-center">
         <div className="w-full space-y-6 small:space-y-8 large:w-5/12">
           <div className="space-y-3 small:space-y-4">
-            <span className="inline-flex items-center text-[0.65rem] tracking-[0.45em] uppercase text-amber-500">
+            <span className="inline-flex items-center font-sans text-[0.65rem] tracking-[0.22em] uppercase text-soft-gold font-normal">
               {t("hero.curatedTagline", locale)}
             </span>
             <Heading
               level="h1"
-              className="text-3xl small:text-5xl large:text-6xl text-grey-90 font-light leading-tight"
+              className="font-display text-3xl small:text-5xl large:text-6xl text-grey-90 font-light leading-tight"
             >
               {t("hero.title", locale)}
             </Heading>
@@ -99,7 +94,7 @@ const Hero = ({ locale: initialLocale }: { locale: Locale }) => {
             <LocalizedClientLink href="/store">
               <Button
                 size="large"
-                className="w-full rounded-full border border-grey-90 bg-grey-90 px-6 py-3 small:px-8 small:py-4 text-xs small:text-sm font-light uppercase tracking-[0.25em] small:tracking-[0.35em] text-white transition-colors duration-300 hover:bg-black small:w-auto"
+                className="w-full rounded-full border border-grey-90 bg-grey-90 px-6 py-3 small:px-8 small:py-4 text-xs small:text-sm font-sans font-medium uppercase tracking-[0.12em] text-white transition-colors duration-300 hover:bg-grey-80 small:w-auto"
               >
                 {t("hero.shopCollection", locale)}
               </Button>
@@ -108,7 +103,7 @@ const Hero = ({ locale: initialLocale }: { locale: Locale }) => {
               <Button
                 variant="secondary"
                 size="large"
-                className="w-full rounded-full border border-grey-40 bg-transparent px-6 py-3 small:px-8 small:py-4 text-xs small:text-sm font-light uppercase tracking-[0.25em] small:tracking-[0.35em] text-grey-80 transition-all duration-300 hover:border-grey-80 small:w-auto"
+                className="w-full rounded-full border border-grey-30 bg-transparent px-6 py-3 small:px-8 small:py-4 text-xs small:text-sm font-sans font-medium uppercase tracking-[0.12em] text-grey-80 transition-all duration-300 hover:border-grey-70 small:w-auto"
               >
                 {t("hero.lookbookCta", locale)}
               </Button>
@@ -118,21 +113,21 @@ const Hero = ({ locale: initialLocale }: { locale: Locale }) => {
           <div className="grid grid-cols-3 gap-3 small:gap-6 border-t border-grey-20 pt-6 small:pt-8">
             {stats.map((stat) => (
               <div key={stat.label} className="space-y-1 min-w-0">
-                <p className="text-2xl small:text-3xl font-light text-grey-90">{stat.value}</p>
-                <p className="text-[0.6rem] small:text-xs uppercase tracking-[0.15em] small:tracking-[0.3em] text-grey-50 leading-tight">
+                <p className="font-display text-3xl small:text-4xl font-light text-grey-90">{stat.value}</p>
+                <p className="font-sans text-[0.6rem] small:text-xs uppercase tracking-[0.18em] text-grey-50 leading-tight font-normal">
                   {stat.label}
                 </p>
               </div>
             ))}
           </div>
 
-          <p className="text-[0.6rem] small:text-xs uppercase tracking-[0.2em] small:tracking-[0.35em] text-grey-50">
+          <p className="font-sans text-[0.6rem] small:text-xs uppercase tracking-[0.18em] text-grey-50 font-normal">
             {t("hero.premiumGuarantee", locale)}
           </p>
         </div>
 
         <div className="relative w-full large:w-7/12">
-          <div className="relative h-[380px] small:h-[520px] overflow-hidden rounded-[24px] small:rounded-[36px] border border-white/50 bg-white/40 shadow-[0_25px_80px_rgba(27,23,20,0.25)] backdrop-blur">
+          <div className="relative h-[380px] small:h-[520px] overflow-hidden rounded-[24px] small:rounded-[36px] border border-white/50 bg-white/40 shadow-warm-xl backdrop-blur">
             <div
               className="flex h-full transition-transform duration-700 ease-out"
               style={{ transform: `translateX(-${activeSlide * 100}%)` }}
@@ -151,9 +146,9 @@ const Hero = ({ locale: initialLocale }: { locale: Locale }) => {
                 </div>
               ))}
             </div>
-            <div className="absolute bottom-4 left-4 right-4 small:bottom-6 small:left-6 small:right-6 flex items-center justify-between rounded-full bg-white/90 px-4 py-3 small:px-5 small:py-4 shadow-lg backdrop-blur">
+            <div className="absolute bottom-4 left-4 right-4 small:bottom-6 small:left-6 small:right-6 flex items-center justify-between rounded-full bg-white/90 px-4 py-3 small:px-5 small:py-4 shadow-warm-lg backdrop-blur">
               <div className="min-w-0 flex-1 mr-3">
-                <p className="hidden small:block text-[0.6rem] uppercase tracking-[0.4em] text-grey-50">
+                <p className="hidden small:block font-sans text-[0.6rem] uppercase tracking-[0.22em] text-grey-50 font-normal">
                   {heroSlides[activeSlide].label}
                 </p>
                 <p className="text-sm small:text-lg text-grey-90 truncate">{heroSlides[activeSlide].title}</p>
@@ -178,7 +173,7 @@ const Hero = ({ locale: initialLocale }: { locale: Locale }) => {
           {accentImages.map((accent) => (
             <div
               key={accent.id}
-              className={`absolute hidden w-36 overflow-hidden rounded-3xl border border-white/40 shadow-xl small:block ${accent.position}`}
+              className={`absolute hidden w-36 overflow-hidden rounded-3xl border border-white/40 shadow-warm-xl small:block ${accent.position}`}
             >
               <Image
                 src={accent.image}

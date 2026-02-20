@@ -151,7 +151,7 @@ export default function EmailSubscriptionPopup() {
         >
             {/* Backdrop */}
             <div
-                className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+                className="absolute inset-0 bg-[rgba(28,20,15,0.60)] backdrop-blur-sm"
                 onClick={handleDismiss}
             />
 
@@ -166,7 +166,7 @@ export default function EmailSubscriptionPopup() {
                 {/* Close button */}
                 <button
                     onClick={handleDismiss}
-                    className="absolute top-4 right-4 p-2 rounded-full text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 transition-colors"
+                    className="absolute top-4 right-4 p-2 rounded-full text-grey-40 hover:text-grey-60 hover:bg-grey-5 transition-colors"
                     aria-label="Close"
                 >
                     <XMark className="w-5 h-5" />
@@ -177,13 +177,13 @@ export default function EmailSubscriptionPopup() {
                     <div className="p-8">
                         {/* Header */}
                         <div className="text-center mb-6">
-                            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-amber-100 to-amber-200 rounded-full mb-4">
-                                <Sparkles className="w-8 h-8 text-amber-600" />
+                            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-pale-pink to-muted-rose rounded-full mb-4">
+                                <Sparkles className="w-8 h-8 text-soft-gold" />
                             </div>
-                            <h2 className="text-2xl font-semibold text-neutral-900 mb-2">
+                            <h2 className="text-2xl font-semibold text-grey-90 mb-2">
                                 {campaign.popup_title || `Unlock ${campaign.discount_percent}% Off`}
                             </h2>
-                            <p className="text-neutral-500 text-sm leading-relaxed">
+                            <p className="text-grey-50 text-sm leading-relaxed">
                                 {campaign.popup_description ||
                                     `Join our exclusive list and get ${campaign.discount_percent}% off your first jewelry purchase.`}
                             </p>
@@ -198,7 +198,7 @@ export default function EmailSubscriptionPopup() {
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     required
-                                    className="w-full px-4 py-3.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition-all"
+                                    className="w-full px-4 py-3.5 bg-grey-5 border border-grey-20 rounded-xl text-sm placeholder:text-grey-40 focus:outline-none focus:ring-2 focus:ring-muted-rose focus:border-transparent transition-all"
                                 />
                             </div>
 
@@ -209,13 +209,13 @@ export default function EmailSubscriptionPopup() {
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full py-3.5 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-full py-3.5 bg-grey-90 hover:bg-grey-80 text-white text-sm font-medium rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {loading ? "Please wait..." : "Get My Discount Code"}
                             </button>
                         </form>
 
-                        <p className="mt-5 text-xs text-center text-neutral-400 leading-relaxed">
+                        <p className="mt-5 text-xs text-center text-grey-40 leading-relaxed">
                             By subscribing, you agree to receive promotional emails.<br />
                             Unsubscribe anytime.
                         </p>
@@ -223,36 +223,36 @@ export default function EmailSubscriptionPopup() {
                 ) : (
                     // Success State
                     <div className="p-8 text-center">
-                        <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
-                            <CheckCircleSolid className="w-8 h-8 text-green-600" />
+                        <div className="inline-flex items-center justify-center w-16 h-16 bg-gold-50 rounded-full mb-4">
+                            <CheckCircleSolid className="w-8 h-8 text-soft-gold" />
                         </div>
-                        <h2 className="text-2xl font-semibold text-neutral-900 mb-2">
+                        <h2 className="text-2xl font-semibold text-grey-90 mb-2">
                             Welcome to the family!
                         </h2>
-                        <p className="text-neutral-500 text-sm mb-6">
+                        <p className="text-grey-50 text-sm mb-6">
                             Here's your exclusive discount code:
                         </p>
 
-                        <div className="bg-neutral-50 border-2 border-dashed border-neutral-200 rounded-xl p-5 mb-4">
-                            <code className="text-2xl font-bold text-neutral-900 tracking-wider">
+                        <div className="bg-cream border-2 border-dashed border-pale-pink rounded-xl p-5 mb-4">
+                            <code className="text-2xl font-bold text-grey-90 tracking-wider">
                                 {discountCode}
                             </code>
                         </div>
 
                         <button
                             onClick={handleCopyCode}
-                            className="w-full py-3 mb-3 border border-neutral-200 text-neutral-700 text-sm font-medium rounded-xl hover:bg-neutral-50 transition-colors"
+                            className="w-full py-3 mb-3 border border-grey-20 text-grey-70 text-sm font-medium rounded-xl hover:bg-grey-5 transition-colors"
                         >
                             {copied ? "Copied to clipboard!" : "Copy Code"}
                         </button>
 
-                        <p className="text-sm text-neutral-500 mb-5">
+                        <p className="text-sm text-grey-50 mb-5">
                             Use this code at checkout for {campaign.discount_percent}% off
                         </p>
 
                         <button
                             onClick={handleDismiss}
-                            className="w-full py-3.5 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium rounded-xl transition-colors"
+                            className="w-full py-3.5 bg-grey-90 hover:bg-grey-80 text-white text-sm font-medium rounded-xl transition-colors"
                         >
                             Start Shopping
                         </button>

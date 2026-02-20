@@ -35,7 +35,7 @@ const ServiceHighlights = () => {
             <div className="text-3xl small:text-4xl mb-2 group-hover:scale-110 transition-transform duration-300">
               {service.icon}
             </div>
-            <Text className="text-sm small:text-base text-grey-90 font-light tracking-wide block">
+            <Text className="text-sm small:text-base text-grey-90 font-normal tracking-[0.04em] block">
               {service.title}
             </Text>
             <Text className="text-xs small:text-sm text-grey-50 font-light">

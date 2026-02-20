@@ -67,7 +67,7 @@ const LanguageSwitcher = ({ locale: initialLocale }: { locale: Locale }) => {
           return (
             <>
               <ListboxButton className="flex items-center gap-x-2 hover:text-ui-fg-base transition-colors">
-                <span className="text-small-regular uppercase tracking-wide">
+                <span className="text-small-regular uppercase tracking-[0.08em]">
                   {currentLanguage.code.toUpperCase()}
                 </span>
               </ListboxButton>
@@ -78,16 +78,16 @@ const LanguageSwitcher = ({ locale: initialLocale }: { locale: Locale }) => {
                 leaveFrom="opacity-100"
                 leaveTo="opacity-0"
               >
-                <ListboxOptions className="absolute right-0 top-full mt-2 min-w-[160px] z-[900] bg-white drop-shadow-md text-small-regular text-black rounded-rounded overflow-hidden">
+                <ListboxOptions className="absolute right-0 top-full mt-2 min-w-[160px] z-[900] bg-cream drop-shadow-md text-small-regular text-grey-90 rounded-rounded overflow-hidden">
                   {languageOptions.map((option) => (
                     <ListboxOption
                       key={option.code}
                       value={option}
                       className={({ active }) =>
                         `py-2 px-3 cursor-pointer flex items-center justify-between ${
-                          active ? "bg-gray-100" : ""
+                          active ? "bg-grey-10" : ""
                         } ${
-                          selectedLocale === option.code ? "bg-gray-50 font-medium" : ""
+                          selectedLocale === option.code ? "bg-grey-5 font-medium" : ""
                         }`
                       }
                     >

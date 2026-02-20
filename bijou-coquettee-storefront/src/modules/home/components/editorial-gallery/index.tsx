@@ -6,27 +6,24 @@ import { t } from "@lib/util/translations"
 
 const editorialShots = [
   {
-    id: "atelier-glow",
-    image:
-      "https://images.unsplash.com/photo-1503341455253-b2e723bb3dbb?auto=format&fit=crop&w=900&q=80",
-    title: "Atelier Glow",
-    descriptor: "Molten satin finish, natural morning light.",
+    id: "crystal-necklace",
+    image: "/591584938_1156724146529006_9094936061071654546_n.jpg",
+    title: "Crystal Elegance",
+    descriptor: "Invisible thread necklace, natural light.",
     layout: "tall",
   },
   {
-    id: "sculpted-lattice",
-    image:
-      "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=1200&q=80",
-    title: "Sculpted Lattice",
-    descriptor: "Hand-built lattice cuff awaiting gemstones.",
+    id: "tennis-bracelet",
+    image: "/589758115_1839941379994791_4987365088989408098_n.jpg",
+    title: "Silver Brilliance",
+    descriptor: "Bezel-set Swarovski crystal tennis bracelet.",
     layout: "wide",
   },
   {
-    id: "portrait-study",
-    image:
-      "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=900&q=80",
-    title: "Portrait Study",
-    descriptor: "Earrings styled with sheer silk organza.",
+    id: "gold-bracelet",
+    image: "/476497969_1392647638852240_3397655176834990255_n.jpg",
+    title: "Golden Glow",
+    descriptor: "Champagne crystals on invisible thread.",
     layout: "standard",
   },
 ]
@@ -39,16 +36,16 @@ const EditorialGallery = ({ locale }: { locale: Locale }) => {
   ]
 
   return (
-    <section className="bg-[#0d0b0a] py-14 small:py-24 text-white">
+    <section className="bg-grey-90 py-14 small:py-24 text-white">
       <div className="content-container space-y-8 small:space-y-12">
         <div className="flex flex-col gap-6 small:gap-8 large:flex-row large:items-end large:justify-between">
           <div className="max-w-2xl space-y-3 small:space-y-4">
-            <span className="text-[0.6rem] uppercase tracking-[0.4em] text-white/60">
+            <span className="font-sans text-[0.6rem] uppercase tracking-[0.22em] text-white/60 font-normal">
               {t("editorial.subtitle", locale)}
             </span>
             <Heading
               level="h2"
-              className="text-2xl small:text-4xl large:text-5xl font-light text-white"
+              className="font-display text-2xl small:text-4xl large:text-5xl font-light text-white"
             >
               {t("editorial.title", locale)}
             </Heading>
@@ -59,8 +56,8 @@ const EditorialGallery = ({ locale }: { locale: Locale }) => {
           <div className="grid grid-cols-3 gap-4 small:gap-6 text-right">
             {highlights.map((highlight) => (
               <div key={highlight.label} className="min-w-0">
-                <p className="text-2xl small:text-3xl font-light">{highlight.value}</p>
-                <p className="text-[0.5rem] small:text-[0.6rem] uppercase tracking-[0.15em] small:tracking-[0.35em] text-white/50 leading-tight">
+                <p className="font-display text-2xl small:text-3xl font-light">{highlight.value}</p>
+                <p className="font-sans text-[0.5rem] small:text-[0.6rem] uppercase tracking-[0.18em] text-white/50 leading-tight font-normal">
                   {highlight.label}
                 </p>
               </div>
@@ -93,10 +90,10 @@ const EditorialGallery = ({ locale }: { locale: Locale }) => {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
                 </div>
                 <div className="absolute inset-x-0 bottom-0 p-6">
-                  <p className="text-[0.65rem] uppercase tracking-[0.35em] text-white/60">
+                  <p className="font-sans text-[0.65rem] uppercase tracking-[0.18em] text-white/60 font-normal">
                     {shot.descriptor}
                   </p>
-                  <p className="text-2xl font-light">{shot.title}</p>
+                  <p className="font-display text-2xl font-light">{shot.title}</p>
                 </div>
               </div>
             )

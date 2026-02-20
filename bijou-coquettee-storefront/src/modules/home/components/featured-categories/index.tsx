@@ -19,7 +19,7 @@ export default async function FeaturedCategories() {
     <section className="content-container py-14 small:py-32 border-t border-grey-10">
       <div className="mb-8 small:mb-16">
         <div className="inline-block mb-4">
-          <span className="text-xs small:text-sm tracking-[0.3em] uppercase text-grey-60 font-light">
+          <span className="font-sans text-xs small:text-sm tracking-[0.18em] uppercase text-grey-60 font-normal">
             Shop by Category
           </span>
         </div>
@@ -41,7 +41,7 @@ export default async function FeaturedCategories() {
               className="group relative block overflow-hidden bg-grey-5 aspect-[4/5] transition-all duration-300 hover:opacity-90"
             >
               <div className="absolute inset-0 flex flex-col justify-end p-6 small:p-8 bg-gradient-to-t from-black/50 via-black/20 to-transparent z-10">
-                <Text className="text-white text-xl small:text-2xl font-light tracking-wide group-hover:translate-y-[-4px] transition-transform duration-300">
+                <Text className="text-white text-xl small:text-2xl font-light tracking-[0.04em] group-hover:translate-y-[-4px] transition-transform duration-300">
                   {category.name}
                 </Text>
                 {category.description && (
@@ -67,7 +67,7 @@ export default async function FeaturedCategories() {
       <div className="mt-12 text-center">
         <LocalizedClientLink
           href="/store"
-          className="inline-block text-sm uppercase tracking-wider text-grey-60 hover:text-grey-90 transition-colors duration-200 font-light border-b border-transparent hover:border-grey-60 pb-1"
+          className="inline-block font-sans text-sm uppercase tracking-[0.12em] text-grey-60 hover:text-grey-90 transition-colors duration-200 font-medium border-b border-transparent hover:border-grey-50 pb-1"
         >
           View All Categories →
         </LocalizedClientLink>

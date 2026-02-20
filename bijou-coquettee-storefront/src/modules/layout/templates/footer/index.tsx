@@ -1,129 +1,165 @@
 import Image from "next/image"
 import { listCategories } from "@lib/data/categories"
 import { listCollections } from "@lib/data/collections"
-import { Text, clx } from "@medusajs/ui"
+import { Text } from "@medusajs/ui"
 
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
-import { getServerLocale, t } from "@lib/util/translations-server"
+import Instagram from "@modules/common/icons/instagram"
+import { t } from "@lib/util/translations-server"
 
 export default async function Footer() {
-  const locale = await getServerLocale()
   const { collections } = await listCollections({
     fields: "*products",
   })
   const productCategories = await listCategories()
 
   return (
-    <footer className="border-t border-ui-border-base w-full">
+    <footer className="border-t border-ui-border-base w-full bg-cream">
       <div className="content-container flex flex-col w-full">
-        <div className="flex flex-col gap-y-6 xsmall:flex-row items-start justify-between py-12 small:py-40">
-          <div>
-            <LocalizedClientLink
-              href="/"
-              className="flex items-center"
-            >
+        {/* Main footer body */}
+        <div className="grid grid-cols-1 gap-12 xsmall:grid-cols-2 small:grid-cols-4 py-16 small:py-20">
+          {/* Column 1: Brand */}
+          <div className="flex flex-col gap-6">
+            <LocalizedClientLink href="/" className="flex items-center">
               <Image
                 src="/logo.png"
                 alt="Bijou Coquettee"
-                width={140}
-                height={140}
-                className="h-16 w-auto object-contain"
+                width={120}
+                height={120}
+                className="h-14 w-auto object-contain"
               />
             </LocalizedClientLink>
+            <p className="font-sans text-xs text-grey-50 font-light leading-relaxed max-w-[200px]">
+              {await t("footer.tagline")}
+            </p>
+            <div className="flex items-center gap-3">
+              <a
+                href="https://instagram.com/bijoucoquettee"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Instagram"
+                className="text-grey-40 hover:text-grey-90 transition-colors duration-200"
+              >
+                <Instagram size="18" />
+              </a>
+            </div>
           </div>
-          <div className="text-small-regular gap-10 md:gap-x-16 grid grid-cols-2 sm:grid-cols-3">
-            {productCategories && productCategories?.length > 0 && (
-              <div className="flex flex-col gap-y-2">
-                <span className="txt-small-plus txt-ui-fg-base">
-                  {await t("footer.categories")}
-                </span>
-                <ul
-                  className="grid grid-cols-1 gap-2"
-                  data-testid="footer-categories"
-                >
-                  {productCategories?.slice(0, 6).map((c) => {
-                    if (c.parent_category) {
-                      return
-                    }
 
-                    const children =
-                      c.category_children?.map((child) => ({
-                        name: child.name,
-                        handle: child.handle,
-                        id: child.id,
-                      })) || null
-
-                    return (
-                      <li
-                        className="flex flex-col gap-2 text-ui-fg-subtle txt-small"
-                        key={c.id}
-                      >
-                        <LocalizedClientLink
-                          className={clx(
-                            "hover:text-ui-fg-base",
-                            children && "txt-small-plus"
-                          )}
-                          href={`/categories/${c.handle}`}
-                          data-testid="category-link"
-                        >
-                          {c.name}
-                        </LocalizedClientLink>
-                        {children && (
-                          <ul className="grid grid-cols-1 ml-3 gap-2">
-                            {children &&
-                              children.map((child) => (
-                                <li key={child.id}>
-                                  <LocalizedClientLink
-                                    className="hover:text-ui-fg-base"
-                                    href={`/categories/${child.handle}`}
-                                    data-testid="category-link"
-                                  >
-                                    {child.name}
-                                  </LocalizedClientLink>
-                                </li>
-                              ))}
-                          </ul>
-                        )}
-                      </li>
-                    )
-                  })}
-                </ul>
-              </div>
-            )}
-            {collections && collections.length > 0 && (
-              <div className="flex flex-col gap-y-2">
-                <span className="txt-small-plus txt-ui-fg-base">
-                  {await t("footer.collections")}
-                </span>
-                <ul
-                  className={clx(
-                    "grid grid-cols-1 gap-2 text-ui-fg-subtle txt-small",
-                    {
-                      "grid-cols-2": (collections?.length || 0) > 3,
-                    }
-                  )}
-                >
-                  {collections?.slice(0, 6).map((c) => (
+          {/* Column 2: Categories */}
+          {productCategories && productCategories.length > 0 && (
+            <div className="flex flex-col gap-4">
+              <span className="font-sans text-xs tracking-[0.14em] uppercase text-grey-90 font-medium">
+                {await t("footer.categories")}
+              </span>
+              <ul
+                className="flex flex-col gap-2.5"
+                data-testid="footer-categories"
+              >
+                {productCategories.slice(0, 6).map((c) => {
+                  if (c.parent_category) {
+                    return null
+                  }
+                  return (
                     <li key={c.id}>
                       <LocalizedClientLink
-                        className="hover:text-ui-fg-base"
-                        href={`/collections/${c.handle}`}
+                        href={`/categories/${c.handle}`}
+                        className="font-sans text-xs text-grey-50 hover:text-grey-90 transition-colors duration-200"
+                        data-testid="category-link"
                       >
-                        {c.title}
+                        {c.name}
                       </LocalizedClientLink>
                     </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+                  )
+                })}
+              </ul>
+            </div>
+          )}
+
+          {/* Column 3: Collections */}
+          {collections && collections.length > 0 && (
+            <div className="flex flex-col gap-4">
+              <span className="font-sans text-xs tracking-[0.14em] uppercase text-grey-90 font-medium">
+                {await t("footer.collections")}
+              </span>
+              <ul className="flex flex-col gap-2.5">
+                {collections.slice(0, 6).map((c) => (
+                  <li key={c.id}>
+                    <LocalizedClientLink
+                      href={`/collections/${c.handle}`}
+                      className="font-sans text-xs text-grey-50 hover:text-grey-90 transition-colors duration-200"
+                    >
+                      {c.title}
+                    </LocalizedClientLink>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Column 4: Contact */}
+          <div className="flex flex-col gap-4">
+            <span className="font-sans text-xs tracking-[0.14em] uppercase text-grey-90 font-medium">
+              {await t("footer.contact")}
+            </span>
+            <ul className="flex flex-col gap-2.5">
+              <li>
+                <a
+                  href="mailto:info@bijoucoquettee.com"
+                  className="font-sans text-xs text-grey-50 hover:text-grey-90 transition-colors duration-200"
+                >
+                  info@bijoucoquettee.com
+                </a>
+              </li>
+              <li>
+                <a
+                  href="tel:+35900000000"
+                  className="font-sans text-xs text-grey-50 hover:text-grey-90 transition-colors duration-200"
+                >
+                  +359 XX XXX XXXX
+                </a>
+              </li>
+              <li className="pt-1">
+                <LocalizedClientLink
+                  href="/contacts"
+                  className="font-sans text-xs text-grey-50 hover:text-grey-90 transition-colors duration-200"
+                >
+                  {await t("footer.contactPage")}
+                </LocalizedClientLink>
+              </li>
+            </ul>
           </div>
         </div>
-        <div className="flex w-full mb-8 small:mb-16 justify-between text-ui-fg-muted">
-          <Text className="txt-compact-small">
+
+        {/* Divider */}
+        <div className="border-t border-grey-20" />
+
+        {/* Bottom bar */}
+        <div className="flex flex-col gap-4 xsmall:flex-row xsmall:items-center xsmall:justify-between py-6 small:py-8">
+          <Text className="font-sans text-xs text-grey-40 font-light">
             {await t("common.copyright", undefined, {
               year: new Date().getFullYear().toString(),
             })}
           </Text>
+          <nav className="flex items-center gap-5">
+            <LocalizedClientLink
+              href="/terms"
+              className="font-sans text-xs text-grey-40 hover:text-grey-70 transition-colors duration-200"
+            >
+              {await t("footer.terms")}
+            </LocalizedClientLink>
+            <LocalizedClientLink
+              href="/privacy-policy"
+              className="font-sans text-xs text-grey-40 hover:text-grey-70 transition-colors duration-200"
+            >
+              {await t("footer.privacy")}
+            </LocalizedClientLink>
+            <LocalizedClientLink
+              href="/cookie-policy"
+              className="font-sans text-xs text-grey-40 hover:text-grey-70 transition-colors duration-200"
+            >
+              {await t("footer.cookies")}
+            </LocalizedClientLink>
+          </nav>
         </div>
       </div>
     </footer>

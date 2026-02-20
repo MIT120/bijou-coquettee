@@ -5,13 +5,13 @@ const BrandStory = () => {
     <section className="content-container py-14 small:py-32 border-t border-grey-10">
       <div className="max-w-4xl mx-auto text-center space-y-8">
         <div className="inline-block mb-4">
-          <span className="text-xs small:text-sm tracking-[0.3em] uppercase text-grey-60 font-light">
+          <span className="font-sans text-xs small:text-sm tracking-[0.18em] uppercase text-grey-60 font-normal">
             Our Story
           </span>
         </div>
         <Heading
           level="h2"
-          className="text-3xl small:text-4xl large:text-5xl text-grey-90 font-light tracking-tight"
+          className="font-display text-3xl small:text-4xl large:text-5xl text-grey-90 font-light tracking-tight"
         >
           Crafted with Passion, Worn with Pride
         </Heading>
@@ -28,8 +28,8 @@ const BrandStory = () => {
         </div>
         <div className="grid grid-cols-1 small:grid-cols-3 gap-8 small:gap-12 pt-12">
           <div className="space-y-3 group hover:opacity-80 transition-opacity duration-300">
-            <div className="text-3xl small:text-4xl text-grey-90 font-light group-hover:translate-y-[-2px] transition-transform duration-300">01</div>
-            <Heading level="h3" className="text-lg text-grey-90 font-light">
+            <div className="font-display text-4xl small:text-5xl text-grey-90 font-light group-hover:translate-y-[-2px] transition-transform duration-300">01</div>
+            <Heading level="h3" className="font-display text-lg text-grey-90 font-light">
               Curated Selection
             </Heading>
             <Text className="text-sm text-grey-50 font-light leading-relaxed">
@@ -37,8 +37,8 @@ const BrandStory = () => {
             </Text>
           </div>
           <div className="space-y-3 group hover:opacity-80 transition-opacity duration-300">
-            <div className="text-3xl small:text-4xl text-grey-90 font-light group-hover:translate-y-[-2px] transition-transform duration-300">02</div>
-            <Heading level="h3" className="text-lg text-grey-90 font-light">
+            <div className="font-display text-4xl small:text-5xl text-grey-90 font-light group-hover:translate-y-[-2px] transition-transform duration-300">02</div>
+            <Heading level="h3" className="font-display text-lg text-grey-90 font-light">
               Quality Craftsmanship
             </Heading>
             <Text className="text-sm text-grey-50 font-light leading-relaxed">
@@ -46,8 +46,8 @@ const BrandStory = () => {
             </Text>
           </div>
           <div className="space-y-3 group hover:opacity-80 transition-opacity duration-300">
-            <div className="text-3xl small:text-4xl text-grey-90 font-light group-hover:translate-y-[-2px] transition-transform duration-300">03</div>
-            <Heading level="h3" className="text-lg text-grey-90 font-light">
+            <div className="font-display text-4xl small:text-5xl text-grey-90 font-light group-hover:translate-y-[-2px] transition-transform duration-300">03</div>
+            <Heading level="h3" className="font-display text-lg text-grey-90 font-light">
               Timeless Design
             </Heading>
             <Text className="text-sm text-grey-50 font-light leading-relaxed">

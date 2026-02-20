@@ -27,13 +27,13 @@ const Testimonials = () => {
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-8 small:mb-16">
           <div className="inline-block mb-3 small:mb-4">
-            <span className="text-xs small:text-sm tracking-[0.3em] uppercase text-grey-60 font-light">
+            <span className="font-sans text-xs small:text-sm tracking-[0.18em] uppercase text-grey-60 font-normal">
               Customer Stories
             </span>
           </div>
           <Heading
             level="h2"
-            className="text-2xl small:text-4xl text-grey-90 font-light tracking-tight"
+            className="font-display text-2xl small:text-4xl text-grey-90 font-light tracking-tight"
           >
             Loved by Our Customers
           </Heading>
@@ -47,14 +47,14 @@ const Testimonials = () => {
             >
               <div className="flex gap-1">
                 {[...Array(testimonial.rating)].map((_, i) => (
-                  <span key={i} className="text-amber-400 text-sm">★</span>
+                  <span key={i} className="text-soft-gold text-sm">★</span>
                 ))}
               </div>
-              <Text className="text-base small:text-lg text-grey-70 font-light leading-relaxed italic">
+              <Text className="font-display text-lg small:text-xl text-grey-70 font-normal leading-relaxed italic">
                 "{testimonial.quote}"
               </Text>
               <div className="pt-4 border-t border-grey-10">
-                <Text className="text-sm text-grey-90 font-light">
+                <Text className="font-sans text-sm text-grey-90 font-normal tracking-[0.04em]">
                   {testimonial.author}
                 </Text>
                 <Text className="text-xs text-grey-50 font-light">

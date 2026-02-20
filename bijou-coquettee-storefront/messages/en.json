@@ -157,7 +157,13 @@
   },
   "footer": {
     "categories": "Categories",
-    "collections": "Collections"
+    "collections": "Collections",
+    "contact": "Contact",
+    "contactPage": "Get in touch",
+    "tagline": "Timeless jewelry, crafted with care.",
+    "terms": "Terms & Conditions",
+    "privacy": "Privacy Policy",
+    "cookies": "Cookie Policy"
   },
   "store": {
     "allProducts": "All products",

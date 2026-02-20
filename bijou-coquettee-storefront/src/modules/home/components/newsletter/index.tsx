@@ -21,13 +21,13 @@ const Newsletter = () => {
     <section className="content-container py-14 small:py-32 border-t border-grey-10 bg-grey-5">
       <div className="max-w-2xl mx-auto text-center space-y-8">
         <div className="inline-block mb-4">
-          <span className="text-xs small:text-sm tracking-[0.3em] uppercase text-grey-60 font-light">
+          <span className="font-sans text-xs small:text-sm tracking-[0.18em] uppercase text-grey-60 font-normal">
             Stay Connected
           </span>
         </div>
         <Heading
           level="h2"
-          className="text-3xl small:text-4xl text-grey-90 font-light tracking-tight"
+          className="font-display text-3xl small:text-4xl text-grey-90 font-light tracking-tight"
         >
           Join Our Newsletter
         </Heading>
@@ -43,11 +43,11 @@ const Newsletter = () => {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Enter your email"
             required
-            className="flex-1 px-4 py-3 bg-white border border-grey-20 text-grey-90 placeholder-grey-40 focus:outline-none focus:border-grey-60 transition-colors duration-200 font-light text-sm"
+            className="flex-1 px-4 py-3 bg-white border border-grey-20 text-grey-90 placeholder-grey-40 focus:outline-none focus:border-soft-gold transition-colors duration-200 font-sans font-light text-sm"
           />
           <Button
             type="submit"
-            className="bg-grey-90 hover:bg-grey-80 text-white px-8 py-3 rounded-none border border-grey-90 hover:border-grey-80 transition-all duration-300 font-light tracking-wide uppercase text-sm whitespace-nowrap"
+            className="bg-grey-90 hover:bg-grey-80 text-white px-8 py-3 rounded-none border border-grey-90 hover:border-grey-80 transition-all duration-300 font-sans font-medium tracking-[0.12em] uppercase text-sm whitespace-nowrap"
           >
             {submitted ? "Subscribed!" : "Subscribe"}
           </Button>

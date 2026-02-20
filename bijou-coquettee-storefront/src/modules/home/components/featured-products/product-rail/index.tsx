@@ -31,11 +31,11 @@ export default async function ProductRail({
       <div className="flex flex-col small:flex-row justify-between items-start small:items-center mb-8 small:mb-16 gap-4">
         <div>
           <div className="inline-block mb-3">
-            <span className="text-xs small:text-sm tracking-[0.3em] uppercase text-grey-60 font-light">
+            <span className="font-sans text-xs small:text-sm tracking-[0.18em] uppercase text-grey-60 font-normal">
               Collection
             </span>
           </div>
-          <Text className="text-2xl small:text-3xl text-grey-90 font-light tracking-tight block">
+          <Text className="font-display text-2xl small:text-3xl text-grey-90 font-light tracking-[-0.01em] block">
             {collection.title}
           </Text>
           {pricedProducts && pricedProducts.length > 0 && (
@@ -46,7 +46,7 @@ export default async function ProductRail({
         </div>
         <InteractiveLink 
           href={`/collections/${collection.handle}`}
-          className="text-sm uppercase tracking-wider text-grey-60 hover:text-grey-90 transition-colors duration-200 font-light border-b border-transparent hover:border-grey-60 pb-1 mt-8 small:mt-0"
+          className="font-sans text-sm uppercase tracking-[0.12em] text-grey-60 hover:text-grey-90 transition-colors duration-200 font-medium border-b border-transparent hover:border-grey-50 pb-1 mt-8 small:mt-0"
         >
           View all →
         </InteractiveLink>

@@ -2,6 +2,21 @@
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
 
+@layer base {
+  body {
+    font-family: var(--font-sans), "DM Sans", -apple-system, sans-serif;
+    font-weight: 300;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display), "Cormorant Garamond", Georgia, serif;
+    font-weight: 300;
+    letter-spacing: -0.01em;
+  }
+}
+
 @layer utilities {
   /* Chrome, Safari and Opera */
   .no-scrollbar::-webkit-scrollbar {
@@ -35,9 +50,9 @@
   select:-webkit-autofill,
   select:-webkit-autofill:hover,
   select:-webkit-autofill:focus {
-    border: 1px solid #212121;
-    -webkit-text-fill-color: #212121;
-    -webkit-box-shadow: 0 0 0px 1000px #fff inset;
+    border: 1px solid #7C5F56;
+    -webkit-text-fill-color: #1C140F;
+    -webkit-box-shadow: 0 0 0px 1000px #FAF5F0 inset;
     transition: background-color 5000s ease-in-out 0s;
   }
 
@@ -55,7 +70,7 @@
   }
 
   .contrast-btn {
-    @apply px-4 py-2 border border-black rounded-full hover:bg-black hover:text-white transition-colors duration-200 ease-in;
+    @apply px-4 py-2 border border-grey-90 rounded-full hover:bg-grey-90 hover:text-white transition-colors duration-200 ease-in;
   }
 
   .text-xsmall-regular {
@@ -132,7 +147,7 @@
     background: linear-gradient(
       to right,
       transparent 0%,
-      rgba(255, 255, 255, 0.1) 50%,
+      rgba(202, 176, 142, 0.12) 50%,
       transparent 100%
     );
     background-size: 1000px 100%;
@@ -151,5 +166,20 @@
 
   .animate-fade-in-up {
     animation: fade-in-up 0.4s ease-out forwards;
+  }
+}
+
+@layer utilities {
+  .shadow-warm-sm {
+    box-shadow: 0 2px 8px rgba(50, 28, 18, 0.08);
+  }
+  .shadow-warm-md {
+    box-shadow: 0 8px 24px rgba(50, 28, 18, 0.12);
+  }
+  .shadow-warm-lg {
+    box-shadow: 0 16px 48px rgba(50, 28, 18, 0.16);
+  }
+  .shadow-warm-xl {
+    box-shadow: 0 25px 80px rgba(50, 28, 18, 0.20);
   }
 }
