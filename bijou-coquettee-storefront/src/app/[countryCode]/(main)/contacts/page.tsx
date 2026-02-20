@@ -3,8 +3,8 @@ import { Heading, Text } from "@medusajs/ui"
 import Instagram from "@modules/common/icons/instagram"
 
 export const metadata: Metadata = {
-  title: "Contact Us | Bijou Coquettee",
-  description: "Get in touch with the Bijou Coquettee team.",
+  title: "Контакти | Bijou Coquettee",
+  description: "Свържете се с екипа на Bijou Coquettee.",
 }
 
 export default function ContactsPage() {
@@ -18,19 +18,36 @@ export default function ContactsPage() {
           level="h1"
           className="font-display text-3xl small:text-4xl text-grey-90 font-light tracking-tight"
         >
-          Get in Touch
+          Контакти
         </Heading>
         <Text className="font-sans text-base text-grey-50 font-light leading-relaxed">
-          We would love to hear from you. Reach out through any of the channels
-          below.
+          Ще се радваме да чуем от вас. Свържете се с нас по някой от каналите
+          по-долу.
         </Text>
       </div>
 
       <div className="space-y-10">
+        {/* Company info */}
+        <div className="p-6 border border-grey-20 bg-cream-100 space-y-2">
+          <span className="font-sans text-xs tracking-[0.14em] uppercase text-grey-60 font-medium block mb-3">
+            Фирмени данни
+          </span>
+          <ul className="space-y-1.5 font-sans text-sm text-grey-70">
+            <li>
+              <strong className="text-grey-90 font-medium">
+                ВЕЛТОН ГРУП ЕООД
+              </strong>
+            </li>
+            <li>ЕИК: 205629294</li>
+            <li>гр. София, ул. Враня 109</li>
+          </ul>
+        </div>
+
+        {/* Contact details */}
         <div className="grid grid-cols-1 xsmall:grid-cols-2 gap-8">
           <div className="space-y-2 p-6 border border-grey-20 bg-cream-100">
             <span className="font-sans text-xs tracking-[0.14em] uppercase text-grey-60 font-medium block mb-3">
-              Email
+              Имейл
             </span>
             <a
               href="mailto:info@bijoucoquettee.com"
@@ -42,7 +59,7 @@ export default function ContactsPage() {
 
           <div className="space-y-2 p-6 border border-grey-20 bg-cream-100">
             <span className="font-sans text-xs tracking-[0.14em] uppercase text-grey-60 font-medium block mb-3">
-              Phone
+              Телефон
             </span>
             <a
               href="tel:+35900000000"
@@ -53,9 +70,20 @@ export default function ContactsPage() {
           </div>
         </div>
 
+        {/* Address */}
+        <div className="space-y-2 p-6 border border-grey-20 bg-cream-100">
+          <span className="font-sans text-xs tracking-[0.14em] uppercase text-grey-60 font-medium block mb-3">
+            Адрес за кореспонденция
+          </span>
+          <Text className="font-sans text-sm text-grey-70">
+            гр. София, 1309, ул. Враня 109
+          </Text>
+        </div>
+
+        {/* Social */}
         <div className="space-y-4">
           <span className="font-sans text-xs tracking-[0.14em] uppercase text-grey-60 font-medium block">
-            Follow Us
+            Последвай ни
           </span>
           <a
             href="https://instagram.com/bijoucoquettee"
@@ -69,7 +97,8 @@ export default function ContactsPage() {
         </div>
 
         <Text className="font-sans text-xs text-grey-40 font-light border-t border-grey-20 pt-8">
-          We aim to respond to all enquiries within 1-2 business days.
+          Стремим се да отговаряме на всички запитвания в рамките на 1-2
+          работни дни.
         </Text>
       </div>
     </div>
