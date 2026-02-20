@@ -1,4 +1,5 @@
 import { Suspense } from "react"
+import Image from "next/image"
 
 import { listRegions } from "@lib/data/regions"
 import { StoreRegion } from "@medusajs/types"
@@ -46,14 +47,21 @@ export default async function Nav() {
           <div className="flex items-center h-full">
             <LocalizedClientLink
               href="/"
-              className="txt-compact-xlarge-plus hover:text-ui-fg-base uppercase"
+              className="flex items-center"
               data-testid="nav-store-link"
             >
-              {await t("common.brand")}
+              <Image
+                src="/logo.png"
+                alt="Bijou Coquettee"
+                width={120}
+                height={120}
+                className="h-12 w-auto object-contain"
+                priority
+              />
             </LocalizedClientLink>
           </div>
 
-          <div className="flex items-center gap-x-6 h-full flex-1 basis-0 justify-end">
+          <div className="flex items-center gap-x-3 small:gap-x-6 h-full flex-1 basis-0 justify-end">
             <SearchOverlay locale={locale} />
             <div className="hidden small:flex items-center gap-x-6 h-full">
               <LocalizedClientLink

@@ -16,8 +16,8 @@ export default async function FeaturedCategories() {
   }
 
   return (
-    <section className="content-container py-24 small:py-32 border-t border-grey-10">
-      <div className="mb-12 small:mb-16">
+    <section className="content-container py-14 small:py-32 border-t border-grey-10">
+      <div className="mb-8 small:mb-16">
         <div className="inline-block mb-4">
           <span className="text-xs small:text-sm tracking-[0.3em] uppercase text-grey-60 font-light">
             Shop by Category

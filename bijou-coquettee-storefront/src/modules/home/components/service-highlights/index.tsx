@@ -25,8 +25,8 @@ const ServiceHighlights = () => {
   ]
 
   return (
-    <section className="content-container py-16 small:py-20 border-t border-grey-10 bg-grey-5">
-      <div className="grid grid-cols-2 small:grid-cols-4 gap-6 small:gap-8">
+    <section className="content-container py-10 small:py-20 border-t border-grey-10 bg-grey-5">
+      <div className="grid grid-cols-2 small:grid-cols-4 gap-4 small:gap-8">
         {services.map((service, index) => (
           <div
             key={index}

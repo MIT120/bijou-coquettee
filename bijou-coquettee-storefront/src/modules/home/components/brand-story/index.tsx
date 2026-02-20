@@ -2,7 +2,7 @@ import { Heading, Text } from "@medusajs/ui"
 
 const BrandStory = () => {
   return (
-    <section className="content-container py-24 small:py-32 border-t border-grey-10">
+    <section className="content-container py-14 small:py-32 border-t border-grey-10">
       <div className="max-w-4xl mx-auto text-center space-y-8">
         <div className="inline-block mb-4">
           <span className="text-xs small:text-sm tracking-[0.3em] uppercase text-grey-60 font-light">

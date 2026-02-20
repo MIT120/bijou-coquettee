@@ -22,21 +22,21 @@ const CareGuide = () => {
   ]
 
   return (
-    <section className="content-container py-24 small:py-32 border-t border-grey-10 bg-grey-5">
+    <section className="content-container py-14 small:py-32 border-t border-grey-10 bg-grey-5">
       <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-16">
-          <div className="inline-block mb-4">
+        <div className="text-center mb-8 small:mb-16">
+          <div className="inline-block mb-3 small:mb-4">
             <span className="text-xs small:text-sm tracking-[0.3em] uppercase text-grey-60 font-light">
               Care Guide
             </span>
           </div>
           <Heading
             level="h2"
-            className="text-3xl small:text-4xl text-grey-90 font-light tracking-tight mb-4"
+            className="text-2xl small:text-4xl text-grey-90 font-light tracking-tight mb-3 small:mb-4"
           >
             Caring for Your Jewelry
           </Heading>
-          <Text className="text-base small:text-lg text-grey-60 font-light max-w-2xl mx-auto">
+          <Text className="text-sm small:text-lg text-grey-60 font-light max-w-2xl mx-auto">
             Proper care ensures your pieces remain beautiful for generations to come
           </Text>
         </div>

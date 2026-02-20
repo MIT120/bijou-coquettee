@@ -39,28 +39,28 @@ const EditorialGallery = ({ locale }: { locale: Locale }) => {
   ]
 
   return (
-    <section className="bg-[#0d0b0a] py-24 text-white">
-      <div className="content-container space-y-12">
-        <div className="flex flex-col gap-8 large:flex-row large:items-end large:justify-between">
-          <div className="max-w-2xl space-y-4">
+    <section className="bg-[#0d0b0a] py-14 small:py-24 text-white">
+      <div className="content-container space-y-8 small:space-y-12">
+        <div className="flex flex-col gap-6 small:gap-8 large:flex-row large:items-end large:justify-between">
+          <div className="max-w-2xl space-y-3 small:space-y-4">
             <span className="text-[0.6rem] uppercase tracking-[0.4em] text-white/60">
               {t("editorial.subtitle", locale)}
             </span>
             <Heading
               level="h2"
-              className="text-3xl small:text-4xl large:text-5xl font-light text-white"
+              className="text-2xl small:text-4xl large:text-5xl font-light text-white"
             >
               {t("editorial.title", locale)}
             </Heading>
-            <Text className="text-base text-white/70">
+            <Text className="text-sm small:text-base text-white/70">
               {t("editorial.description", locale)}
             </Text>
           </div>
-          <div className="grid grid-cols-3 gap-6 text-right">
+          <div className="grid grid-cols-3 gap-4 small:gap-6 text-right">
             {highlights.map((highlight) => (
-              <div key={highlight.label}>
-                <p className="text-3xl font-light">{highlight.value}</p>
-                <p className="text-[0.6rem] uppercase tracking-[0.35em] text-white/50">
+              <div key={highlight.label} className="min-w-0">
+                <p className="text-2xl small:text-3xl font-light">{highlight.value}</p>
+                <p className="text-[0.5rem] small:text-[0.6rem] uppercase tracking-[0.15em] small:tracking-[0.35em] text-white/50 leading-tight">
                   {highlight.label}
                 </p>
               </div>

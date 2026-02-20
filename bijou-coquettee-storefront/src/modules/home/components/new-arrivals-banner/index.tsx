@@ -3,8 +3,8 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 
 const NewArrivalsBanner = () => {
   return (
-    <section className="content-container py-16 small:py-20 border-t border-grey-10 bg-gradient-to-r from-grey-90 to-grey-80 text-white">
-      <div className="max-w-4xl mx-auto text-center space-y-6">
+    <section className="content-container py-10 small:py-20 border-t border-grey-10 bg-gradient-to-r from-grey-90 to-grey-80 text-white">
+      <div className="max-w-4xl mx-auto text-center space-y-4 small:space-y-6">
         <div className="inline-block mb-2">
           <span className="text-xs small:text-sm tracking-[0.3em] uppercase text-white/70 font-light">
             New Collection

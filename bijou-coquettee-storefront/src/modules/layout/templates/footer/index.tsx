@@ -1,3 +1,4 @@
+import Image from "next/image"
 import { listCategories } from "@lib/data/categories"
 import { listCollections } from "@lib/data/collections"
 import { Text, clx } from "@medusajs/ui"
@@ -15,13 +16,19 @@ export default async function Footer() {
   return (
     <footer className="border-t border-ui-border-base w-full">
       <div className="content-container flex flex-col w-full">
-        <div className="flex flex-col gap-y-6 xsmall:flex-row items-start justify-between py-40">
+        <div className="flex flex-col gap-y-6 xsmall:flex-row items-start justify-between py-12 small:py-40">
           <div>
             <LocalizedClientLink
               href="/"
-              className="txt-compact-xlarge-plus text-ui-fg-subtle hover:text-ui-fg-base uppercase"
+              className="flex items-center"
             >
-              {await t("common.brand")}
+              <Image
+                src="/logo.png"
+                alt="Bijou Coquettee"
+                width={140}
+                height={140}
+                className="h-16 w-auto object-contain"
+              />
             </LocalizedClientLink>
           </div>
           <div className="text-small-regular gap-10 md:gap-x-16 grid grid-cols-2 sm:grid-cols-3">
@@ -111,7 +118,7 @@ export default async function Footer() {
             )}
           </div>
         </div>
-        <div className="flex w-full mb-16 justify-between text-ui-fg-muted">
+        <div className="flex w-full mb-8 small:mb-16 justify-between text-ui-fg-muted">
           <Text className="txt-compact-small">
             {await t("common.copyright", undefined, {
               year: new Date().getFullYear().toString(),

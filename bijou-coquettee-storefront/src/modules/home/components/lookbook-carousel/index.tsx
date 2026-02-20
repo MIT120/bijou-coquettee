@@ -83,7 +83,7 @@ const LookbookCarousel = ({ locale: initialLocale }: { locale: Locale }) => {
   }
 
   return (
-    <section id="lookbook" className="bg-[#fefcf8] py-20 small:py-28">
+    <section id="lookbook" className="bg-[#fefcf8] py-12 small:py-28">
       <div className="content-container space-y-10">
         <div className="flex flex-col gap-6 large:flex-row large:items-end large:justify-between">
           <div className="space-y-4 max-w-2xl">
@@ -122,7 +122,7 @@ const LookbookCarousel = ({ locale: initialLocale }: { locale: Locale }) => {
 
         <div
           ref={sliderRef}
-          className="no-scrollbar flex gap-8 overflow-x-auto pb-4"
+          className="no-scrollbar flex gap-4 small:gap-8 overflow-x-auto pb-4"
         >
           {lookbookSlides.map((slide) => (
             <div

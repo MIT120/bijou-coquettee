@@ -23,17 +23,17 @@ const Testimonials = () => {
   ]
 
   return (
-    <section className="content-container py-24 small:py-32 border-t border-grey-10 bg-white">
+    <section className="content-container py-14 small:py-32 border-t border-grey-10 bg-white">
       <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-16">
-          <div className="inline-block mb-4">
+        <div className="text-center mb-8 small:mb-16">
+          <div className="inline-block mb-3 small:mb-4">
             <span className="text-xs small:text-sm tracking-[0.3em] uppercase text-grey-60 font-light">
               Customer Stories
             </span>
           </div>
           <Heading
             level="h2"
-            className="text-3xl small:text-4xl text-grey-90 font-light tracking-tight"
+            className="text-2xl small:text-4xl text-grey-90 font-light tracking-tight"
           >
             Loved by Our Customers
           </Heading>
