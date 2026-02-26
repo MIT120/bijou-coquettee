@@ -6,24 +6,24 @@ import { t } from "@lib/util/translations"
 
 const editorialShots = [
   {
-    id: "crystal-necklace",
-    image: "/591584938_1156724146529006_9094936061071654546_n.jpg",
-    title: "Crystal Elegance",
-    descriptor: "Invisible thread necklace, natural light.",
+    id: "pearl-bracelet",
+    image: "/bracelet-pearl-swarovski.png",
+    title: "Pearl Elegance",
+    descriptor: "Pearl bracelet with Swarovski crystal accent.",
     layout: "tall",
   },
   {
-    id: "tennis-bracelet",
-    image: "/589758115_1839941379994791_4987365088989408098_n.jpg",
-    title: "Silver Brilliance",
-    descriptor: "Bezel-set Swarovski crystal tennis bracelet.",
+    id: "blue-bracelet",
+    image: "/bracelet-swarovski-blue.png",
+    title: "Azure Brilliance",
+    descriptor: "Blue Swarovski crystals on jewellery cord.",
     layout: "wide",
   },
   {
-    id: "gold-bracelet",
-    image: "/476497969_1392647638852240_3397655176834990255_n.jpg",
-    title: "Golden Glow",
-    descriptor: "Champagne crystals on invisible thread.",
+    id: "dark-red-bracelet",
+    image: "/bracelet-swarovski-dark-red.png",
+    title: "Ruby Glow",
+    descriptor: "Dark red Swarovski crystals, everyday elegance.",
     layout: "standard",
   },
 ]

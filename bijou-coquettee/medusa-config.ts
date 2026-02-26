@@ -42,6 +42,22 @@ module.exports = defineConfig({
       options: {},
     },
     {
+      resolve: "./src/modules/carousel-slide",
+      options: {},
+    },
+    {
+      resolve: "./src/modules/cms-page",
+      options: {},
+    },
+    {
+      resolve: "./src/modules/checkout-promo",
+      options: {},
+    },
+    {
+      resolve: "./src/modules/certificate",
+      options: {},
+    },
+    {
       resolve: "@medusajs/medusa/fulfillment",
       options: {
         providers: [

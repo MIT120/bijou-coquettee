@@ -1,11 +1,24 @@
 import { Heading } from "@medusajs/ui"
+import { HttpTypes } from "@medusajs/types"
 
 import ItemsPreviewTemplate from "@modules/cart/templates/preview"
 import DiscountCode from "@modules/checkout/components/discount-code"
+import CheckoutPromoOffer from "@modules/checkout/components/checkout-promo-offer"
 import CartTotals from "@modules/common/components/cart-totals"
 import Divider from "@modules/common/components/divider"
+import type { CheckoutPromo } from "@/types/checkout-promo"
 
-const CheckoutSummary = ({ cart }: { cart: any }) => {
+const CheckoutSummary = ({
+  cart,
+  promo,
+  promoProduct,
+  countryCode,
+}: {
+  cart: any
+  promo?: CheckoutPromo | null
+  promoProduct?: HttpTypes.StoreProduct | null
+  countryCode?: string
+}) => {
   return (
     <div className="sticky top-0 flex flex-col-reverse small:flex-col gap-y-8 py-8 small:py-0 ">
       <div className="w-full bg-white flex flex-col">
@@ -22,6 +35,16 @@ const CheckoutSummary = ({ cart }: { cart: any }) => {
         <div className="my-6">
           <DiscountCode cart={cart} />
         </div>
+        {promo && promoProduct && countryCode && (
+          <div className="mb-6">
+            <CheckoutPromoOffer
+              promo={promo}
+              product={promoProduct}
+              cart={cart}
+              countryCode={countryCode}
+            />
+          </div>
+        )}
       </div>
     </div>
   )

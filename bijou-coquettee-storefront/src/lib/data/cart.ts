@@ -450,6 +450,30 @@ export async function updateRegion(countryCode: string, currentPath: string) {
   redirect(`/${countryCode}${currentPath}`)
 }
 
+export async function addPromoToCart({
+  variantId,
+  countryCode,
+  promotionCode,
+}: {
+  variantId: string
+  countryCode: string
+  promotionCode?: string | null
+}) {
+  await addToCart({ variantId, quantity: 1, countryCode })
+
+  if (promotionCode) {
+    const cart = await retrieveCart()
+    if (cart) {
+      const existingCodes = (cart.promotions || [])
+        .map((p: any) => p.code)
+        .filter(Boolean)
+
+      const allCodes = [...new Set([...existingCodes, promotionCode])]
+      await applyPromotions(allCodes)
+    }
+  }
+}
+
 export async function listCartOptions() {
   const cartId = await getCartId()
   const headers = {

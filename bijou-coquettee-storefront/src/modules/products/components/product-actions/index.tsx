@@ -7,6 +7,7 @@ import { useMetaPixel } from "@lib/components/meta-pixel"
 import { HttpTypes } from "@medusajs/types"
 import { Button } from "@medusajs/ui"
 import Divider from "@modules/common/components/divider"
+import ColorOptionSelect from "@modules/products/components/product-actions/color-option-select"
 import OptionSelect from "@modules/products/components/product-actions/option-select"
 import SizeGuideButton from "@modules/products/components/size-guide-button"
 import WishlistButton from "@modules/products/components/wishlist-button"
@@ -31,6 +32,33 @@ const optionsAsKeymap = (
   }, {})
 }
 
+const isColorOption = (option: HttpTypes.StoreProductOption): boolean => {
+  const title = option.title?.toLowerCase().trim() ?? ""
+  return title === "color" || title === "colour"
+}
+
+const syncOptionsToUrl = (
+  options: Record<string, string | undefined>,
+  productOptions: HttpTypes.StoreProductOption[]
+) => {
+  if (typeof window === "undefined") return
+
+  const url = new URL(window.location.href)
+
+  for (const option of productOptions) {
+    const key = option.title?.toLowerCase()
+    if (!key) continue
+    const value = options[option.id]
+    if (value) {
+      url.searchParams.set(key, value)
+    } else {
+      url.searchParams.delete(key)
+    }
+  }
+
+  window.history.replaceState(null, "", url.toString())
+}
+
 export default function ProductActions({
   product,
   disabled,
@@ -41,13 +69,35 @@ export default function ProductActions({
   const { trackAddToCart } = useAnalytics()
   const { trackAddToCart: trackMetaAddToCart } = useMetaPixel()
 
-  // If there is only 1 variant, preselect the options
+  // Initialize options: auto-select single variant or restore from URL
   useEffect(() => {
     if (product.variants?.length === 1) {
       const variantOptions = optionsAsKeymap(product.variants[0].options)
       setOptions(variantOptions ?? {})
+      return
     }
-  }, [product.variants])
+
+    if ((product.variants?.length ?? 0) > 1) {
+      const params = new URLSearchParams(window.location.search)
+      const restored: Record<string, string> = {}
+      let found = false
+
+      for (const option of product.options ?? []) {
+        const key = option.title?.toLowerCase()
+        if (!key) continue
+        const value = params.get(key)
+        if (
+          value &&
+          (option.values ?? []).some((v) => v.value === value)
+        ) {
+          restored[option.id] = value
+          found = true
+        }
+      }
+
+      if (found) setOptions(restored)
+    }
+  }, [product.variants, product.options])
 
   const selectedVariant = useMemo(() => {
     if (!product.variants || product.variants.length === 0) {
@@ -62,10 +112,11 @@ export default function ProductActions({
 
   // update the options when a variant is selected
   const setOptionValue = (optionId: string, value: string) => {
-    setOptions((prev) => ({
-      ...prev,
-      [optionId]: value,
-    }))
+    setOptions((prev) => {
+      const next = { ...prev, [optionId]: value }
+      syncOptionsToUrl(next, product.options ?? [])
+      return next
+    })
   }
 
   //check if the selected options produce a valid variant
@@ -202,9 +253,13 @@ export default function ProductActions({
           {(product.variants?.length ?? 0) > 1 && (
             <div className="flex flex-col gap-y-4">
               {(product.options || []).map((option) => {
+                const OptionComponent = isColorOption(option)
+                  ? ColorOptionSelect
+                  : OptionSelect
+
                 return (
                   <div key={option.id}>
-                    <OptionSelect
+                    <OptionComponent
                       option={option}
                       current={options[option.id]}
                       updateOption={setOptionValue}

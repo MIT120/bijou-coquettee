@@ -7,9 +7,15 @@ import ChevronDown from "@modules/common/icons/chevron-down"
 import X from "@modules/common/icons/x"
 
 import { getProductPrice } from "@lib/util/get-product-price"
+import ColorOptionSelect from "./color-option-select"
 import OptionSelect from "./option-select"
 import { HttpTypes } from "@medusajs/types"
 import { isSimpleProduct } from "@lib/util/product"
+
+const isColorOption = (option: HttpTypes.StoreProductOption): boolean => {
+  const title = option.title?.toLowerCase().trim() ?? ""
+  return title === "color" || title === "colour"
+}
 
 type MobileActionsProps = {
   product: HttpTypes.StoreProduct
@@ -187,9 +193,13 @@ const MobileActions: React.FC<MobileActionsProps> = ({
                   {(product.variants?.length ?? 0) > 1 && (
                     <div className="flex flex-col gap-y-6">
                       {(product.options || []).map((option) => {
+                        const OptionComponent = isColorOption(option)
+                          ? ColorOptionSelect
+                          : OptionSelect
+
                         return (
                           <div key={option.id}>
-                            <OptionSelect
+                            <OptionComponent
                               option={option}
                               current={options[option.id]}
                               updateOption={updateOptions}
