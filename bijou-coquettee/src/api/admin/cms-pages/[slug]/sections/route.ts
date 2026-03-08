@@ -9,6 +9,14 @@ const VALID_SECTION_TYPES = [
     "stats",
     "team",
     "cta",
+    "accordion",
+    "video",
+    "file_download",
+    "testimonial",
+    "feature_grid",
+    "divider",
+    "banner",
+    "logo_grid",
 ]
 
 /**

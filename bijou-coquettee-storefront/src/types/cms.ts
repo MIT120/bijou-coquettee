@@ -16,6 +16,14 @@ export type SectionType =
     | "stats"
     | "team"
     | "cta"
+    | "accordion"
+    | "video"
+    | "file_download"
+    | "testimonial"
+    | "feature_grid"
+    | "divider"
+    | "banner"
+    | "logo_grid"
 
 export type PageSection = {
     id: string
@@ -98,4 +106,85 @@ export type CtaContent = {
 export type CmsPageResponse = {
     page: CmsPage
     sections: PageSection[]
+}
+
+export type AccordionItem = {
+    question: string
+    answer: string
+}
+
+export type AccordionContent = {
+    heading?: string
+    items: AccordionItem[]
+}
+
+export type VideoContent = {
+    heading?: string
+    description?: string
+    video_url: string
+    aspect_ratio?: "16:9" | "4:3" | "1:1"
+}
+
+export type FileItem = {
+    file_url: string
+    file_name: string
+    file_size?: string
+    file_type?: string
+    description?: string
+}
+
+export type FileDownloadContent = {
+    heading?: string
+    description?: string
+    files: FileItem[]
+}
+
+export type TestimonialItem = {
+    quote: string
+    author: string
+    role?: string
+    image_url?: string
+    rating?: number
+}
+
+export type TestimonialContent = {
+    heading?: string
+    testimonials: TestimonialItem[]
+}
+
+export type FeatureItem = {
+    icon?: string
+    title: string
+    description: string
+}
+
+export type FeatureGridContent = {
+    heading?: string
+    columns?: 2 | 3 | 4
+    features: FeatureItem[]
+}
+
+export type DividerContent = {
+    style: "line" | "dots" | "space"
+    spacing: "small" | "medium" | "large"
+}
+
+export type BannerContent = {
+    text: string
+    background_color?: string
+    text_color?: string
+    cta_text?: string
+    cta_link?: string
+    style: "info" | "promo" | "warning"
+}
+
+export type LogoItem = {
+    image_url: string
+    alt: string
+    link?: string
+}
+
+export type LogoGridContent = {
+    heading?: string
+    logos: LogoItem[]
 }

@@ -17,6 +17,9 @@ importers:
       '@medusajs/dashboard':
         specifier: ^2.11.1
         version: 2.11.1(@babel/runtime@7.28.6)(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(typescript@5.9.3)
+      '@medusajs/file-local':
+        specifier: ^2.13.3
+        version: 2.13.3(@medusajs/framework@2.11.1(@medusajs/cli@2.11.1(@opentelemetry/api@1.9.0)(@types/node@20.19.37))(@types/node@20.19.37)(ioredis@5.10.0)(vite@5.4.21(@types/node@20.19.37)))
       '@medusajs/framework':
         specifier: 2.11.1
         version: 2.11.1(@medusajs/cli@2.11.1(@opentelemetry/api@1.9.0)(@types/node@20.19.37))(@types/node@20.19.37)(ioredis@5.10.0)(vite@5.4.21(@types/node@20.19.37))
@@ -1083,6 +1086,12 @@ packages:
     engines: {node: '>=20'}
     peerDependencies:
       '@medusajs/framework': 2.11.1
+
+  '@medusajs/file-local@2.13.3':
+    resolution: {integrity: sha512-nuJxRYWb0M62faM5u9V1CDLh8q+2KM0U/s2V8SbnSJRrAdaBU5MwKHyP/HM4LMAAxb0CxSW/8u2UyinAYvgCUw==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      '@medusajs/framework': 2.13.3
 
   '@medusajs/file-s3@2.11.1':
     resolution: {integrity: sha512-TVxGKSHaGx0KekN39gF4SEMZ5LO4K9KfpIa/W4S4517X0sOIrYtzxWSzR/C8Yc6vqVkbs1VGSzvcR83rr9v20Q==}
@@ -8337,6 +8346,10 @@ snapshots:
       - supports-color
 
   '@medusajs/file-local@2.11.1(@medusajs/framework@2.11.1(@medusajs/cli@2.11.1(@opentelemetry/api@1.9.0)(@types/node@20.19.37))(@types/node@20.19.37)(ioredis@5.10.0)(vite@5.4.21(@types/node@20.19.37)))':
+    dependencies:
+      '@medusajs/framework': 2.11.1(@medusajs/cli@2.11.1(@opentelemetry/api@1.9.0)(@types/node@20.19.37))(@types/node@20.19.37)(ioredis@5.10.0)(vite@5.4.21(@types/node@20.19.37))
+
+  '@medusajs/file-local@2.13.3(@medusajs/framework@2.11.1(@medusajs/cli@2.11.1(@opentelemetry/api@1.9.0)(@types/node@20.19.37))(@types/node@20.19.37)(ioredis@5.10.0)(vite@5.4.21(@types/node@20.19.37)))':
     dependencies:
       '@medusajs/framework': 2.11.1(@medusajs/cli@2.11.1(@opentelemetry/api@1.9.0)(@types/node@20.19.37))(@types/node@20.19.37)(ioredis@5.10.0)(vite@5.4.21(@types/node@20.19.37))
 

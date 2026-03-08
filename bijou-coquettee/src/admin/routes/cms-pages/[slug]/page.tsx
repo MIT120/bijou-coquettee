@@ -1,5 +1,7 @@
 import { useEffect, useState, useCallback } from "react"
 import { useParams } from "react-router-dom"
+import ImageUploadField from "../_components/image-upload-field"
+import FileUploadField from "../_components/file-upload-field"
 import {
     Container,
     Heading,
@@ -70,6 +72,39 @@ type TeamMember = {
     role: string
     image_url: string
     bio: string
+}
+
+type AccordionItem = {
+    question: string
+    answer: string
+}
+
+type FileItem = {
+    file_url: string
+    file_name: string
+    file_size: string
+    file_type: string
+    description: string
+}
+
+type TestimonialItem = {
+    quote: string
+    author: string
+    role: string
+    image_url: string
+    rating: number
+}
+
+type FeatureItem = {
+    icon: string
+    title: string
+    description: string
+}
+
+type LogoItem = {
+    image_url: string
+    alt: string
+    link: string
 }
 
 // ---------------------------------------------------------------------------
@@ -155,6 +190,103 @@ const SECTION_TYPES = [
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-6 h-6">
                 <rect x="2" y="7" width="20" height="10" rx="2" />
                 <path d="M9 12h6M12 9v6" strokeLinecap="round" />
+            </svg>
+        ),
+    },
+    {
+        value: "accordion",
+        label: "Accordion / FAQ",
+        description: "Expandable Q&A panels for FAQs, care tips, or policies.",
+        icon: (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-6 h-6">
+                <path d="M4 6h16" strokeLinecap="round" />
+                <path d="M4 10h16" strokeLinecap="round" />
+                <path d="M4 14h10" strokeLinecap="round" />
+                <path d="M17 13l2 2 2-2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M4 18h10" strokeLinecap="round" />
+            </svg>
+        ),
+    },
+    {
+        value: "video",
+        label: "Video Embed",
+        description: "Embed YouTube or Vimeo videos with an optional heading.",
+        icon: (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-6 h-6">
+                <rect x="2" y="4" width="20" height="16" rx="2" />
+                <path d="M10 9l6 3-6 3V9z" strokeLinejoin="round" />
+            </svg>
+        ),
+    },
+    {
+        value: "file_download",
+        label: "File Download",
+        description: "Downloadable PDFs, catalogs, or documents with preview.",
+        icon: (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-6 h-6">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                <path d="M14 2v6h6" strokeLinejoin="round" />
+                <path d="M12 12v6M9 15l3 3 3-3" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+        ),
+    },
+    {
+        value: "testimonial",
+        label: "Testimonials",
+        description: "Customer quotes with ratings, photos, and attribution.",
+        icon: (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-6 h-6">
+                <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z" />
+                <path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z" />
+            </svg>
+        ),
+    },
+    {
+        value: "feature_grid",
+        label: "Feature Grid",
+        description: "Grid of icons with titles and descriptions for key features.",
+        icon: (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-6 h-6">
+                <rect x="2" y="2" width="9" height="9" rx="1.5" />
+                <rect x="13" y="2" width="9" height="9" rx="1.5" />
+                <rect x="2" y="13" width="9" height="9" rx="1.5" />
+                <rect x="13" y="13" width="9" height="9" rx="1.5" />
+                <path d="M5 6.5l1.5 1.5L9 5M16 6.5l1.5 1.5L20 5M5 17.5l1.5 1.5L9 16M16 17.5l1.5 1.5L20 16" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+        ),
+    },
+    {
+        value: "divider",
+        label: "Divider / Spacer",
+        description: "Visual separator or breathing space between sections.",
+        icon: (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-6 h-6">
+                <path d="M5 12h14" strokeLinecap="round" />
+                <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" />
+                <circle cx="7" cy="12" r="1" fill="currentColor" stroke="none" />
+                <circle cx="17" cy="12" r="1" fill="currentColor" stroke="none" />
+            </svg>
+        ),
+    },
+    {
+        value: "banner",
+        label: "Banner",
+        description: "Full-width announcement or promotional banner.",
+        icon: (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-6 h-6">
+                <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+        ),
+    },
+    {
+        value: "logo_grid",
+        label: "Logo Grid",
+        description: "Row of partner, press, or certification logos.",
+        icon: (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-6 h-6">
+                <rect x="2" y="8" width="5" height="8" rx="1" />
+                <rect x="9.5" y="8" width="5" height="8" rx="1" />
+                <rect x="17" y="8" width="5" height="8" rx="1" />
             </svg>
         ),
     },
@@ -343,19 +475,11 @@ const GalleryBuilder = ({
                             </IconButton>
                         </div>
                     </div>
-                    <div className="flex items-start gap-3">
-                        <ImagePreview url={img.image_url} size={64} />
-                        <div className="flex-1 space-y-2">
-                            <div>
-                                <Label>Image URL *</Label>
-                                <Input
-                                    value={img.image_url}
-                                    onChange={(e) => updateImage(index, "image_url", e.target.value)}
-                                    placeholder="https://..."
-                                />
-                            </div>
-                        </div>
-                    </div>
+                    <ImageUploadField
+                        label="Image *"
+                        value={img.image_url}
+                        onChange={(url) => updateImage(index, "image_url", url)}
+                    />
                     <div className="grid grid-cols-2 gap-3">
                         <div>
                             <Label>Alt Text</Label>
@@ -593,37 +717,29 @@ const TeamBuilder = ({
                             </IconButton>
                         </div>
                     </div>
-                    <div className="flex items-start gap-3">
-                        <ImagePreview url={member.image_url} size={72} />
-                        <div className="flex-1 space-y-2">
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <Label>Name *</Label>
-                                    <Input
-                                        value={member.name}
-                                        onChange={(e) => updateMember(index, "name", e.target.value)}
-                                        placeholder="Jane Doe"
-                                    />
-                                </div>
-                                <div>
-                                    <Label>Role *</Label>
-                                    <Input
-                                        value={member.role}
-                                        onChange={(e) => updateMember(index, "role", e.target.value)}
-                                        placeholder="Founder"
-                                    />
-                                </div>
-                            </div>
-                            <div>
-                                <Label>Photo URL</Label>
-                                <Input
-                                    value={member.image_url}
-                                    onChange={(e) => updateMember(index, "image_url", e.target.value)}
-                                    placeholder="https://..."
-                                />
-                            </div>
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <Label>Name *</Label>
+                            <Input
+                                value={member.name}
+                                onChange={(e) => updateMember(index, "name", e.target.value)}
+                                placeholder="Jane Doe"
+                            />
+                        </div>
+                        <div>
+                            <Label>Role *</Label>
+                            <Input
+                                value={member.role}
+                                onChange={(e) => updateMember(index, "role", e.target.value)}
+                                placeholder="Founder"
+                            />
                         </div>
                     </div>
+                    <ImageUploadField
+                        label="Photo"
+                        value={member.image_url}
+                        onChange={(url) => updateMember(index, "image_url", url)}
+                    />
                     <div>
                         <Label>Bio</Label>
                         <Textarea
@@ -643,6 +759,581 @@ const TeamBuilder = ({
             >
                 <Plus />
                 Add Member
+            </Button>
+        </div>
+    )
+}
+
+// ---------------------------------------------------------------------------
+// Accordion section builder
+// ---------------------------------------------------------------------------
+
+const AccordionBuilder = ({
+    items,
+    onChange,
+}: {
+    items: AccordionItem[]
+    onChange: (items: AccordionItem[]) => void
+}) => {
+    const addItem = () => {
+        onChange([...items, { question: "", answer: "" }])
+    }
+
+    const updateItem = (index: number, field: keyof AccordionItem, value: string) => {
+        const updated = items.map((item, i) =>
+            i === index ? { ...item, [field]: value } : item
+        )
+        onChange(updated)
+    }
+
+    const removeItem = (index: number) => {
+        onChange(items.filter((_, i) => i !== index))
+    }
+
+    const moveUp = (index: number) => {
+        if (index === 0) return
+        const updated = [...items]
+        ;[updated[index - 1], updated[index]] = [updated[index], updated[index - 1]]
+        onChange(updated)
+    }
+
+    const moveDown = (index: number) => {
+        if (index === items.length - 1) return
+        const updated = [...items]
+        ;[updated[index], updated[index + 1]] = [updated[index + 1], updated[index]]
+        onChange(updated)
+    }
+
+    return (
+        <div className="space-y-3">
+            {items.length === 0 && (
+                <div className="rounded-lg border border-dashed border-ui-border-base bg-ui-bg-subtle py-6 text-center">
+                    <Text size="small" className="text-ui-fg-muted">
+                        No items yet. Click "Add Item" to get started.
+                    </Text>
+                </div>
+            )}
+            {items.map((item, index) => (
+                <div
+                    key={index}
+                    className="rounded-lg border border-ui-border-base bg-ui-bg-subtle p-4 space-y-3"
+                >
+                    <div className="flex items-center justify-between">
+                        <Text size="small" className="font-medium text-ui-fg-base">
+                            {item.question ? item.question.substring(0, 50) : `Item ${index + 1}`}
+                        </Text>
+                        <div className="flex items-center gap-1">
+                            <IconButton size="small" variant="transparent" onClick={() => moveUp(index)} disabled={index === 0} type="button">
+                                <ArrowUpMini />
+                            </IconButton>
+                            <IconButton size="small" variant="transparent" onClick={() => moveDown(index)} disabled={index === items.length - 1} type="button">
+                                <ArrowDownMini />
+                            </IconButton>
+                            <IconButton size="small" variant="transparent" onClick={() => removeItem(index)} type="button" className="text-ui-fg-error">
+                                <Trash />
+                            </IconButton>
+                        </div>
+                    </div>
+                    <div>
+                        <Label>Question *</Label>
+                        <Input
+                            value={item.question}
+                            onChange={(e) => updateItem(index, "question", e.target.value)}
+                            placeholder="What is your return policy?"
+                        />
+                    </div>
+                    <div>
+                        <Label>Answer *</Label>
+                        <Textarea
+                            value={item.answer}
+                            onChange={(e) => updateItem(index, "answer", e.target.value)}
+                            placeholder="We accept returns within 30 days..."
+                            rows={3}
+                        />
+                    </div>
+                </div>
+            ))}
+            <Button type="button" variant="secondary" size="small" onClick={addItem}>
+                <Plus />
+                Add Item
+            </Button>
+        </div>
+    )
+}
+
+// ---------------------------------------------------------------------------
+// File download section builder
+// ---------------------------------------------------------------------------
+
+const FileDownloadBuilder = ({
+    files,
+    onChange,
+}: {
+    files: FileItem[]
+    onChange: (files: FileItem[]) => void
+}) => {
+    const addFile = () => {
+        onChange([...files, { file_url: "", file_name: "", file_size: "", file_type: "", description: "" }])
+    }
+
+    const updateFile = (index: number, field: keyof FileItem, value: string) => {
+        const updated = files.map((f, i) =>
+            i === index ? { ...f, [field]: value } : f
+        )
+        onChange(updated)
+    }
+
+    const removeFile = (index: number) => {
+        onChange(files.filter((_, i) => i !== index))
+    }
+
+    const moveUp = (index: number) => {
+        if (index === 0) return
+        const updated = [...files]
+        ;[updated[index - 1], updated[index]] = [updated[index], updated[index - 1]]
+        onChange(updated)
+    }
+
+    const moveDown = (index: number) => {
+        if (index === files.length - 1) return
+        const updated = [...files]
+        ;[updated[index], updated[index + 1]] = [updated[index + 1], updated[index]]
+        onChange(updated)
+    }
+
+    return (
+        <div className="space-y-3">
+            {files.length === 0 && (
+                <div className="rounded-lg border border-dashed border-ui-border-base bg-ui-bg-subtle py-6 text-center">
+                    <Text size="small" className="text-ui-fg-muted">
+                        No files yet. Click "Add File" to get started.
+                    </Text>
+                </div>
+            )}
+            {files.map((file, index) => (
+                <div
+                    key={index}
+                    className="rounded-lg border border-ui-border-base bg-ui-bg-subtle p-4 space-y-3"
+                >
+                    <div className="flex items-center justify-between">
+                        <Text size="small" className="font-medium text-ui-fg-base">
+                            {file.file_name || `File ${index + 1}`}
+                        </Text>
+                        <div className="flex items-center gap-1">
+                            <IconButton size="small" variant="transparent" onClick={() => moveUp(index)} disabled={index === 0} type="button">
+                                <ArrowUpMini />
+                            </IconButton>
+                            <IconButton size="small" variant="transparent" onClick={() => moveDown(index)} disabled={index === files.length - 1} type="button">
+                                <ArrowDownMini />
+                            </IconButton>
+                            <IconButton size="small" variant="transparent" onClick={() => removeFile(index)} type="button" className="text-ui-fg-error">
+                                <Trash />
+                            </IconButton>
+                        </div>
+                    </div>
+                    <FileUploadField
+                        label="File *"
+                        value={file.file_url}
+                        onChange={(url) => {
+                            const ext = url.split(".").pop()?.toLowerCase() || ""
+                            updateFile(index, "file_url", url)
+                            if (ext && !file.file_type) {
+                                updateFile(index, "file_type", ext.toUpperCase())
+                            }
+                        }}
+                    />
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <Label>File Name *</Label>
+                            <Input
+                                value={file.file_name}
+                                onChange={(e) => updateFile(index, "file_name", e.target.value)}
+                                placeholder="Product Catalog 2024"
+                            />
+                        </div>
+                        <div>
+                            <Label>File Size</Label>
+                            <Input
+                                value={file.file_size}
+                                onChange={(e) => updateFile(index, "file_size", e.target.value)}
+                                placeholder="2.4 MB"
+                            />
+                        </div>
+                    </div>
+                    <div>
+                        <Label>File Type</Label>
+                        <Input
+                            value={file.file_type}
+                            onChange={(e) => updateFile(index, "file_type", e.target.value)}
+                            placeholder="PDF"
+                        />
+                    </div>
+                    <div>
+                        <Label>Description</Label>
+                        <Textarea
+                            value={file.description}
+                            onChange={(e) => updateFile(index, "description", e.target.value)}
+                            placeholder="Brief description of this document..."
+                            rows={2}
+                        />
+                    </div>
+                </div>
+            ))}
+            <Button type="button" variant="secondary" size="small" onClick={addFile}>
+                <Plus />
+                Add File
+            </Button>
+        </div>
+    )
+}
+
+// ---------------------------------------------------------------------------
+// Testimonial section builder
+// ---------------------------------------------------------------------------
+
+const TestimonialBuilder = ({
+    testimonials,
+    onChange,
+}: {
+    testimonials: TestimonialItem[]
+    onChange: (testimonials: TestimonialItem[]) => void
+}) => {
+    const addItem = () => {
+        onChange([...testimonials, { quote: "", author: "", role: "", image_url: "", rating: 5 }])
+    }
+
+    const updateItem = (index: number, field: keyof TestimonialItem, value: string | number) => {
+        const updated = testimonials.map((t, i) =>
+            i === index ? { ...t, [field]: value } : t
+        )
+        onChange(updated)
+    }
+
+    const removeItem = (index: number) => {
+        onChange(testimonials.filter((_, i) => i !== index))
+    }
+
+    const moveUp = (index: number) => {
+        if (index === 0) return
+        const updated = [...testimonials]
+        ;[updated[index - 1], updated[index]] = [updated[index], updated[index - 1]]
+        onChange(updated)
+    }
+
+    const moveDown = (index: number) => {
+        if (index === testimonials.length - 1) return
+        const updated = [...testimonials]
+        ;[updated[index], updated[index + 1]] = [updated[index + 1], updated[index]]
+        onChange(updated)
+    }
+
+    return (
+        <div className="space-y-3">
+            {testimonials.length === 0 && (
+                <div className="rounded-lg border border-dashed border-ui-border-base bg-ui-bg-subtle py-6 text-center">
+                    <Text size="small" className="text-ui-fg-muted">
+                        No testimonials yet. Click "Add Testimonial" to get started.
+                    </Text>
+                </div>
+            )}
+            {testimonials.map((t, index) => (
+                <div
+                    key={index}
+                    className="rounded-lg border border-ui-border-base bg-ui-bg-subtle p-4 space-y-3"
+                >
+                    <div className="flex items-center justify-between">
+                        <Text size="small" className="font-medium text-ui-fg-base">
+                            {t.author || `Testimonial ${index + 1}`}
+                        </Text>
+                        <div className="flex items-center gap-1">
+                            <IconButton size="small" variant="transparent" onClick={() => moveUp(index)} disabled={index === 0} type="button">
+                                <ArrowUpMini />
+                            </IconButton>
+                            <IconButton size="small" variant="transparent" onClick={() => moveDown(index)} disabled={index === testimonials.length - 1} type="button">
+                                <ArrowDownMini />
+                            </IconButton>
+                            <IconButton size="small" variant="transparent" onClick={() => removeItem(index)} type="button" className="text-ui-fg-error">
+                                <Trash />
+                            </IconButton>
+                        </div>
+                    </div>
+                    <div>
+                        <Label>Quote *</Label>
+                        <Textarea
+                            value={t.quote}
+                            onChange={(e) => updateItem(index, "quote", e.target.value)}
+                            placeholder="This jewelry is absolutely stunning..."
+                            rows={3}
+                        />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <Label>Author *</Label>
+                            <Input
+                                value={t.author}
+                                onChange={(e) => updateItem(index, "author", e.target.value)}
+                                placeholder="Jane Doe"
+                            />
+                        </div>
+                        <div>
+                            <Label>Role / Location</Label>
+                            <Input
+                                value={t.role}
+                                onChange={(e) => updateItem(index, "role", e.target.value)}
+                                placeholder="Loyal Customer"
+                            />
+                        </div>
+                    </div>
+                    <div>
+                        <Label>Rating (1–5)</Label>
+                        <Input
+                            type="number"
+                            min={1}
+                            max={5}
+                            value={t.rating}
+                            onChange={(e) => updateItem(index, "rating", parseInt(e.target.value) || 5)}
+                        />
+                    </div>
+                    <ImageUploadField
+                        label="Author Photo"
+                        value={t.image_url}
+                        onChange={(url) => updateItem(index, "image_url", url)}
+                    />
+                </div>
+            ))}
+            <Button type="button" variant="secondary" size="small" onClick={addItem}>
+                <Plus />
+                Add Testimonial
+            </Button>
+        </div>
+    )
+}
+
+// ---------------------------------------------------------------------------
+// Feature grid section builder
+// ---------------------------------------------------------------------------
+
+const FEATURE_ICONS = [
+    { value: "shield", label: "Shield" },
+    { value: "heart", label: "Heart" },
+    { value: "truck", label: "Truck" },
+    { value: "star", label: "Star" },
+    { value: "gem", label: "Gem" },
+    { value: "sparkle", label: "Sparkle" },
+    { value: "clock", label: "Clock" },
+    { value: "award", label: "Award" },
+    { value: "leaf", label: "Leaf" },
+    { value: "globe", label: "Globe" },
+]
+
+const FeatureGridBuilder = ({
+    features,
+    onChange,
+}: {
+    features: FeatureItem[]
+    onChange: (features: FeatureItem[]) => void
+}) => {
+    const addItem = () => {
+        onChange([...features, { icon: "star", title: "", description: "" }])
+    }
+
+    const updateItem = (index: number, field: keyof FeatureItem, value: string) => {
+        const updated = features.map((f, i) =>
+            i === index ? { ...f, [field]: value } : f
+        )
+        onChange(updated)
+    }
+
+    const removeItem = (index: number) => {
+        onChange(features.filter((_, i) => i !== index))
+    }
+
+    const moveUp = (index: number) => {
+        if (index === 0) return
+        const updated = [...features]
+        ;[updated[index - 1], updated[index]] = [updated[index], updated[index - 1]]
+        onChange(updated)
+    }
+
+    const moveDown = (index: number) => {
+        if (index === features.length - 1) return
+        const updated = [...features]
+        ;[updated[index], updated[index + 1]] = [updated[index + 1], updated[index]]
+        onChange(updated)
+    }
+
+    return (
+        <div className="space-y-3">
+            {features.length === 0 && (
+                <div className="rounded-lg border border-dashed border-ui-border-base bg-ui-bg-subtle py-6 text-center">
+                    <Text size="small" className="text-ui-fg-muted">
+                        No features yet. Click "Add Feature" to get started.
+                    </Text>
+                </div>
+            )}
+            {features.map((feature, index) => (
+                <div
+                    key={index}
+                    className="rounded-lg border border-ui-border-base bg-ui-bg-subtle p-3 space-y-3"
+                >
+                    <div className="flex items-center justify-between">
+                        <Text size="small" className="font-medium text-ui-fg-base">
+                            {feature.title || `Feature ${index + 1}`}
+                        </Text>
+                        <div className="flex items-center gap-1">
+                            <IconButton size="small" variant="transparent" onClick={() => moveUp(index)} disabled={index === 0} type="button">
+                                <ArrowUpMini />
+                            </IconButton>
+                            <IconButton size="small" variant="transparent" onClick={() => moveDown(index)} disabled={index === features.length - 1} type="button">
+                                <ArrowDownMini />
+                            </IconButton>
+                            <IconButton size="small" variant="transparent" onClick={() => removeItem(index)} type="button" className="text-ui-fg-error">
+                                <Trash />
+                            </IconButton>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <Label>Icon</Label>
+                            <Select value={feature.icon} onValueChange={(v) => updateItem(index, "icon", v)}>
+                                <Select.Trigger>
+                                    <Select.Value />
+                                </Select.Trigger>
+                                <Select.Content>
+                                    {FEATURE_ICONS.map((icon) => (
+                                        <Select.Item key={icon.value} value={icon.value}>
+                                            {icon.label}
+                                        </Select.Item>
+                                    ))}
+                                </Select.Content>
+                            </Select>
+                        </div>
+                        <div>
+                            <Label>Title *</Label>
+                            <Input
+                                value={feature.title}
+                                onChange={(e) => updateItem(index, "title", e.target.value)}
+                                placeholder="Free Shipping"
+                            />
+                        </div>
+                    </div>
+                    <div>
+                        <Label>Description</Label>
+                        <Textarea
+                            value={feature.description}
+                            onChange={(e) => updateItem(index, "description", e.target.value)}
+                            placeholder="On all orders over €50"
+                            rows={2}
+                        />
+                    </div>
+                </div>
+            ))}
+            <Button type="button" variant="secondary" size="small" onClick={addItem}>
+                <Plus />
+                Add Feature
+            </Button>
+        </div>
+    )
+}
+
+// ---------------------------------------------------------------------------
+// Logo grid section builder
+// ---------------------------------------------------------------------------
+
+const LogoGridBuilder = ({
+    logos,
+    onChange,
+}: {
+    logos: LogoItem[]
+    onChange: (logos: LogoItem[]) => void
+}) => {
+    const addLogo = () => {
+        onChange([...logos, { image_url: "", alt: "", link: "" }])
+    }
+
+    const updateLogo = (index: number, field: keyof LogoItem, value: string) => {
+        const updated = logos.map((l, i) =>
+            i === index ? { ...l, [field]: value } : l
+        )
+        onChange(updated)
+    }
+
+    const removeLogo = (index: number) => {
+        onChange(logos.filter((_, i) => i !== index))
+    }
+
+    const moveUp = (index: number) => {
+        if (index === 0) return
+        const updated = [...logos]
+        ;[updated[index - 1], updated[index]] = [updated[index], updated[index - 1]]
+        onChange(updated)
+    }
+
+    const moveDown = (index: number) => {
+        if (index === logos.length - 1) return
+        const updated = [...logos]
+        ;[updated[index], updated[index + 1]] = [updated[index + 1], updated[index]]
+        onChange(updated)
+    }
+
+    return (
+        <div className="space-y-3">
+            {logos.length === 0 && (
+                <div className="rounded-lg border border-dashed border-ui-border-base bg-ui-bg-subtle py-6 text-center">
+                    <Text size="small" className="text-ui-fg-muted">
+                        No logos yet. Click "Add Logo" to get started.
+                    </Text>
+                </div>
+            )}
+            {logos.map((logo, index) => (
+                <div
+                    key={index}
+                    className="rounded-lg border border-ui-border-base bg-ui-bg-subtle p-4 space-y-3"
+                >
+                    <div className="flex items-center justify-between">
+                        <Text size="small" className="font-medium text-ui-fg-base">
+                            {logo.alt || `Logo ${index + 1}`}
+                        </Text>
+                        <div className="flex items-center gap-1">
+                            <IconButton size="small" variant="transparent" onClick={() => moveUp(index)} disabled={index === 0} type="button">
+                                <ArrowUpMini />
+                            </IconButton>
+                            <IconButton size="small" variant="transparent" onClick={() => moveDown(index)} disabled={index === logos.length - 1} type="button">
+                                <ArrowDownMini />
+                            </IconButton>
+                            <IconButton size="small" variant="transparent" onClick={() => removeLogo(index)} type="button" className="text-ui-fg-error">
+                                <Trash />
+                            </IconButton>
+                        </div>
+                    </div>
+                    <ImageUploadField
+                        label="Logo Image *"
+                        value={logo.image_url}
+                        onChange={(url) => updateLogo(index, "image_url", url)}
+                    />
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <Label>Alt Text *</Label>
+                            <Input
+                                value={logo.alt}
+                                onChange={(e) => updateLogo(index, "alt", e.target.value)}
+                                placeholder="Partner name"
+                            />
+                        </div>
+                        <div>
+                            <Label>Link (optional)</Label>
+                            <Input
+                                value={logo.link}
+                                onChange={(e) => updateLogo(index, "link", e.target.value)}
+                                placeholder="https://partner.com"
+                            />
+                        </div>
+                    </div>
+                </div>
+            ))}
+            <Button type="button" variant="secondary" size="small" onClick={addLogo}>
+                <Plus />
+                Add Logo
             </Button>
         </div>
     )
@@ -669,18 +1360,11 @@ const ContentFields = ({
         case "hero":
             return (
                 <div className="space-y-4">
-                    <div>
-                        <Label>Image URL *</Label>
-                        <div className="flex items-center gap-3 mt-1">
-                            <ImagePreview url={(content.image_url as string) || ""} size={64} />
-                            <Input
-                                value={(content.image_url as string) || ""}
-                                onChange={(e) => update("image_url", e.target.value)}
-                                placeholder="https://..."
-                                className="flex-1"
-                            />
-                        </div>
-                    </div>
+                    <ImageUploadField
+                        label="Image *"
+                        value={(content.image_url as string) || ""}
+                        onChange={(url) => update("image_url", url)}
+                    />
                     <div>
                         <Label>Heading *</Label>
                         <Input
@@ -793,18 +1477,11 @@ const ContentFields = ({
         case "image_text":
             return (
                 <div className="space-y-4">
-                    <div>
-                        <Label>Image URL *</Label>
-                        <div className="flex items-center gap-3 mt-1">
-                            <ImagePreview url={(content.image_url as string) || ""} size={64} />
-                            <Input
-                                value={(content.image_url as string) || ""}
-                                onChange={(e) => update("image_url", e.target.value)}
-                                placeholder="https://..."
-                                className="flex-1"
-                            />
-                        </div>
-                    </div>
+                    <ImageUploadField
+                        label="Image *"
+                        value={(content.image_url as string) || ""}
+                        onChange={(url) => update("image_url", url)}
+                    />
                     <div>
                         <Label>Image Alt Text</Label>
                         <Input
@@ -989,6 +1666,319 @@ const ContentFields = ({
                     </div>
                 </div>
             )
+
+        case "accordion": {
+            const rawItems = (content.items as AccordionItem[]) || []
+            return (
+                <div className="space-y-4">
+                    <div>
+                        <Label>Heading</Label>
+                        <Input
+                            value={(content.heading as string) || ""}
+                            onChange={(e) => update("heading", e.target.value)}
+                            placeholder="Frequently Asked Questions"
+                        />
+                    </div>
+                    <div>
+                        <Label className="mb-2 block">Items</Label>
+                        <AccordionBuilder
+                            items={rawItems}
+                            onChange={(items) => update("items", items)}
+                        />
+                    </div>
+                </div>
+            )
+        }
+
+        case "video":
+            return (
+                <div className="space-y-4">
+                    <div>
+                        <Label>Video URL *</Label>
+                        <Input
+                            value={(content.video_url as string) || ""}
+                            onChange={(e) => update("video_url", e.target.value)}
+                            placeholder="https://www.youtube.com/watch?v=..."
+                        />
+                        <Text size="xsmall" className="text-ui-fg-muted mt-1">
+                            Paste a YouTube or Vimeo URL
+                        </Text>
+                    </div>
+                    <div>
+                        <Label>Heading (optional)</Label>
+                        <Input
+                            value={(content.heading as string) || ""}
+                            onChange={(e) => update("heading", e.target.value)}
+                            placeholder="Watch our story"
+                        />
+                    </div>
+                    <div>
+                        <Label>Description (optional)</Label>
+                        <Textarea
+                            value={(content.description as string) || ""}
+                            onChange={(e) => update("description", e.target.value)}
+                            placeholder="A short description below the video..."
+                            rows={3}
+                        />
+                    </div>
+                    <div>
+                        <Label>Aspect Ratio</Label>
+                        <Select
+                            value={(content.aspect_ratio as string) || "16:9"}
+                            onValueChange={(v) => update("aspect_ratio", v)}
+                        >
+                            <Select.Trigger>
+                                <Select.Value />
+                            </Select.Trigger>
+                            <Select.Content>
+                                <Select.Item value="16:9">16:9 (Widescreen)</Select.Item>
+                                <Select.Item value="4:3">4:3 (Standard)</Select.Item>
+                                <Select.Item value="1:1">1:1 (Square)</Select.Item>
+                            </Select.Content>
+                        </Select>
+                    </div>
+                </div>
+            )
+
+        case "file_download": {
+            const rawFiles = (content.files as FileItem[]) || []
+            return (
+                <div className="space-y-4">
+                    <div>
+                        <Label>Heading</Label>
+                        <Input
+                            value={(content.heading as string) || ""}
+                            onChange={(e) => update("heading", e.target.value)}
+                            placeholder="Downloads"
+                        />
+                    </div>
+                    <div>
+                        <Label>Description</Label>
+                        <Textarea
+                            value={(content.description as string) || ""}
+                            onChange={(e) => update("description", e.target.value)}
+                            placeholder="Find all our catalogs and resources here..."
+                            rows={2}
+                        />
+                    </div>
+                    <div>
+                        <Label className="mb-2 block">Files</Label>
+                        <FileDownloadBuilder
+                            files={rawFiles}
+                            onChange={(files) => update("files", files)}
+                        />
+                    </div>
+                </div>
+            )
+        }
+
+        case "testimonial": {
+            const rawTestimonials = (content.testimonials as TestimonialItem[]) || []
+            return (
+                <div className="space-y-4">
+                    <div>
+                        <Label>Heading</Label>
+                        <Input
+                            value={(content.heading as string) || ""}
+                            onChange={(e) => update("heading", e.target.value)}
+                            placeholder="What our customers say"
+                        />
+                    </div>
+                    <div>
+                        <Label className="mb-2 block">Testimonials</Label>
+                        <TestimonialBuilder
+                            testimonials={rawTestimonials}
+                            onChange={(testimonials) => update("testimonials", testimonials)}
+                        />
+                    </div>
+                </div>
+            )
+        }
+
+        case "feature_grid": {
+            const rawFeatures = (content.features as FeatureItem[]) || []
+            return (
+                <div className="space-y-4">
+                    <div>
+                        <Label>Heading</Label>
+                        <Input
+                            value={(content.heading as string) || ""}
+                            onChange={(e) => update("heading", e.target.value)}
+                            placeholder="Why choose us"
+                        />
+                    </div>
+                    <div>
+                        <Label>Columns</Label>
+                        <Select
+                            value={String((content.columns as number) || 3)}
+                            onValueChange={(v) => update("columns", parseInt(v))}
+                        >
+                            <Select.Trigger>
+                                <Select.Value />
+                            </Select.Trigger>
+                            <Select.Content>
+                                <Select.Item value="2">2 Columns</Select.Item>
+                                <Select.Item value="3">3 Columns</Select.Item>
+                                <Select.Item value="4">4 Columns</Select.Item>
+                            </Select.Content>
+                        </Select>
+                    </div>
+                    <div>
+                        <Label className="mb-2 block">Features</Label>
+                        <FeatureGridBuilder
+                            features={rawFeatures}
+                            onChange={(features) => update("features", features)}
+                        />
+                    </div>
+                </div>
+            )
+        }
+
+        case "divider":
+            return (
+                <div className="space-y-4">
+                    <div>
+                        <Label>Style</Label>
+                        <Select
+                            value={(content.style as string) || "line"}
+                            onValueChange={(v) => update("style", v)}
+                        >
+                            <Select.Trigger>
+                                <Select.Value />
+                            </Select.Trigger>
+                            <Select.Content>
+                                <Select.Item value="line">Line</Select.Item>
+                                <Select.Item value="dots">Dots</Select.Item>
+                                <Select.Item value="space">Space only</Select.Item>
+                            </Select.Content>
+                        </Select>
+                    </div>
+                    <div>
+                        <Label>Spacing</Label>
+                        <Select
+                            value={(content.spacing as string) || "medium"}
+                            onValueChange={(v) => update("spacing", v)}
+                        >
+                            <Select.Trigger>
+                                <Select.Value />
+                            </Select.Trigger>
+                            <Select.Content>
+                                <Select.Item value="small">Small</Select.Item>
+                                <Select.Item value="medium">Medium</Select.Item>
+                                <Select.Item value="large">Large</Select.Item>
+                            </Select.Content>
+                        </Select>
+                    </div>
+                </div>
+            )
+
+        case "banner":
+            return (
+                <div className="space-y-4">
+                    <div>
+                        <Label>Text *</Label>
+                        <Textarea
+                            value={(content.text as string) || ""}
+                            onChange={(e) => update("text", e.target.value)}
+                            placeholder="Free shipping on orders over €50!"
+                            rows={2}
+                        />
+                    </div>
+                    <div>
+                        <Label>Style</Label>
+                        <Select
+                            value={(content.style as string) || "promo"}
+                            onValueChange={(v) => update("style", v)}
+                        >
+                            <Select.Trigger>
+                                <Select.Value />
+                            </Select.Trigger>
+                            <Select.Content>
+                                <Select.Item value="info">Info</Select.Item>
+                                <Select.Item value="promo">Promo</Select.Item>
+                                <Select.Item value="warning">Warning</Select.Item>
+                            </Select.Content>
+                        </Select>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <Label>Background Color</Label>
+                            <div className="flex items-center gap-2 mt-1">
+                                <input
+                                    type="color"
+                                    value={(content.background_color as string) || "#f9f5f0"}
+                                    onChange={(e) => update("background_color", e.target.value)}
+                                    className="w-9 h-9 rounded border border-ui-border-base cursor-pointer bg-ui-bg-subtle p-0.5"
+                                />
+                                <Input
+                                    value={(content.background_color as string) || ""}
+                                    onChange={(e) => update("background_color", e.target.value)}
+                                    placeholder="#f9f5f0"
+                                    className="flex-1"
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <Label>Text Color</Label>
+                            <div className="flex items-center gap-2 mt-1">
+                                <input
+                                    type="color"
+                                    value={(content.text_color as string) || "#1a1a1a"}
+                                    onChange={(e) => update("text_color", e.target.value)}
+                                    className="w-9 h-9 rounded border border-ui-border-base cursor-pointer bg-ui-bg-subtle p-0.5"
+                                />
+                                <Input
+                                    value={(content.text_color as string) || ""}
+                                    onChange={(e) => update("text_color", e.target.value)}
+                                    placeholder="#1a1a1a"
+                                    className="flex-1"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <Label>CTA Text (optional)</Label>
+                            <Input
+                                value={(content.cta_text as string) || ""}
+                                onChange={(e) => update("cta_text", e.target.value)}
+                                placeholder="Shop Now"
+                            />
+                        </div>
+                        <div>
+                            <Label>CTA Link (optional)</Label>
+                            <Input
+                                value={(content.cta_link as string) || ""}
+                                onChange={(e) => update("cta_link", e.target.value)}
+                                placeholder="/collections/sale"
+                            />
+                        </div>
+                    </div>
+                </div>
+            )
+
+        case "logo_grid": {
+            const rawLogos = (content.logos as LogoItem[]) || []
+            return (
+                <div className="space-y-4">
+                    <div>
+                        <Label>Heading (optional)</Label>
+                        <Input
+                            value={(content.heading as string) || ""}
+                            onChange={(e) => update("heading", e.target.value)}
+                            placeholder="As seen in"
+                        />
+                    </div>
+                    <div>
+                        <Label className="mb-2 block">Logos</Label>
+                        <LogoGridBuilder
+                            logos={rawLogos}
+                            onChange={(logos) => update("logos", logos)}
+                        />
+                    </div>
+                </div>
+            )
+        }
 
         default:
             return (
@@ -1286,8 +2276,8 @@ const EmptyState = ({ onAdd, onQuickAdd }: { onAdd: () => void; onQuickAdd: (typ
                 Build this page by adding content blocks. Choose from heroes, text, galleries, and more.
             </Text>
 
-            <div className="grid grid-cols-3 gap-3 mb-8 w-full max-w-lg">
-                {SECTION_TYPES.slice(0, 6).map((type) => (
+            <div className="grid grid-cols-3 gap-3 mb-8 w-full max-w-2xl">
+                {SECTION_TYPES.map((type) => (
                     <button
                         key={type.value}
                         type="button"
@@ -1405,6 +2395,70 @@ function getContentPreview(section: PageSection): React.ReactNode {
                     {(c.button_text as string) ? ` — "${c.button_text}"` : ""}
                 </span>
             )
+        case "accordion": {
+            const items = (c.items as unknown[]) || []
+            return (
+                <span className="text-sm text-ui-fg-muted">
+                    {items.length} Q&amp;A item{items.length !== 1 ? "s" : ""}
+                    {(c.heading as string) ? ` — ${c.heading}` : ""}
+                </span>
+            )
+        }
+        case "video":
+            return (
+                <span className="truncate text-sm text-ui-fg-base">
+                    {(c.heading as string) || "Video embed"}
+                    {(c.video_url as string) ? ` — ${c.video_url}` : ""}
+                </span>
+            )
+        case "file_download": {
+            const files = (c.files as unknown[]) || []
+            return (
+                <span className="text-sm text-ui-fg-muted">
+                    {files.length} file{files.length !== 1 ? "s" : ""}
+                    {(c.heading as string) ? ` — ${c.heading}` : ""}
+                </span>
+            )
+        }
+        case "testimonial": {
+            const testimonials = (c.testimonials as unknown[]) || []
+            return (
+                <span className="text-sm text-ui-fg-muted">
+                    {testimonials.length} testimonial{testimonials.length !== 1 ? "s" : ""}
+                    {(c.heading as string) ? ` — ${c.heading}` : ""}
+                </span>
+            )
+        }
+        case "feature_grid": {
+            const features = (c.features as unknown[]) || []
+            return (
+                <span className="text-sm text-ui-fg-muted">
+                    {features.length} feature{features.length !== 1 ? "s" : ""}
+                    {(c.heading as string) ? ` — ${c.heading}` : ""}
+                </span>
+            )
+        }
+        case "divider":
+            return (
+                <span className="text-sm text-ui-fg-muted">
+                    {(c.style as string) || "line"} divider — {(c.spacing as string) || "medium"} spacing
+                </span>
+            )
+        case "banner":
+            return (
+                <span className="truncate text-sm text-ui-fg-base">
+                    {(c.text as string)?.substring(0, 60) || "Banner"}
+                </span>
+            )
+        case "logo_grid": {
+            const logos = (c.logos as unknown[]) || []
+            return (
+                <span className="text-sm text-ui-fg-muted">
+                    {logos.length} logo{logos.length !== 1 ? "s" : ""}
+                    {(c.heading as string) ? ` — ${c.heading}` : ""}
+                </span>
+            )
+        }
         default:
             return (
                 <span className="text-sm text-ui-fg-muted">{section.type}</span>
