@@ -118,6 +118,14 @@ export default async function Footer() {
                   +359 XX XXX XXXX
                 </a>
               </li>
+              <li>
+                <LocalizedClientLink
+                  href="/about"
+                  className="font-sans text-xs text-grey-50 hover:text-grey-90 transition-colors duration-200"
+                >
+                  {await t("navigation.about")}
+                </LocalizedClientLink>
+              </li>
               <li className="pt-1">
                 <LocalizedClientLink
                   href="/contacts"

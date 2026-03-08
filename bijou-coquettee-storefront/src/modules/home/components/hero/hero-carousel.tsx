@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useRef } from "react"
 import Image from "next/image"
 import { Button, Heading, Text } from "@medusajs/ui"
 
@@ -20,8 +20,15 @@ const HeroCarousel = ({ locale: initialLocale, slides }: HeroCarouselProps) => {
   const [activeSlide, setActiveSlide] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
 
+  const touchStartX = useRef<number | null>(null)
+  const touchEndX = useRef<number | null>(null)
+
   const goToNext = useCallback(() => {
     setActiveSlide((prev) => (prev + 1) % slides.length)
+  }, [slides.length])
+
+  const goToPrev = useCallback(() => {
+    setActiveSlide((prev) => (prev - 1 + slides.length) % slides.length)
   }, [slides.length])
 
   useEffect(() => {
@@ -30,6 +37,30 @@ const HeroCarousel = ({ locale: initialLocale, slides }: HeroCarouselProps) => {
     const timer = window.setInterval(goToNext, 6500)
     return () => window.clearInterval(timer)
   }, [isPaused, goToNext, slides.length])
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.changedTouches[0].clientX
+    touchEndX.current = null
+  }, [])
+
+  const handleTouchEnd = useCallback(
+    (e: React.TouchEvent) => {
+      touchEndX.current = e.changedTouches[0].clientX
+      if (touchStartX.current === null || touchEndX.current === null) return
+      const delta = touchStartX.current - touchEndX.current
+      if (delta > 50) goToNext()
+      else if (delta < -50) goToPrev()
+    },
+    [goToNext, goToPrev]
+  )
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "ArrowLeft") goToPrev()
+      else if (e.key === "ArrowRight") goToNext()
+    },
+    [goToPrev, goToNext]
+  )
 
   const stats = [
     { value: "03", label: t("hero.stats.ateliers", locale) },
@@ -44,10 +75,12 @@ const HeroCarousel = ({ locale: initialLocale, slides }: HeroCarouselProps) => {
       className="relative overflow-hidden bg-cream-200"
       role="region"
       aria-label="Hero carousel"
+      tabIndex={0}
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onFocus={() => setIsPaused(true)}
       onBlur={() => setIsPaused(false)}
+      onKeyDown={handleKeyDown}
     >
       <div className="absolute inset-0 bg-gradient-to-br from-white via-transparent to-transparent" />
       <div className="absolute inset-y-0 right-0 w-1/2 bg-gradient-to-l from-white/70 to-transparent pointer-events-none" />
@@ -110,7 +143,11 @@ const HeroCarousel = ({ locale: initialLocale, slides }: HeroCarouselProps) => {
         </div>
 
         <div className="relative w-full large:w-7/12">
-          <div className="relative h-[380px] small:h-[520px] overflow-hidden rounded-[24px] small:rounded-[36px] border border-white/50 bg-white/40 shadow-warm-xl backdrop-blur">
+          <div
+            className="group relative h-[380px] small:h-[520px] overflow-hidden rounded-[24px] small:rounded-[36px] border border-white/50 bg-white/40 shadow-warm-xl backdrop-blur"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          >
             <div
               className="flex h-full transition-transform duration-700 ease-out"
               style={{ transform: `translateX(-${activeSlide * 100}%)` }}
@@ -150,6 +187,46 @@ const HeroCarousel = ({ locale: initialLocale, slides }: HeroCarouselProps) => {
                 )
               })}
             </div>
+            {slides.length > 1 && (
+              <>
+                <button
+                  onClick={goToPrev}
+                  className="absolute left-3 top-1/2 z-10 hidden small:flex -translate-y-1/2 items-center justify-center w-10 h-10 rounded-full bg-white/80 hover:bg-white shadow-sm backdrop-blur-sm transition-all duration-200 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-grey-40"
+                  aria-label="Previous slide"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.75"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="w-5 h-5 text-grey-70"
+                  >
+                    <polyline points="13 5 7 10 13 15" />
+                  </svg>
+                </button>
+                <button
+                  onClick={goToNext}
+                  className="absolute right-3 top-1/2 z-10 hidden small:flex -translate-y-1/2 items-center justify-center w-10 h-10 rounded-full bg-white/80 hover:bg-white shadow-sm backdrop-blur-sm transition-all duration-200 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-grey-40"
+                  aria-label="Next slide"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.75"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="w-5 h-5 text-grey-70"
+                  >
+                    <polyline points="7 5 13 10 7 15" />
+                  </svg>
+                </button>
+              </>
+            )}
             <div
               className="absolute bottom-4 left-4 right-4 small:bottom-6 small:left-6 small:right-6 flex items-center justify-between rounded-full bg-white/90 px-4 py-3 small:px-5 small:py-4 shadow-warm-lg backdrop-blur"
               aria-live="polite"

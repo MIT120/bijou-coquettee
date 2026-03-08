@@ -1,14 +1,42 @@
 import { Metadata } from "next"
 import { Heading, Text } from "@medusajs/ui"
-import Certificates from "@modules/home/components/certificates"
 
-export const metadata: Metadata = {
-    title: "За нас | Bijou Coquettee",
-    description:
-        "Научете повече за Bijou Coquettee - ръчно изработени бижута с кристали Swarovski и естествени камъни.",
+import Certificates from "@modules/home/components/certificates"
+import PageSectionRenderer from "@modules/common/components/page-section-renderer"
+import { getCmsPage } from "@lib/data/cms-pages"
+
+// ---------------------------------------------------------------------------
+// Metadata: resolved at request time so CMS SEO fields can override defaults
+// ---------------------------------------------------------------------------
+
+const DEFAULT_TITLE = "За нас | Bijou Coquettee"
+const DEFAULT_DESCRIPTION =
+    "Научете повече за Bijou Coquettee - ръчно изработени бижута с кристали Swarovski и естествени камъни."
+
+export async function generateMetadata(): Promise<Metadata> {
+    const cmsData = await getCmsPage("about")
+
+    if (cmsData?.page?.is_published) {
+        return {
+            title: cmsData.page.seo_title ?? DEFAULT_TITLE,
+            description: cmsData.page.seo_description ?? DEFAULT_DESCRIPTION,
+            openGraph: cmsData.page.seo_image
+                ? { images: [{ url: cmsData.page.seo_image }] }
+                : undefined,
+        }
+    }
+
+    return {
+        title: DEFAULT_TITLE,
+        description: DEFAULT_DESCRIPTION,
+    }
 }
 
-export default function AboutPage() {
+// ---------------------------------------------------------------------------
+// Hardcoded fallback content (keep as-is so the page always renders)
+// ---------------------------------------------------------------------------
+
+function StaticAboutContent() {
     return (
         <div className="py-16 small:py-24">
             <div className="content-container max-w-3xl">
@@ -83,8 +111,30 @@ export default function AboutPage() {
                     </section>
                 </div>
             </div>
+        </div>
+    )
+}
+
+// ---------------------------------------------------------------------------
+// Page component
+// ---------------------------------------------------------------------------
+
+export default async function AboutPage() {
+    const cmsData = await getCmsPage("about")
+    const isCmsActive =
+        cmsData !== null &&
+        cmsData.page.is_published &&
+        cmsData.sections.length > 0
+
+    return (
+        <main>
+            {isCmsActive ? (
+                <PageSectionRenderer sections={cmsData.sections} />
+            ) : (
+                <StaticAboutContent />
+            )}
 
             <Certificates />
-        </div>
+        </main>
     )
 }

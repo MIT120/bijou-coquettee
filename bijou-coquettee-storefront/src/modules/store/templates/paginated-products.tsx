@@ -3,8 +3,12 @@ import { getRegion } from "@lib/data/regions"
 import ProductPreview from "@modules/products/components/product-preview"
 import { Pagination } from "@modules/store/components/pagination"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
+import { OPTION_TITLES } from "@modules/store/components/refinement-list/color-filter"
 
 const PRODUCT_LIMIT = 12
+
+// Option title names that represent a color/metal choice.
+const COLOR_OPTION_TITLES = OPTION_TITLES
 
 type PaginatedProductsParams = {
   limit: number
@@ -14,6 +18,28 @@ type PaginatedProductsParams = {
   order?: string
 }
 
+/** Extract all unique color/metal values from a product list. */
+export function extractAvailableColors(
+  products: Awaited<
+    ReturnType<typeof listProductsWithSort>
+  >["response"]["products"]
+): string[] {
+  const seen = new Set<string>()
+
+  for (const product of products) {
+    for (const option of product.options ?? []) {
+      if (!COLOR_OPTION_TITLES.includes(option.title?.toLowerCase().trim() ?? "")) {
+        continue
+      }
+      for (const v of option.values ?? []) {
+        if (v.value) seen.add(v.value)
+      }
+    }
+  }
+
+  return Array.from(seen).sort((a, b) => a.localeCompare(b))
+}
+
 export default async function PaginatedProducts({
   sortBy,
   page,
@@ -21,6 +47,7 @@ export default async function PaginatedProducts({
   categoryId,
   productsIds,
   countryCode,
+  colorFilter,
 }: {
   sortBy?: SortOptions
   page: number
@@ -28,6 +55,7 @@ export default async function PaginatedProducts({
   categoryId?: string
   productsIds?: string[]
   countryCode: string
+  colorFilter?: string[]
 }) {
   const queryParams: PaginatedProductsParams = {
     limit: 12,
@@ -63,6 +91,41 @@ export default async function PaginatedProducts({
     sortBy,
     countryCode,
   })
+
+  // Apply client-side color/metal filter when one or more colors are selected.
+  // Medusa's store API does not expose option-value filtering natively, so we
+  // filter the already-fetched products in memory (listProductsWithSort fetches
+  // up to 100 products and then paginates locally).
+  if (colorFilter && colorFilter.length > 0) {
+    const normalizedFilter = colorFilter.map((c) => c.toLowerCase().trim())
+
+    products = products.filter((product) => {
+      for (const option of product.options ?? []) {
+        if (
+          !COLOR_OPTION_TITLES.includes(
+            option.title?.toLowerCase().trim() ?? ""
+          )
+        ) {
+          continue
+        }
+        for (const v of option.values ?? []) {
+          if (
+            v.value &&
+            normalizedFilter.includes(v.value.toLowerCase().trim())
+          ) {
+            return true
+          }
+        }
+      }
+      return false
+    })
+
+    count = products.length
+
+    // Re-paginate after filtering
+    const pageParam = (page - 1) * PRODUCT_LIMIT
+    products = products.slice(pageParam, pageParam + PRODUCT_LIMIT)
+  }
 
   const totalPages = Math.ceil(count / PRODUCT_LIMIT)
 

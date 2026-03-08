@@ -25,6 +25,7 @@
   "dependencies": {
     "@medusajs/admin-sdk": "2.11.1",
     "@medusajs/cli": "2.11.1",
+    "@medusajs/dashboard": "^2.11.1",
     "@medusajs/framework": "2.11.1",
     "@medusajs/medusa": "2.11.1",
     "@pdf-lib/fontkit": "^1.1.1",

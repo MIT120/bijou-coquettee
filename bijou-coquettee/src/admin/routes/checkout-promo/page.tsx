@@ -1,5 +1,5 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk"
-import { ShoppingBag } from "@medusajs/icons"
+import { ShoppingBag, MagnifyingGlass } from "@medusajs/icons"
 import {
     Container,
     Heading,
@@ -14,8 +14,9 @@ import {
     Text,
     IconButton,
     toast,
+    Select,
 } from "@medusajs/ui"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef, useCallback } from "react"
 import { EllipsisHorizontal } from "@medusajs/icons"
 
 type CheckoutPromo = {
@@ -29,6 +30,16 @@ type CheckoutPromo = {
     promotion_id: string | null
     is_active: boolean
     created_at: string
+}
+
+type AdminProduct = {
+    id: string
+    title: string
+    thumbnail: string | null
+    variants: Array<{
+        id: string
+        title: string
+    }>
 }
 
 type FormData = {
@@ -49,6 +60,166 @@ const emptyForm: FormData = {
     is_active: false,
 }
 
+// Product search hook with 300ms debounce
+function useProductSearch() {
+    const [query, setQuery] = useState("")
+    const [results, setResults] = useState<AdminProduct[]>([])
+    const [searching, setSearching] = useState(false)
+    const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+    const search = useCallback((term: string) => {
+        setQuery(term)
+        if (timerRef.current) clearTimeout(timerRef.current)
+
+        if (!term.trim()) {
+            setResults([])
+            return
+        }
+
+        timerRef.current = setTimeout(async () => {
+            setSearching(true)
+            try {
+                const res = await fetch(
+                    `/admin/products?q=${encodeURIComponent(term)}&limit=10`,
+                    { credentials: "include" }
+                )
+                const data = await res.json()
+                setResults(data.products || [])
+            } catch {
+                setResults([])
+            } finally {
+                setSearching(false)
+            }
+        }, 300)
+    }, [])
+
+    const clear = useCallback(() => {
+        setQuery("")
+        setResults([])
+        if (timerRef.current) clearTimeout(timerRef.current)
+    }, [])
+
+    return { query, results, searching, search, clear }
+}
+
+function ProductSearchField({
+    onSelect,
+    initialProductId,
+}: {
+    onSelect: (product: AdminProduct) => void
+    initialProductId?: string
+}) {
+    const { query, results, searching, search, clear } = useProductSearch()
+    const [selectedTitle, setSelectedTitle] = useState("")
+    const [open, setOpen] = useState(false)
+    const containerRef = useRef<HTMLDivElement>(null)
+
+    // Fetch the product title when editing an existing promo
+    useEffect(() => {
+        if (!initialProductId) return
+        const fetchTitle = async () => {
+            try {
+                const res = await fetch(`/admin/products/${initialProductId}`, {
+                    credentials: "include",
+                })
+                const data = await res.json()
+                if (data.product?.title) {
+                    setSelectedTitle(data.product.title)
+                }
+            } catch {
+                // silently ignore — the manual ID field is still populated
+            }
+        }
+        fetchTitle()
+    }, [initialProductId])
+
+    // Close dropdown on outside click
+    useEffect(() => {
+        const handler = (e: MouseEvent) => {
+            if (
+                containerRef.current &&
+                !containerRef.current.contains(e.target as Node)
+            ) {
+                setOpen(false)
+            }
+        }
+        document.addEventListener("mousedown", handler)
+        return () => document.removeEventListener("mousedown", handler)
+    }, [])
+
+    const handleSelect = (product: AdminProduct) => {
+        setSelectedTitle(product.title)
+        setOpen(false)
+        clear()
+        onSelect(product)
+    }
+
+    const handleInput = (value: string) => {
+        setSelectedTitle("")
+        setOpen(true)
+        search(value)
+    }
+
+    return (
+        <div ref={containerRef} className="relative">
+            <div className="relative">
+                <MagnifyingGlass className="absolute left-2.5 top-1/2 -translate-y-1/2 text-ui-fg-muted w-4 h-4" />
+                <Input
+                    placeholder="Search products by name..."
+                    value={selectedTitle || query}
+                    onChange={(e) => handleInput(e.target.value)}
+                    onFocus={() => {
+                        if (query) setOpen(true)
+                    }}
+                    className="pl-8"
+                />
+            </div>
+
+            {open && (query || searching) && (
+                <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-ui-bg-base border border-ui-border-base rounded-lg shadow-elevation-flyout max-h-60 overflow-y-auto">
+                    {searching && (
+                        <div className="px-3 py-2 text-xs text-ui-fg-muted">
+                            Searching...
+                        </div>
+                    )}
+                    {!searching && results.length === 0 && query && (
+                        <div className="px-3 py-2 text-xs text-ui-fg-muted">
+                            No products found
+                        </div>
+                    )}
+                    {results.map((product) => (
+                        <button
+                            key={product.id}
+                            type="button"
+                            onClick={() => handleSelect(product)}
+                            className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-ui-bg-subtle transition-colors"
+                        >
+                            {product.thumbnail ? (
+                                <img
+                                    src={product.thumbnail}
+                                    alt={product.title}
+                                    className="w-8 h-8 object-cover rounded flex-shrink-0"
+                                />
+                            ) : (
+                                <div className="w-8 h-8 bg-ui-bg-subtle rounded flex-shrink-0" />
+                            )}
+                            <div className="min-w-0">
+                                <p className="text-sm text-ui-fg-base font-medium truncate">
+                                    {product.title}
+                                </p>
+                                <p className="text-xs text-ui-fg-muted truncate">
+                                    {product.variants.length} variant
+                                    {product.variants.length !== 1 ? "s" : ""}
+                                </p>
+                            </div>
+                        </button>
+                    ))}
+                </div>
+            )}
+        </div>
+    )
+}
+
 function PromoFormModal({
     open,
     onClose,
@@ -62,6 +233,9 @@ function PromoFormModal({
 }) {
     const [form, setForm] = useState<FormData>(emptyForm)
     const [saving, setSaving] = useState(false)
+    const [selectedProduct, setSelectedProduct] =
+        useState<AdminProduct | null>(null)
+    const [showManualIds, setShowManualIds] = useState(false)
 
     useEffect(() => {
         if (editing) {
@@ -73,17 +247,34 @@ function PromoFormModal({
                 discount_percent: editing.discount_percent?.toString() || "",
                 is_active: editing.is_active,
             })
+            setSelectedProduct(null)
+            setShowManualIds(false)
         } else {
             setForm(emptyForm)
+            setSelectedProduct(null)
+            setShowManualIds(false)
         }
     }, [editing, open])
 
     if (!open) return null
 
+    const handleProductSelect = (product: AdminProduct) => {
+        setSelectedProduct(product)
+        setForm((prev) => ({
+            ...prev,
+            product_id: product.id,
+            variant_id: "",
+        }))
+    }
+
+    const handleVariantSelect = (variantId: string) => {
+        setForm((prev) => ({ ...prev, variant_id: variantId }))
+    }
+
     const handleSubmit = async () => {
         if (!form.product_id || !form.variant_id) {
             toast.error("Error", {
-                description: "Product ID and Variant ID are required",
+                description: "A product and variant are required",
             })
             return
         }
@@ -98,36 +289,112 @@ function PromoFormModal({
         }
     }
 
+    // Variants available from selected product or empty when editing
+    const variantOptions = selectedProduct?.variants ?? []
+
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-            <div className="bg-white rounded-lg shadow-lg w-full max-w-lg max-h-[90vh] overflow-y-auto p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ui-bg-overlay">
+            <div className="bg-ui-bg-base text-ui-fg-base rounded-lg shadow-elevation-modal w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 border border-ui-border-base">
                 <Heading level="h2" className="mb-4">
                     {editing ? "Edit Checkout Promo" : "Create Checkout Promo"}
                 </Heading>
 
-                <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-5">
+                    {/* Product search */}
                     <div>
-                        <Label htmlFor="product_id">Product ID *</Label>
-                        <Input
-                            id="product_id"
-                            placeholder="prod_01ABC..."
-                            value={form.product_id}
-                            onChange={(e) =>
-                                setForm({ ...form, product_id: e.target.value })
-                            }
+                        <Label className="mb-1.5 block">
+                            Product *
+                        </Label>
+                        <ProductSearchField
+                            onSelect={handleProductSelect}
+                            initialProductId={editing?.product_id}
                         />
+                        {form.product_id && (
+                            <p className="mt-1 text-xs text-ui-fg-muted font-mono">
+                                {form.product_id}
+                            </p>
+                        )}
                     </div>
 
+                    {/* Variant select — shown when a product has been picked via search */}
+                    {variantOptions.length > 0 && (
+                        <div>
+                            <Label className="mb-1.5 block">Variant *</Label>
+                            <Select
+                                value={form.variant_id}
+                                onValueChange={handleVariantSelect}
+                            >
+                                <Select.Trigger>
+                                    <Select.Value placeholder="Select a variant..." />
+                                </Select.Trigger>
+                                <Select.Content>
+                                    {variantOptions.map((v) => (
+                                        <Select.Item key={v.id} value={v.id}>
+                                            {v.title}
+                                        </Select.Item>
+                                    ))}
+                                </Select.Content>
+                            </Select>
+                            {form.variant_id && (
+                                <p className="mt-1 text-xs text-ui-fg-muted font-mono">
+                                    {form.variant_id}
+                                </p>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Manual ID toggle */}
                     <div>
-                        <Label htmlFor="variant_id">Variant ID *</Label>
-                        <Input
-                            id="variant_id"
-                            placeholder="variant_01ABC..."
-                            value={form.variant_id}
-                            onChange={(e) =>
-                                setForm({ ...form, variant_id: e.target.value })
-                            }
-                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowManualIds((v) => !v)}
+                            className="text-xs text-ui-fg-muted underline hover:text-ui-fg-base transition-colors"
+                        >
+                            {showManualIds
+                                ? "Hide manual ID fields"
+                                : "Enter IDs manually"}
+                        </button>
+
+                        {showManualIds && (
+                            <div className="mt-3 flex flex-col gap-3 p-3 bg-ui-bg-subtle rounded-lg border border-ui-border-base">
+                                <Text className="text-xs text-ui-fg-muted">
+                                    Use these fields to paste product/variant IDs directly.
+                                    They override any selection above.
+                                </Text>
+                                <div>
+                                    <Label htmlFor="product_id_manual">
+                                        Product ID
+                                    </Label>
+                                    <Input
+                                        id="product_id_manual"
+                                        placeholder="prod_01ABC..."
+                                        value={form.product_id}
+                                        onChange={(e) =>
+                                            setForm({
+                                                ...form,
+                                                product_id: e.target.value,
+                                            })
+                                        }
+                                    />
+                                </div>
+                                <div>
+                                    <Label htmlFor="variant_id_manual">
+                                        Variant ID
+                                    </Label>
+                                    <Input
+                                        id="variant_id_manual"
+                                        placeholder="variant_01ABC..."
+                                        value={form.variant_id}
+                                        onChange={(e) =>
+                                            setForm({
+                                                ...form,
+                                                variant_id: e.target.value,
+                                            })
+                                        }
+                                    />
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     <div>
@@ -149,13 +416,18 @@ function PromoFormModal({
                             placeholder="Add a matching bracelet to your order"
                             value={form.description}
                             onChange={(e) =>
-                                setForm({ ...form, description: e.target.value })
+                                setForm({
+                                    ...form,
+                                    description: e.target.value,
+                                })
                             }
                         />
                     </div>
 
                     <div>
-                        <Label htmlFor="discount_percent">Discount % (0 = no discount)</Label>
+                        <Label htmlFor="discount_percent">
+                            Discount % (0 = no discount)
+                        </Label>
                         <Input
                             id="discount_percent"
                             type="number"
@@ -164,7 +436,10 @@ function PromoFormModal({
                             placeholder="0"
                             value={form.discount_percent}
                             onChange={(e) =>
-                                setForm({ ...form, discount_percent: e.target.value })
+                                setForm({
+                                    ...form,
+                                    discount_percent: e.target.value,
+                                })
                             }
                         />
                     </div>
@@ -278,7 +553,9 @@ const CheckoutPromoPage = () => {
             })
             if (!res.ok) throw new Error()
             toast.success("Success", {
-                description: promo.is_active ? "Promo deactivated" : "Promo activated",
+                description: promo.is_active
+                    ? "Promo deactivated"
+                    : "Promo activated",
             })
             await fetchPromos()
         } catch {
@@ -309,8 +586,8 @@ const CheckoutPromoPage = () => {
             </div>
 
             <Text className="text-ui-fg-subtle mb-6">
-                Configure a promotional product to display in the checkout sidebar.
-                Only one promo can be active at a time.
+                Configure a promotional product to display in the checkout
+                sidebar. Only one promo can be active at a time.
             </Text>
 
             {promos.length === 0 ? (
@@ -368,9 +645,13 @@ const CheckoutPromoPage = () => {
                                 </Table.Cell>
                                 <Table.Cell>
                                     <Badge
-                                        color={promo.is_active ? "green" : "grey"}
+                                        color={
+                                            promo.is_active ? "green" : "grey"
+                                        }
                                     >
-                                        {promo.is_active ? "Active" : "Inactive"}
+                                        {promo.is_active
+                                            ? "Active"
+                                            : "Inactive"}
                                     </Badge>
                                 </Table.Cell>
                                 <Table.Cell className="text-right">

@@ -65,7 +65,7 @@ export const NAV_ITEMS: NavItem[] = [
     },
     {
         key: "about",
-        href: "/#about",
+        href: "/about",
         translationKey: "navigation.about",
     },
 ]

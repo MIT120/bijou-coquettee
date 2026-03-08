@@ -14,7 +14,7 @@ import { isSimpleProduct } from "@lib/util/product"
 
 const isColorOption = (option: HttpTypes.StoreProductOption): boolean => {
   const title = option.title?.toLowerCase().trim() ?? ""
-  return title === "color" || title === "colour"
+  return ["color", "colour", "metal", "метал", "цвят"].includes(title)
 }
 
 type MobileActionsProps = {

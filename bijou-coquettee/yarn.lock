@@ -2074,7 +2074,7 @@
   resolved "https://registry.npmjs.org/@medusajs/customer/-/customer-2.11.1.tgz"
   integrity sha512-pjMH+VvPs//fBv7i0Yj2GrATcGEmeY2uuhOxh3kyvTjiD3d/B8qCu4m+iUt2r13OgoGanQhJRykia1F2VaJsGg==
 
-"@medusajs/dashboard@2.11.1":
+"@medusajs/dashboard@^2.11.1", "@medusajs/dashboard@2.11.1":
   version "2.11.1"
   resolved "https://registry.npmjs.org/@medusajs/dashboard/-/dashboard-2.11.1.tgz"
   integrity sha512-eB8cdAizk7FQLXm/k+vhwVhi4cAfenO4O1/ViNCHM1NhZi8AsnlU1ofg2aVsCEtoEZ+LVCp1uzcX38b33PWkgg==

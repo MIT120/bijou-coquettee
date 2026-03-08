@@ -4,14 +4,20 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useCallback } from "react"
 
 import SortProducts, { SortOptions } from "./sort-products"
+import ColorFilter from "./color-filter"
 
 type RefinementListProps = {
   sortBy: SortOptions
   search?: boolean
-  'data-testid'?: string
+  availableColors?: string[]
+  "data-testid"?: string
 }
 
-const RefinementList = ({ sortBy, 'data-testid': dataTestId }: RefinementListProps) => {
+const RefinementList = ({
+  sortBy,
+  availableColors,
+  "data-testid": dataTestId,
+}: RefinementListProps) => {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -33,7 +39,14 @@ const RefinementList = ({ sortBy, 'data-testid': dataTestId }: RefinementListPro
 
   return (
     <div className="flex small:flex-col gap-12 py-4 mb-8 small:px-0 pl-6 small:min-w-[250px] small:ml-[1.675rem]">
-      <SortProducts sortBy={sortBy} setQueryParams={setQueryParams} data-testid={dataTestId} />
+      <SortProducts
+        sortBy={sortBy}
+        setQueryParams={setQueryParams}
+        data-testid={dataTestId}
+      />
+      {availableColors && availableColors.length > 0 && (
+        <ColorFilter availableColors={availableColors} />
+      )}
     </div>
   )
 }
