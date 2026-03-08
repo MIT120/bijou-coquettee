@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
 
@@ -21,6 +21,7 @@ import type {
     DividerContent,
     BannerContent,
     LogoGridContent,
+    CertificatesContent,
 } from "@/types/cms"
 
 import Lightbox from "@modules/common/components/lightbox"
@@ -1043,6 +1044,137 @@ function LogoGridSection({ content }: { content: LogoGridContent }) {
 }
 
 // ---------------------------------------------------------------------------
+// Certificates section — data fetched client-side from certificate module
+// ---------------------------------------------------------------------------
+
+type CertificateItem = {
+    id: string
+    title: string
+    description: string | null
+    image_url: string
+    link: string | null
+    sort_order: number
+}
+
+function CertificatesSection({ content }: { content: CertificatesContent }) {
+    const [certificates, setCertificates] = useState<CertificateItem[]>([])
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        const backendUrl =
+            process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL || "http://localhost:9000"
+        const publishableKey =
+            process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY || ""
+
+        fetch(`${backendUrl}/store/certificates`, {
+            headers: publishableKey
+                ? { "x-publishable-api-key": publishableKey }
+                : {},
+            next: { revalidate: 60 },
+        } as any)
+            .then((res) => res.json())
+            .then((data) => {
+                setCertificates(data.certificates ?? [])
+            })
+            .catch(() => {
+                setCertificates([])
+            })
+            .finally(() => setLoading(false))
+    }, [])
+
+    if (loading) {
+        return (
+            <section className="py-12 small:py-16">
+                <div className="content-container">
+                    <div className="flex justify-center">
+                        <div className="h-8 w-8 animate-spin rounded-full border-2 border-grey-30 border-t-grey-90" />
+                    </div>
+                </div>
+            </section>
+        )
+    }
+
+    if (certificates.length === 0) return null
+
+    const columns = content.columns || 3
+    const colClasses =
+        columns === 2
+            ? "grid-cols-1 xsmall:grid-cols-2"
+            : columns === 4
+                ? "grid-cols-2 xsmall:grid-cols-3 medium:grid-cols-4"
+                : "grid-cols-1 xsmall:grid-cols-2 medium:grid-cols-3"
+
+    return (
+        <section className="py-12 small:py-16">
+            <div className="content-container">
+                {(content.label || content.heading || content.description) && (
+                    <div className="text-center mb-10">
+                        {content.label && (
+                            <span className="font-sans text-xs tracking-[0.18em] uppercase text-grey-60 font-normal">
+                                {content.label}
+                            </span>
+                        )}
+                        {content.heading && (
+                            <h2 className="font-display text-2xl small:text-3xl text-grey-90 font-light tracking-tight mt-2">
+                                {content.heading}
+                            </h2>
+                        )}
+                        {content.description && (
+                            <p className="font-sans text-sm text-grey-50 font-light leading-relaxed text-center max-w-2xl mx-auto mt-5 mb-0">
+                                {content.description}
+                            </p>
+                        )}
+                    </div>
+                )}
+
+                <div className={`grid ${colClasses} gap-6 small:gap-8`}>
+                    {certificates.map((cert) => {
+                        const card = (
+                            <div className="group flex flex-col items-center text-center">
+                                <div className="relative w-full aspect-[4/3] bg-cream-100 border border-grey-20 rounded-sm overflow-hidden">
+                                    <Image
+                                        src={cert.image_url}
+                                        alt={cert.title}
+                                        fill
+                                        sizes="(max-width: 480px) 100vw, (max-width: 768px) 50vw, 33vw"
+                                        className="object-contain p-2"
+                                        loading="lazy"
+                                    />
+                                </div>
+                                <h3 className="font-sans text-sm text-grey-90 font-medium mt-3">
+                                    {cert.title}
+                                </h3>
+                                {cert.description && (
+                                    <p className="font-sans text-xs text-grey-50 font-light mt-1 leading-relaxed">
+                                        {cert.description}
+                                    </p>
+                                )}
+                            </div>
+                        )
+
+                        if (cert.link) {
+                            return (
+                                <a
+                                    key={cert.id}
+                                    href={cert.link}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="focus:outline-none focus-visible:ring-2 focus-visible:ring-grey-40 rounded-sm"
+                                >
+                                    {card}
+                                </a>
+                            )
+                        }
+
+                        return <div key={cert.id}>{card}</div>
+                    })}
+                </div>
+            </div>
+        </section>
+    )
+}
+
+// ---------------------------------------------------------------------------
 // Main renderer
 // ---------------------------------------------------------------------------
 
@@ -1136,6 +1268,12 @@ function renderSection(section: PageSection) {
             return (
                 <LogoGridSection
                     content={section.content as unknown as LogoGridContent}
+                />
+            )
+        case "certificates":
+            return (
+                <CertificatesSection
+                    content={section.content as unknown as CertificatesContent}
                 />
             )
         default:

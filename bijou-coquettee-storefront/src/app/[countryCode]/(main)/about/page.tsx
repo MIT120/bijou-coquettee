@@ -131,10 +131,11 @@ export default async function AboutPage() {
             {isCmsActive ? (
                 <PageSectionRenderer sections={cmsData.sections} />
             ) : (
-                <StaticAboutContent />
+                <>
+                    <StaticAboutContent />
+                    <Certificates />
+                </>
             )}
-
-            <Certificates />
         </main>
     )
 }

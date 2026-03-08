@@ -290,6 +290,19 @@ const SECTION_TYPES = [
             </svg>
         ),
     },
+    {
+        value: "certificates",
+        label: "Certificates",
+        description: "Displays certificates from the certificate module. Customise heading and description.",
+        icon: (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-6 h-6">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                <path d="M14 2v6h6" strokeLinejoin="round" />
+                <circle cx="12" cy="14" r="3" />
+                <path d="M10 17l-1 4 3-1.5L15 21l-1-4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+        ),
+    },
 ]
 
 const SECTION_TYPE_MAP = Object.fromEntries(SECTION_TYPES.map((t) => [t.value, t]))
@@ -1980,6 +1993,59 @@ const ContentFields = ({
             )
         }
 
+        case "certificates":
+            return (
+                <div className="space-y-4">
+                    <div className="rounded-lg border border-ui-border-base bg-ui-bg-subtle p-3">
+                        <Text className="text-ui-fg-muted text-sm">
+                            This section automatically displays certificates from the Certificate module.
+                            You can customise the heading and description below.
+                        </Text>
+                    </div>
+                    <div>
+                        <Label>Label (optional)</Label>
+                        <Input
+                            value={(content.label as string) || ""}
+                            onChange={(e) => update("label", e.target.value)}
+                            placeholder="Quality & Trust"
+                        />
+                    </div>
+                    <div>
+                        <Label>Heading (optional)</Label>
+                        <Input
+                            value={(content.heading as string) || ""}
+                            onChange={(e) => update("heading", e.target.value)}
+                            placeholder="Our Certificates"
+                        />
+                    </div>
+                    <div>
+                        <Label>Description (optional)</Label>
+                        <Textarea
+                            value={(content.description as string) || ""}
+                            onChange={(e) => update("description", e.target.value)}
+                            placeholder="Describe the meaning behind your certificates..."
+                            rows={3}
+                        />
+                    </div>
+                    <div>
+                        <Label>Columns</Label>
+                        <Select
+                            value={String((content.columns as number) || 3)}
+                            onValueChange={(v) => update("columns", parseInt(v))}
+                        >
+                            <Select.Trigger>
+                                <Select.Value placeholder="3 columns" />
+                            </Select.Trigger>
+                            <Select.Content>
+                                <Select.Item value="2">2 columns</Select.Item>
+                                <Select.Item value="3">3 columns</Select.Item>
+                                <Select.Item value="4">4 columns</Select.Item>
+                            </Select.Content>
+                        </Select>
+                    </div>
+                </div>
+            )
+
         default:
             return (
                 <div>
@@ -2459,6 +2525,13 @@ function getContentPreview(section: PageSection): React.ReactNode {
                 </span>
             )
         }
+        case "certificates":
+            return (
+                <span className="text-sm text-ui-fg-muted">
+                    Auto-loaded from Certificate module
+                    {(c.heading as string) ? ` — ${c.heading}` : ""}
+                </span>
+            )
         default:
             return (
                 <span className="text-sm text-ui-fg-muted">{section.type}</span>

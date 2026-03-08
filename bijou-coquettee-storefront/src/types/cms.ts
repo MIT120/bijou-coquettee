@@ -24,6 +24,7 @@ export type SectionType =
     | "divider"
     | "banner"
     | "logo_grid"
+    | "certificates"
 
 export type PageSection = {
     id: string
@@ -187,4 +188,11 @@ export type LogoItem = {
 export type LogoGridContent = {
     heading?: string
     logos: LogoItem[]
+}
+
+export type CertificatesContent = {
+    label?: string
+    heading?: string
+    description?: string
+    columns?: 2 | 3 | 4
 }

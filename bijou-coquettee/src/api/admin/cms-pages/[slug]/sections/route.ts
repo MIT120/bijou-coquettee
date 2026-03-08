@@ -17,6 +17,7 @@ const VALID_SECTION_TYPES = [
     "divider",
     "banner",
     "logo_grid",
+    "certificates",
 ]
 
 /**
