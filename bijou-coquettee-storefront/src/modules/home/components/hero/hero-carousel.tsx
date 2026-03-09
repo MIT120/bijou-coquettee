@@ -104,6 +104,24 @@ const HeroCarousel = ({ locale: initialLocale, slides }: HeroCarouselProps) => {
             </Text>
           </div>
 
+          {/* Category Navigation Pills */}
+          <div className="flex flex-wrap gap-2 small:gap-3">
+            {[
+              { label: "Гривни", href: "/categories/bracelets" },
+              { label: "Колиета", href: "/categories/necklaces" },
+              { label: "Пръстени", href: "/categories/rings" },
+              { label: "Обеци", href: "/categories/earrings" },
+            ].map((cat) => (
+              <LocalizedClientLink
+                key={cat.href}
+                href={cat.href}
+                className="px-4 py-2 small:px-5 small:py-2.5 rounded-full border border-grey-30 bg-white/60 backdrop-blur-sm text-xs small:text-sm font-sans tracking-[0.06em] text-grey-70 hover:bg-grey-90 hover:text-white hover:border-grey-90 transition-all duration-300"
+              >
+                {cat.label}
+              </LocalizedClientLink>
+            ))}
+          </div>
+
           <div className="flex flex-col gap-3 small:gap-4 small:flex-row">
             <LocalizedClientLink href="/store">
               <Button

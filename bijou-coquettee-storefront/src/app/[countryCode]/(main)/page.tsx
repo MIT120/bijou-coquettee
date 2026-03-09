@@ -13,6 +13,7 @@ import CareGuide from "@modules/home/components/care-guide"
 import SpecialOffer from "@modules/home/components/special-offer"
 import LookbookCarousel from "@modules/home/components/lookbook-carousel"
 import EditorialGallery from "@modules/home/components/editorial-gallery"
+import Certificates from "@modules/home/components/certificates"
 import { listCollections } from "@lib/data/collections"
 import { getRegion } from "@lib/data/regions"
 import { getServerLocale } from "@lib/util/translations-server"
@@ -57,6 +58,7 @@ export default async function Home(props: {
       <FeaturedCategories />
       <GiftGuide />
       <Testimonials />
+      <Certificates />
       <BrandStory />
       <CareGuide />
       <Newsletter />

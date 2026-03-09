@@ -18,30 +18,16 @@ const ProductTabs = ({ product }: ProductTabsProps) => {
   const countryCode = params?.countryCode as string | undefined
   const locale = getLocale(countryCode)
 
-  const tabs = [
-    {
-      label: t("product.productInformation", locale),
-      component: <ProductInfoTab product={product} />,
-    },
-    {
-      label: t("product.shippingReturns", locale),
-      component: <ShippingInfoTab />,
-    },
-  ]
-
   return (
     <div className="w-full">
       <Accordion type="multiple">
-        {tabs.map((tab, i) => (
-          <Accordion.Item
-            key={i}
-            title={tab.label}
-            headingSize="medium"
-            value={tab.label}
-          >
-            {tab.component}
-          </Accordion.Item>
-        ))}
+        <Accordion.Item
+          title={t("product.shippingReturns", locale)}
+          headingSize="medium"
+          value="shipping"
+        >
+          <ShippingInfoTab />
+        </Accordion.Item>
       </Accordion>
     </div>
   )

@@ -4,23 +4,23 @@ const ServiceHighlights = () => {
   const services = [
     {
       icon: "✨",
-      title: "Free Shipping",
-      description: "On orders over $100",
+      title: "Безплатна доставка",
+      description: "За поръчки над 50 лв.",
     },
     {
       icon: "🔒",
-      title: "Secure Payment",
-      description: "100% secure checkout",
+      title: "Сигурно плащане",
+      description: "100% защитено плащане",
     },
     {
       icon: "💎",
-      title: "Authenticity Guaranteed",
-      description: "Certified quality assurance",
+      title: "Гарантирана автентичност",
+      description: "Сертифицирано качество",
     },
     {
       icon: "↩️",
-      title: "Easy Returns",
-      description: "30-day return policy",
+      title: "Лесно връщане",
+      description: "14 дни право на връщане",
     },
   ]
 

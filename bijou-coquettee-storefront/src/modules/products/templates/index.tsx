@@ -32,26 +32,17 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
     <>
       <ProductViewTracker product={product} region={region} />
       <div
-        className="content-container flex flex-col small:flex-row small:items-start py-4 small:py-12 relative gap-x-8 gap-y-4 small:gap-y-8"
+        className="content-container flex flex-col small:flex-row small:items-start py-4 small:py-12 relative gap-x-10 gap-y-4 small:gap-y-8"
         data-testid="product-container"
       >
-        {/* Product Info - Hidden on mobile, shown in sidebar on desktop */}
-        <div className="hidden small:flex flex-col small:sticky small:top-48 small:py-0 small:max-w-[300px] w-full gap-y-6">
-          <ProductInfo product={product} />
-          <ProductTabs product={product} />
-        </div>
-
-        {/* Image Gallery - Full width on mobile */}
-        <div className="block w-full relative small:px-4 order-first small:order-none">
+        {/* Image Gallery - Takes more space on desktop */}
+        <div className="block w-full relative order-first small:order-none small:flex-1">
           <ImageGallery images={product?.images || []} />
         </div>
 
-        {/* Product Actions & Info on Mobile */}
-        <div className="flex flex-col small:sticky small:top-48 small:py-0 small:max-w-[300px] w-full gap-y-4 small:gap-y-12">
-          {/* Show product info on mobile only */}
-          <div className="small:hidden">
-            <ProductInfo product={product} />
-          </div>
+        {/* Product Info & Actions - Right sidebar on desktop */}
+        <div className="flex flex-col small:sticky small:top-48 small:py-0 small:w-[400px] small:min-w-[360px] w-full gap-y-5">
+          <ProductInfo product={product} />
 
           <ProductOnboardingCta />
           <Suspense
@@ -66,10 +57,8 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
             <ProductActionsWrapper id={product.id} region={region} />
           </Suspense>
 
-          {/* Show product tabs on mobile only */}
-          <div className="small:hidden mt-4">
-            <ProductTabs product={product} />
-          </div>
+          {/* Shipping & Returns accordion below actions */}
+          <ProductTabs product={product} />
         </div>
       </div>
       <div className="content-container my-16 small:my-24">

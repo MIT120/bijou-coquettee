@@ -16,6 +16,7 @@ import { useParams } from "next/navigation"
 import { useEffect, useMemo, useRef, useState } from "react"
 import ProductPrice from "../product-price"
 import MobileActions from "./mobile-actions"
+import UpsellPopup from "@modules/products/components/upsell-popup"
 
 type ProductActionsProps = {
   product: HttpTypes.StoreProduct
@@ -65,6 +66,7 @@ export default function ProductActions({
 }: ProductActionsProps) {
   const [options, setOptions] = useState<Record<string, string | undefined>>({})
   const [isAdding, setIsAdding] = useState(false)
+  const [showUpsell, setShowUpsell] = useState(false)
   const countryCode = useParams().countryCode as string
   const { trackAddToCart } = useAnalytics()
   const { trackAddToCart: trackMetaAddToCart } = useMetaPixel()
@@ -212,6 +214,7 @@ export default function ProductActions({
     trackMetaAddToCart(product.id!, product.title || "", price, currency)
 
     setIsAdding(false)
+    setShowUpsell(true)
   }
 
   // Determine if product needs a size guide based on tags or categories
@@ -326,6 +329,13 @@ export default function ProductActions({
           optionsDisabled={!!disabled || isAdding}
         />
       </div>
+
+      <UpsellPopup
+        show={showUpsell}
+        onClose={() => setShowUpsell(false)}
+        relatedProducts={[]}
+        currentProductTitle={product.title || ""}
+      />
     </>
   )
 }
