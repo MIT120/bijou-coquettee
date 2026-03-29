@@ -6,6 +6,7 @@ export interface CarouselSlide {
     image_url: string
     cta_text: string | null
     cta_link: string | null
+    product_handle: string | null
     overlay_color: string | null
     overlay_opacity: number | null
     sort_order: number

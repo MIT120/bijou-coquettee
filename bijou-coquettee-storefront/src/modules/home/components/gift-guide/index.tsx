@@ -4,26 +4,26 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 const GiftGuide = () => {
   const giftCategories = [
     {
-      title: "For Her",
-      description: "Elegant pieces that celebrate her unique style",
+      title: "За нея",
+      description: "Елегантни бижута, които празнуват нейния уникален стил",
       link: "/store?gift=her",
       gradient: "from-rose-50 to-rose-100",
     },
     {
-      title: "For Him",
-      description: "Sophisticated designs for the modern gentleman",
+      title: "За него",
+      description: "Изтънчени дизайни за модерния мъж",
       link: "/store?gift=him",
       gradient: "from-cream-100 to-cream-300",
     },
     {
-      title: "Anniversary",
-      description: "Timeless symbols of love and commitment",
+      title: "Годишнина",
+      description: "Вечни символи на любов и отдаденост",
       link: "/store?gift=anniversary",
       gradient: "from-gold-50 to-gold-100",
     },
     {
-      title: "Special Occasions",
-      description: "Make every moment memorable",
+      title: "Специални поводи",
+      description: "Направете всеки момент незабравим",
       link: "/store?gift=occasions",
       gradient: "from-rose-100 to-gold-50",
     },
@@ -35,17 +35,17 @@ const GiftGuide = () => {
         <div className="text-center mb-8 small:mb-16">
           <div className="inline-block mb-3 small:mb-4">
             <span className="font-sans text-xs small:text-sm tracking-[0.18em] uppercase text-grey-60 font-normal">
-              Gift Guide
+              Подаръчен гид
             </span>
           </div>
           <Heading
             level="h2"
             className="font-display text-2xl small:text-4xl text-grey-90 font-light tracking-tight mb-3 small:mb-4"
           >
-            Find the Perfect Gift
+            Намерете перфектния подарък
           </Heading>
           <Text className="text-sm small:text-lg text-grey-60 font-light max-w-2xl mx-auto">
-            Thoughtfully curated collections for every occasion and loved one
+            Грижливо подбрани колекции за всеки повод и любим човек
           </Text>
         </div>
 
@@ -68,7 +68,7 @@ const GiftGuide = () => {
                   {category.description}
                 </Text>
                 <span className="font-sans text-xs uppercase tracking-[0.12em] text-grey-60 group-hover:text-grey-90 transition-colors duration-200 font-medium border-b border-transparent group-hover:border-grey-60 pb-1">
-                  Shop Now →
+                  Пазарувай →
                 </span>
               </div>
             </LocalizedClientLink>
@@ -81,7 +81,7 @@ const GiftGuide = () => {
               variant="secondary"
               className="bg-transparent hover:bg-grey-90 hover:text-white text-grey-90 px-8 py-3 rounded-none border border-grey-30 hover:border-grey-90 transition-all duration-300 font-sans font-medium tracking-[0.12em] uppercase text-sm"
             >
-              View All Gifts
+              Виж всички подаръци
             </Button>
           </LocalizedClientLink>
         </div>

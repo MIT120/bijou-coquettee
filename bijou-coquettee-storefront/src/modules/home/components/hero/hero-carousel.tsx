@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback, useRef } from "react"
 import Image from "next/image"
-import { Button, Heading, Text } from "@medusajs/ui"
 
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { t } from "@lib/util/translations"
@@ -15,28 +14,65 @@ interface HeroCarouselProps {
   slides: CarouselSlide[]
 }
 
+const CATEGORIES = [
+  { label: "Гривни", href: "/categories/bracelets" },
+  { label: "Колиета", href: "/categories/necklaces" },
+  { label: "Обеци", href: "/categories/earrings" },
+  { label: "Комплекти", href: "/categories/sets" },
+  { label: "Всички", href: "/store" },
+]
+
+// How far each card is pushed down from the top (cascading staircase effect)
+const CARD_TOP_OFFSETS = [0, 60, 110]
+const CARD_TOP_OFFSETS_MOBILE = [0, 30, 55]
+
 const HeroCarousel = ({ locale: initialLocale, slides }: HeroCarouselProps) => {
   const locale = useSyncedLocale(initialLocale)
-  const [activeSlide, setActiveSlide] = useState(0)
+  const [activePage, setActivePage] = useState(0)
+  const [activeProduct, setActiveProduct] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
+  const [mounted, setMounted] = useState(false)
 
   const touchStartX = useRef<number | null>(null)
   const touchEndX = useRef<number | null>(null)
 
+  useEffect(() => {
+    const id = setTimeout(() => setMounted(true), 80)
+    return () => clearTimeout(id)
+  }, [])
+
+  // Group slides into pages of 3
+  const pages: CarouselSlide[][] = []
+  for (let i = 0; i < slides.length; i += 3) {
+    pages.push(slides.slice(i, i + 3))
+  }
+  const totalPages = pages.length
+  const currentPage = pages[activePage] || []
+  const collectionName = currentPage[0]?.subtitle ?? t("hero.curatedTagline", locale)
+
   const goToNext = useCallback(() => {
-    setActiveSlide((prev) => (prev + 1) % slides.length)
-  }, [slides.length])
+    setActivePage((prev) => (prev + 1) % totalPages)
+    setActiveProduct(0)
+  }, [totalPages])
 
   const goToPrev = useCallback(() => {
-    setActiveSlide((prev) => (prev - 1 + slides.length) % slides.length)
-  }, [slides.length])
+    setActivePage((prev) => (prev - 1 + totalPages) % totalPages)
+    setActiveProduct(0)
+  }, [totalPages])
 
   useEffect(() => {
-    if (isPaused || slides.length <= 1) return
-
-    const timer = window.setInterval(goToNext, 6500)
+    if (isPaused || totalPages <= 1) return
+    const timer = window.setInterval(goToNext, 7000)
     return () => window.clearInterval(timer)
-  }, [isPaused, goToNext, slides.length])
+  }, [isPaused, goToNext, totalPages])
+
+  useEffect(() => {
+    if (isPaused || currentPage.length <= 1) return
+    const timer = window.setInterval(() => {
+      setActiveProduct((prev) => (prev + 1) % currentPage.length)
+    }, 2400)
+    return () => window.clearInterval(timer)
+  }, [isPaused, activePage, currentPage.length])
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     touchStartX.current = e.changedTouches[0].clientX
@@ -62,17 +98,9 @@ const HeroCarousel = ({ locale: initialLocale, slides }: HeroCarouselProps) => {
     [goToPrev, goToNext]
   )
 
-  const stats = [
-    { value: "03", label: t("hero.stats.ateliers", locale) },
-    { value: "148", label: t("hero.stats.heirlooms", locale) },
-    { value: "48h", label: t("hero.stats.delivery", locale) },
-  ]
-
-  const currentSlide = slides[activeSlide]
-
   return (
     <section
-      className="relative overflow-hidden bg-cream-200"
+      className="relative overflow-hidden"
       role="region"
       aria-label="Hero carousel"
       tabIndex={0}
@@ -81,202 +109,213 @@ const HeroCarousel = ({ locale: initialLocale, slides }: HeroCarouselProps) => {
       onFocus={() => setIsPaused(true)}
       onBlur={() => setIsPaused(false)}
       onKeyDown={handleKeyDown}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
     >
-      <div className="absolute inset-0 bg-gradient-to-br from-white via-transparent to-transparent" />
-      <div className="absolute inset-y-0 right-0 w-1/2 bg-gradient-to-l from-white/70 to-transparent pointer-events-none" />
-      <div className="content-container relative z-10 flex flex-col gap-8 small:gap-16 py-10 small:py-24 large:flex-row large:items-center">
-        <div className="w-full space-y-6 small:space-y-8 large:w-5/12">
-          <div className="space-y-3 small:space-y-4">
-            <span className="inline-flex items-center font-sans text-[0.65rem] tracking-[0.22em] uppercase text-soft-gold font-normal">
-              {t("hero.curatedTagline", locale)}
-            </span>
-            <Heading
-              level="h1"
-              className="font-display text-3xl small:text-5xl large:text-6xl text-grey-90 font-light leading-tight"
-            >
-              {t("hero.title", locale)}
-            </Heading>
-            <Text className="text-base small:text-lg text-grey-60 leading-relaxed">
-              {t("hero.description", locale)}
-            </Text>
-            <Text className="text-base text-grey-50">
-              {t("hero.discoverStatement", locale)}
-            </Text>
-          </div>
+      {/* ── HERO CONTAINER ──────────────────────────────────────── */}
+      <div className="relative w-full bg-[#120f0c] h-[460px] small:h-[560px] large:h-[660px]">
 
-          {/* Category Navigation Pills */}
-          <div className="flex flex-wrap gap-2 small:gap-3">
-            {[
-              { label: "Гривни", href: "/categories/bracelets" },
-              { label: "Колиета", href: "/categories/necklaces" },
-              { label: "Пръстени", href: "/categories/rings" },
-              { label: "Обеци", href: "/categories/earrings" },
-            ].map((cat) => (
+        {/* ── COLLECTION LABEL ────────────────────────────────── */}
+        <div
+          className="absolute top-7 small:top-9 left-6 small:left-10 z-20 pointer-events-none"
+          style={{
+            opacity: mounted ? 1 : 0,
+            transform: mounted ? "translateY(0)" : "translateY(-6px)",
+            transition: "opacity 800ms ease, transform 800ms ease",
+          }}
+        >
+          <span className="inline-flex items-center gap-2.5 font-sans text-[0.58rem] tracking-[0.32em] uppercase text-[#c9a96e]/60 font-normal">
+            <span
+              className="h-px bg-[#c9a96e]/40"
+              style={{
+                width: mounted ? "20px" : "0px",
+                transition: "width 600ms ease 200ms",
+              }}
+            />
+            {collectionName}
+          </span>
+        </div>
+
+        {/* ── BROWSE LINK ─────────────────────────────────────── */}
+        <div className="absolute bottom-6 small:bottom-8 right-6 small:right-10 z-20">
+          <LocalizedClientLink
+            href="/categories/bracelets"
+            className="inline-flex items-center gap-2 font-sans text-[0.6rem] tracking-[0.22em] uppercase text-white/35 hover:text-white/70 transition-colors duration-500 group/link"
+          >
+            Разгледай гривните
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="w-3 h-3 -translate-x-1 opacity-0 group-hover/link:translate-x-0 group-hover/link:opacity-100 transition-all duration-400"
+            >
+              <polyline points="3 8 13 8" />
+              <polyline points="9 4 13 8 9 12" />
+            </svg>
+          </LocalizedClientLink>
+        </div>
+
+        {/* ── 3 PRODUCT CARDS — flex, bottom-aligned ──────────── */}
+        <div className="absolute inset-0 flex items-end">
+          {currentPage.map((slide, index) => {
+            const isActive = index === activeProduct
+            const desktopOffset = CARD_TOP_OFFSETS[index] ?? 0
+            const mobileOffset = CARD_TOP_OFFSETS_MOBILE[index] ?? 0
+            const productHref = slide.product_handle
+              ? `/products/${slide.product_handle}`
+              : (slide.cta_link ?? null)
+
+            const cardStyle = {
+              paddingTop: `clamp(${mobileOffset}px, 5vw, ${desktopOffset}px)`,
+              opacity: mounted ? (isActive ? 1 : 0.38) : 0,
+              transform: mounted ? `scale(${isActive ? 1 : 0.988})` : "scale(0.96)",
+              transition: [
+                "opacity 700ms cubic-bezier(0.4,0,0.2,1)",
+                "transform 700ms cubic-bezier(0.4,0,0.2,1)",
+              ].join(", "),
+              transitionDelay: mounted ? "0ms" : `${index * 90}ms`,
+            }
+            const cardClass = "relative flex-1 h-full overflow-hidden cursor-pointer group/card focus-visible:outline-none"
+
+            const cardInner = (
+              <>
+                {/* Image */}
+                <div className="absolute inset-0" style={{ top: `clamp(${mobileOffset}px, 5vw, ${desktopOffset}px)` }}>
+                  <Image
+                    src={slide.image_url}
+                    alt={slide.title}
+                    fill
+                    priority={index === 0}
+                    sizes="33vw"
+                    className="object-cover"
+                    style={{
+                      transform: isActive ? "scale(1)" : "scale(1.04)",
+                      transition: "transform 1100ms cubic-bezier(0.4,0,0.2,1)",
+                    }}
+                  />
+                  {/* Gradient overlay */}
+                  <div
+                    className="absolute inset-0"
+                    style={{
+                      background: isActive
+                        ? "linear-gradient(to top, rgba(0,0,0,0.62) 0%, rgba(0,0,0,0.05) 45%, rgba(0,0,0,0.15) 100%)"
+                        : "linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.22) 45%, rgba(0,0,0,0.32) 100%)",
+                      transition: "background 700ms ease",
+                    }}
+                  />
+                </div>
+                {/* Thin right-edge divider */}
+                {index < currentPage.length - 1 && (
+                  <div
+                    className="absolute right-0 z-10 w-px bg-white/6"
+                    style={{
+                      top: `clamp(${mobileOffset + 20}px, 6vw, ${desktopOffset + 20}px)`,
+                      bottom: "20%",
+                    }}
+                  />
+                )}
+                {/* Product label – slides up when active */}
+                <div
+                  className="absolute bottom-0 inset-x-0 z-10 px-4 small:px-6 py-5 small:py-7"
+                  style={{
+                    opacity: isActive ? 1 : 0,
+                    transform: isActive ? "translateY(0)" : "translateY(8px)",
+                    transition: "opacity 500ms ease, transform 500ms ease",
+                  }}
+                >
+                  <p className="text-white/88 text-xs small:text-sm font-display font-light leading-snug">
+                    {slide.title}
+                  </p>
+                  {productHref && isActive && (
+                    <span className="inline-flex items-center gap-1 mt-1.5 font-sans text-[0.58rem] tracking-[0.18em] uppercase text-[#c9a96e]/70">
+                      View product
+                      <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-2.5 h-2.5">
+                        <polyline points="2 6 10 6" /><polyline points="7 3 10 6 7 9" />
+                      </svg>
+                    </span>
+                  )}
+                </div>
+                {/* Hover label on inactive */}
+                {!isActive && (
+                  <div className="absolute bottom-0 inset-x-0 z-10 px-4 small:px-6 py-5 small:py-7 opacity-0 group-hover/card:opacity-100 transition-opacity duration-400">
+                    <p className="text-white/55 text-xs small:text-sm font-display font-light leading-snug">
+                      {slide.title}
+                    </p>
+                  </div>
+                )}
+              </>
+            )
+
+            return productHref ? (
+              <LocalizedClientLink
+                key={slide.id}
+                href={productHref}
+                onClick={() => setActiveProduct(index)}
+                className={cardClass}
+                style={cardStyle}
+                aria-label={`View ${slide.title}`}
+              >
+                {cardInner}
+              </LocalizedClientLink>
+            ) : (
+              <button
+                key={slide.id}
+                onClick={() => setActiveProduct(index)}
+                className={cardClass}
+                style={cardStyle}
+                aria-label={`View ${slide.title}`}
+              >
+                {cardInner}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* ── PAGE DOTS (only if > 1 page) ────────────────────── */}
+        {totalPages > 1 && (
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
+            {pages.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => {
+                  setActivePage(i)
+                  setActiveProduct(0)
+                }}
+                className="p-1.5 focus-visible:outline-none group/dot"
+                aria-label={`Collection ${i + 1}`}
+              >
+                <div
+                  style={{
+                    height: "2px",
+                    borderRadius: "999px",
+                    width: i === activePage ? "28px" : "8px",
+                    background: i === activePage ? "rgba(201,169,110,0.75)" : "rgba(255,255,255,0.18)",
+                    transition: "width 500ms ease, background 400ms ease",
+                  }}
+                />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── CATEGORY PILLS ───────────────────────────────────── */}
+      <div className="bg-cream-200 border-t border-grey-10">
+        <div className="content-container py-4 small:py-5">
+          <div className="flex items-center justify-center gap-2 small:gap-3 flex-wrap">
+            {CATEGORIES.map((cat) => (
               <LocalizedClientLink
                 key={cat.href}
                 href={cat.href}
-                className="px-4 py-2 small:px-5 small:py-2.5 rounded-full border border-grey-30 bg-white/60 backdrop-blur-sm text-xs small:text-sm font-sans tracking-[0.06em] text-grey-70 hover:bg-grey-90 hover:text-white hover:border-grey-90 transition-all duration-300"
+                className="px-5 py-2 small:px-6 small:py-2.5 rounded-full border border-grey-20 bg-white text-xs small:text-sm font-sans tracking-[0.06em] text-grey-70 hover:bg-grey-90 hover:text-white hover:border-grey-90 transition-all duration-300 shadow-sm"
               >
                 {cat.label}
               </LocalizedClientLink>
             ))}
-          </div>
-
-          <div className="flex flex-col gap-3 small:gap-4 small:flex-row">
-            <LocalizedClientLink href="/store">
-              <Button
-                size="large"
-                className="w-full rounded-full border border-grey-90 bg-grey-90 px-6 py-3 small:px-8 small:py-4 text-xs small:text-sm font-sans font-medium uppercase tracking-[0.12em] text-white transition-colors duration-300 hover:bg-grey-80 small:w-auto"
-              >
-                {t("hero.shopCollection", locale)}
-              </Button>
-            </LocalizedClientLink>
-            <LocalizedClientLink href="#lookbook">
-              <Button
-                variant="secondary"
-                size="large"
-                className="w-full rounded-full border border-grey-30 bg-transparent px-6 py-3 small:px-8 small:py-4 text-xs small:text-sm font-sans font-medium uppercase tracking-[0.12em] text-grey-80 transition-all duration-300 hover:border-grey-70 small:w-auto"
-              >
-                {t("hero.lookbookCta", locale)}
-              </Button>
-            </LocalizedClientLink>
-          </div>
-
-          <div className="grid grid-cols-3 gap-3 small:gap-6 border-t border-grey-20 pt-6 small:pt-8">
-            {stats.map((stat) => (
-              <div key={stat.label} className="space-y-1 min-w-0">
-                <p className="font-display text-3xl small:text-4xl font-light text-grey-90">
-                  {stat.value}
-                </p>
-                <p className="font-sans text-[0.6rem] small:text-xs uppercase tracking-[0.18em] text-grey-50 leading-tight font-normal">
-                  {stat.label}
-                </p>
-              </div>
-            ))}
-          </div>
-
-          <p className="font-sans text-[0.6rem] small:text-xs uppercase tracking-[0.18em] text-grey-50 font-normal">
-            {t("hero.premiumGuarantee", locale)}
-          </p>
-        </div>
-
-        <div className="relative w-full large:w-7/12">
-          <div
-            className="group relative h-[380px] small:h-[520px] overflow-hidden rounded-[24px] small:rounded-[36px] border border-white/50 bg-white/40 shadow-warm-xl backdrop-blur"
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
-          >
-            <div
-              className="flex h-full transition-transform duration-700 ease-out"
-              style={{ transform: `translateX(-${activeSlide * 100}%)` }}
-            >
-              {slides.map((slide, index) => {
-                const overlayStyle = slide.overlay_color
-                  ? { backgroundColor: slide.overlay_color }
-                  : undefined
-                const overlayOpacity =
-                  slide.overlay_opacity != null
-                    ? slide.overlay_opacity / 100
-                    : 0.4
-
-                return (
-                  <div key={slide.id} className="relative h-full w-full shrink-0">
-                    <Image
-                      src={slide.image_url}
-                      alt={slide.title}
-                      fill
-                      priority={index === 0}
-                      sizes="(max-width: 768px) 100vw, 55vw"
-                      className="object-cover"
-                    />
-                    <div
-                      className="absolute inset-0"
-                      style={
-                        overlayStyle
-                          ? { ...overlayStyle, opacity: overlayOpacity }
-                          : undefined
-                      }
-                    >
-                      {!overlayStyle && (
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
-                      )}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-            {slides.length > 1 && (
-              <>
-                <button
-                  onClick={goToPrev}
-                  className="absolute left-3 top-1/2 z-10 hidden small:flex -translate-y-1/2 items-center justify-center w-10 h-10 rounded-full bg-white/80 hover:bg-white shadow-sm backdrop-blur-sm transition-all duration-200 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-grey-40"
-                  aria-label="Previous slide"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 20 20"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.75"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="w-5 h-5 text-grey-70"
-                  >
-                    <polyline points="13 5 7 10 13 15" />
-                  </svg>
-                </button>
-                <button
-                  onClick={goToNext}
-                  className="absolute right-3 top-1/2 z-10 hidden small:flex -translate-y-1/2 items-center justify-center w-10 h-10 rounded-full bg-white/80 hover:bg-white shadow-sm backdrop-blur-sm transition-all duration-200 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-grey-40"
-                  aria-label="Next slide"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 20 20"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.75"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="w-5 h-5 text-grey-70"
-                  >
-                    <polyline points="7 5 13 10 7 15" />
-                  </svg>
-                </button>
-              </>
-            )}
-            <div
-              className="absolute bottom-4 left-4 right-4 small:bottom-6 small:left-6 small:right-6 flex items-center justify-between rounded-full bg-white/90 px-4 py-3 small:px-5 small:py-4 shadow-warm-lg backdrop-blur"
-              aria-live="polite"
-            >
-              <div className="min-w-0 flex-1 mr-3">
-                {currentSlide.subtitle && (
-                  <p className="hidden small:block font-sans text-[0.6rem] uppercase tracking-[0.22em] text-grey-50 font-normal">
-                    {currentSlide.subtitle}
-                  </p>
-                )}
-                <p className="text-sm small:text-lg text-grey-90 truncate">
-                  {currentSlide.title}
-                </p>
-                {currentSlide.description && (
-                  <p className="hidden small:block text-sm text-grey-60">
-                    {currentSlide.description}
-                  </p>
-                )}
-              </div>
-              <div className="flex gap-2 small:gap-3 shrink-0">
-                {slides.map((slide, index) => (
-                  <button
-                    key={slide.id}
-                    onClick={() => setActiveSlide(index)}
-                    className={`h-2 w-5 small:w-8 rounded-full transition-all ${
-                      index === activeSlide ? "bg-grey-90" : "bg-grey-30"
-                    }`}
-                    aria-label={`Show slide ${index + 1}: ${slide.title}`}
-                  />
-                ))}
-              </div>
-            </div>
           </div>
         </div>
       </div>

@@ -169,13 +169,18 @@
     "allProducts": "All products",
     "sortBy": "Sort by",
     "filter": "Filter",
-    "clearFilters": "Clear filters",
+    "clearFilters": "Clear all",
     "noProducts": "No products found",
+    "noProductsDescription": "Try adjusting or clearing your active filters to see more results.",
+    "products": "{count} products",
     "showMore": "Show more",
     "showLess": "Show less",
     "latestArrivals": "Latest Arrivals",
-    "priceLowToHigh": "Price: Low -> High",
-    "priceHighToLow": "Price: High -> Low"
+    "priceLowToHigh": "Price: Low to High",
+    "priceHighToLow": "Price: High to Low",
+    "metalColor": "Metal / Color",
+    "filterActive": "{count} filter active",
+    "filtersActive": "{count} filters active"
   },
   "search": {
     "placeholder": "Search jewelry or keywords",

@@ -4,6 +4,7 @@ import { listCartOptions, retrieveCart } from "@lib/data/cart"
 import { retrieveCustomer } from "@lib/data/customer"
 // import { getWishlist } from "@lib/data/wishlist" // DISABLED: Wishlist temporarily disabled
 import { getBaseURL } from "@lib/util/env"
+import { getAnnouncementMessages } from "@lib/data/announcement-messages"
 import { WishlistProvider } from "@lib/context/wishlist-context"
 import { StoreCartShippingOption } from "@medusajs/types"
 import CartMismatchBanner from "@modules/layout/components/cart-mismatch-banner"
@@ -12,6 +13,7 @@ import Nav from "@modules/layout/templates/nav"
 import FreeShippingPriceNudge from "@modules/shipping/components/free-shipping-price-nudge"
 import EmailSubscriptionPopup from "@modules/campaigns/components/email-subscription-popup"
 import DiscountBanner from "@modules/campaigns/components/discount-banner"
+import AnnouncementMarquee from "@modules/layout/components/announcement-marquee"
 
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseURL()),
@@ -31,8 +33,12 @@ export default async function PageLayout(props: { children: React.ReactNode }) {
     shippingOptions = shipping_options
   }
 
+  const announcementMessages = await getAnnouncementMessages()
+  const messageTexts = announcementMessages.map((m) => m.text)
+
   return (
     <WishlistProvider customer={customer}>
+      <AnnouncementMarquee messages={messageTexts} />
       <DiscountBanner />
       <Nav />
       {customer && cart && (

@@ -38,7 +38,7 @@ export default async function Nav() {
       <header className="relative h-16 mx-auto border-b duration-200 bg-cream border-ui-border-base">
         <nav className="content-container txt-xsmall-plus text-ui-fg-subtle flex items-center justify-between w-full h-full text-small-regular">
           <div className="flex-1 basis-0 h-full flex items-center gap-x-6">
-            <div className="h-full">
+            <div className="h-full small:hidden">
               <SideMenu regions={regions} locale={locale} />
             </div>
             <DesktopNavLinks items={navItems} />
@@ -53,9 +53,9 @@ export default async function Nav() {
               <Image
                 src="/logo.png"
                 alt="Bijou Coquettee"
-                width={120}
-                height={120}
-                className="h-12 w-auto object-contain"
+                width={140}
+                height={140}
+                className="h-11 small:h-14 w-auto object-contain drop-shadow-sm"
                 priority
               />
             </LocalizedClientLink>

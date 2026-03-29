@@ -58,6 +58,18 @@ module.exports = defineConfig({
       options: {},
     },
     {
+      resolve: "./src/modules/announcement-message",
+      options: {},
+    },
+    {
+      resolve: "./src/modules/service-highlight",
+      options: {},
+    },
+    {
+      resolve: "./src/modules/special-offer",
+      options: {},
+    },
+    {
       resolve: "@medusajs/medusa/file",
       options: {
         providers: [

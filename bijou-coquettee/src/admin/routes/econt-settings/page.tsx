@@ -248,7 +248,7 @@ const EcontSettingsPage = () => {
               <Select.Trigger>
                 <Select.Value placeholder="Изберете режим" />
               </Select.Trigger>
-              <Select.Content>
+              <Select.Content className="!z-[9999]">
                 <Select.Item value="true">
                   Да - Демо (тестова среда)
                 </Select.Item>
@@ -387,7 +387,7 @@ const EcontSettingsPage = () => {
               <Select.Trigger>
                 <Select.Value placeholder="Изберете метод" />
               </Select.Trigger>
-              <Select.Content>
+              <Select.Content className="!z-[9999]">
                 <Select.Item value="bank">
                   По банков път
                 </Select.Item>

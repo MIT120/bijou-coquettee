@@ -30,19 +30,9 @@ export default async function ProductRail({
     <div className="content-container py-10 small:py-32 border-t border-grey-10 first:border-t-0">
       <div className="flex flex-col small:flex-row justify-between items-start small:items-center mb-8 small:mb-16 gap-4">
         <div>
-          <div className="inline-block mb-3">
-            <span className="font-sans text-xs small:text-sm tracking-[0.18em] uppercase text-grey-60 font-normal">
-              Collection
-            </span>
-          </div>
           <Text className="font-display text-2xl small:text-3xl text-grey-90 font-light tracking-[-0.01em] block">
             {collection.title}
           </Text>
-          {pricedProducts && pricedProducts.length > 0 && (
-            <Text className="text-sm text-grey-50 mt-2 font-light">
-              {pricedProducts.length} {pricedProducts.length === 1 ? 'piece' : 'pieces'}
-            </Text>
-          )}
         </div>
         <InteractiveLink 
           href={`/collections/${collection.handle}`}

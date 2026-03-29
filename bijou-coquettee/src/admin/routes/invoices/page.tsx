@@ -292,7 +292,7 @@ const CreateInvoiceDrawer = ({
               <Select.Trigger>
                 <Select.Value />
               </Select.Trigger>
-              <Select.Content>
+              <Select.Content className="!z-[9999]">
                 <Select.Item value="20">20% (стандартна)</Select.Item>
                 <Select.Item value="9">9% (намалена)</Select.Item>
                 <Select.Item value="0">0% (освободена)</Select.Item>
@@ -580,7 +580,7 @@ const InvoicesPage = () => {
           <Select.Trigger className="w-full sm:w-48">
             <Select.Value placeholder="Всички статуси" />
           </Select.Trigger>
-          <Select.Content>
+          <Select.Content className="!z-[9999]">
             <Select.Item value="active">Активни (чернови + издадени)</Select.Item>
             <Select.Item value="all">Всички статуси</Select.Item>
             {Object.entries(STATUS_CONFIG).map(([key, config]) => (

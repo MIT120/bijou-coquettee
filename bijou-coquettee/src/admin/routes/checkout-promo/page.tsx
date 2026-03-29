@@ -327,7 +327,7 @@ function PromoFormModal({
                                 <Select.Trigger>
                                     <Select.Value placeholder="Select a variant..." />
                                 </Select.Trigger>
-                                <Select.Content>
+                                <Select.Content className="!z-[9999]">
                                     {variantOptions.map((v) => (
                                         <Select.Item key={v.id} value={v.id}>
                                             {v.title}

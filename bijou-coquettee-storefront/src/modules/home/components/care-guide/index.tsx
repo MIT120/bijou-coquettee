@@ -4,20 +4,20 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 const CareGuide = () => {
   const careTips = [
     {
-      title: "Storage",
-      description: "Store jewelry in a soft pouch or separate compartments to prevent scratches.",
+      title: "Съхранение",
+      description: "Съхранявайте бижутата в мек калъф или в отделни прегради, за да предотвратите надраскване.",
     },
     {
-      title: "Cleaning",
-      description: "Gently clean with a soft, lint-free cloth. Avoid harsh chemicals.",
+      title: "Почистване",
+      description: "Почиствайте внимателно с мека кърпа без мъх. Избягвайте агресивни химикали.",
     },
     {
-      title: "Wearing",
-      description: "Put jewelry on last when getting ready to avoid contact with perfumes and lotions.",
+      title: "Носене",
+      description: "Слагайте бижутата последни при подготовка, за да избегнете контакт с парфюми и лосиони.",
     },
     {
-      title: "Maintenance",
-      description: "Have your pieces professionally inspected and cleaned annually.",
+      title: "Поддръжка",
+      description: "Носете бижутата си на професионална проверка и почистване веднъж годишно.",
     },
   ]
 
@@ -27,17 +27,17 @@ const CareGuide = () => {
         <div className="text-center mb-8 small:mb-16">
           <div className="inline-block mb-3 small:mb-4">
             <span className="font-sans text-xs small:text-sm tracking-[0.18em] uppercase text-grey-60 font-normal">
-              Care Guide
+              Грижа за бижутата
             </span>
           </div>
           <Heading
             level="h2"
             className="font-display text-2xl small:text-4xl text-grey-90 font-light tracking-tight mb-3 small:mb-4"
           >
-            Caring for Your Jewelry
+            Как да се грижите за вашите бижута
           </Heading>
           <Text className="text-sm small:text-lg text-grey-60 font-light max-w-2xl mx-auto">
-            Proper care ensures your pieces remain beautiful for generations to come
+            Правилната грижа гарантира, че бижутата ви ще останат красиви за поколения напред
           </Text>
         </div>
 
@@ -68,7 +68,7 @@ const CareGuide = () => {
             href="/size-guide"
             className="inline-block font-sans text-sm uppercase tracking-[0.12em] text-grey-60 hover:text-grey-90 transition-colors duration-200 font-medium border-b border-transparent hover:border-grey-50 pb-1"
           >
-            View Size Guide →
+            Ръководство за размери →
           </LocalizedClientLink>
         </div>
       </div>

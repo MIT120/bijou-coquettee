@@ -54,48 +54,66 @@ function getColorCss(colorName: string): string | null {
   return COLOR_MAP[colorName.toLowerCase().trim()] ?? null
 }
 
-type ColorSwatchProps = {
+/** Returns true when the color is light enough that a dark outline is needed. */
+function isLightColor(colorName: string): boolean {
+  const light = ["white", "ivory", "pearl", "platinum", "silver", "crystal", "diamond", "beige"]
+  return light.includes(colorName.toLowerCase().trim())
+}
+
+type ColorPillProps = {
   colorName: string
   selected: boolean
   onClick: () => void
   disabled?: boolean
 }
 
-const ColorSwatch = ({
-  colorName,
-  selected,
-  onClick,
-  disabled,
-}: ColorSwatchProps) => {
+/**
+ * A pill-shaped button containing a small color dot followed by the color
+ * label. Active state fills the pill with the brand dark tone.
+ */
+const ColorPill = ({ colorName, selected, onClick, disabled }: ColorPillProps) => {
   const cssColor = getColorCss(colorName)
-  const isWhite = colorName.toLowerCase().trim() === "white"
+  const light = isLightColor(colorName)
 
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
-      title={colorName}
-      aria-label={`${selected ? "Remove" : "Filter by"} ${colorName}`}
       aria-pressed={selected}
+      aria-label={`${selected ? "Remove filter" : "Filter by"} ${colorName}`}
       className={clx(
-        "relative w-7 h-7 rounded-full transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-ui-fg-base focus-visible:ring-offset-2",
-        "flex-shrink-0",
-        {
-          // Selection ring – offset so the swatch colour is fully visible
-          "ring-2 ring-ui-fg-base ring-offset-2": selected,
-          "hover:ring-2 hover:ring-ui-border-strong hover:ring-offset-1":
-            !selected && !disabled,
-          "opacity-50 cursor-not-allowed": disabled,
-        }
+        // Base pill
+        "inline-flex items-center gap-2 pl-2.5 pr-3.5 py-1.5 rounded-full border text-xs tracking-wide font-medium",
+        "transition-all duration-200 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-grey-80 focus-visible:ring-offset-2",
+        "whitespace-nowrap select-none",
+        // Bubble pop animation on press
+        "filter-bubble-pop",
+        // Inactive
+        "border-grey-20 text-grey-50 bg-white hover:border-grey-40 hover:text-grey-80",
+        // Active overrides
+        selected && [
+          "border-grey-80 bg-grey-80 text-white",
+          "hover:border-grey-70 hover:bg-grey-70",
+        ],
+        // Disabled
+        disabled && "opacity-40 cursor-not-allowed pointer-events-none"
       )}
-      style={{
-        background: cssColor ?? "linear-gradient(135deg, #e5e5e5, #a3a3a3)",
-        // White swatches need a visible border so they don't vanish on a
-        // white background.
-        boxShadow: isWhite ? "inset 0 0 0 1px #d1d5db" : undefined,
-      }}
-    />
+    >
+      {/* Color dot */}
+      <span
+        aria-hidden="true"
+        className={clx(
+          "w-3 h-3 rounded-full flex-shrink-0",
+          light && !selected && "ring-1 ring-grey-20"
+        )}
+        style={{
+          background: cssColor ?? "linear-gradient(135deg,#e5e5e5,#a3a3a3)",
+        }}
+      />
+      {/* Capitalize first letter for display */}
+      <span className="capitalize">{colorName}</span>
+    </button>
   )
 }
 
@@ -148,59 +166,25 @@ const ColorFilter = ({ availableColors, label }: ColorFilterProps) => {
     router.push(`${pathname}?${buildQuery(next)}`, { scroll: false })
   }
 
-  const clearColors = () => {
-    router.push(`${pathname}?${buildQuery([])}`, { scroll: false })
-  }
-
   if (availableColors.length === 0) {
     return null
   }
 
-  const displayLabel = label ?? "Metal / Color"
-
   return (
-    <div className="flex flex-col gap-y-3">
-      {/* Header row */}
-      <div className="flex items-center justify-between">
-        <span className="txt-compact-small-plus text-ui-fg-muted">
-          {displayLabel}
-        </span>
-        {selectedColors.length > 0 && (
-          <button
-            type="button"
-            onClick={clearColors}
-            className="txt-compact-xsmall text-ui-fg-muted hover:text-ui-fg-base underline underline-offset-2 transition-colors"
-          >
-            Clear
-          </button>
-        )}
-      </div>
-
-      {/* Swatch grid */}
-      <div className="flex flex-wrap gap-2">
-        {availableColors.map((colorName) => {
-          const isSelected = selectedColors.some(
-            (c) => c.toLowerCase() === colorName.toLowerCase()
-          )
-          return (
-            <div key={colorName} className="flex flex-col items-center gap-y-1">
-              <ColorSwatch
-                colorName={colorName}
-                selected={isSelected}
-                onClick={() => toggleColor(colorName)}
-              />
-              <span
-                className={clx("text-[10px] leading-none text-center max-w-[3rem] truncate", {
-                  "text-ui-fg-base font-medium": isSelected,
-                  "text-ui-fg-subtle": !isSelected,
-                })}
-              >
-                {colorName}
-              </span>
-            </div>
-          )
-        })}
-      </div>
+    <div className="flex items-center gap-2 flex-wrap">
+      {availableColors.map((colorName) => {
+        const isSelected = selectedColors.some(
+          (c) => c.toLowerCase() === colorName.toLowerCase()
+        )
+        return (
+          <ColorPill
+            key={colorName}
+            colorName={colorName}
+            selected={isSelected}
+            onClick={() => toggleColor(colorName)}
+          />
+        )
+      })}
     </div>
   )
 }

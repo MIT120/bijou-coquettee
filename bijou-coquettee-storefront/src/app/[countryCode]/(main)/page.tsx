@@ -1,22 +1,18 @@
 import { Metadata } from "next"
 
-import FeaturedProducts from "@modules/home/components/featured-products"
 import Hero from "@modules/home/components/hero"
 import BrandStory from "@modules/home/components/brand-story"
-import FeaturedCategories from "@modules/home/components/featured-categories"
 import Newsletter from "@modules/home/components/newsletter"
 import ServiceHighlights from "@modules/home/components/service-highlights"
 import Testimonials from "@modules/home/components/testimonials"
-import GiftGuide from "@modules/home/components/gift-guide"
 import NewArrivalsBanner from "@modules/home/components/new-arrivals-banner"
 import CareGuide from "@modules/home/components/care-guide"
 import SpecialOffer from "@modules/home/components/special-offer"
-import LookbookCarousel from "@modules/home/components/lookbook-carousel"
-import EditorialGallery from "@modules/home/components/editorial-gallery"
 import Certificates from "@modules/home/components/certificates"
-import { listCollections } from "@lib/data/collections"
 import { getRegion } from "@lib/data/regions"
 import { getServerLocale } from "@lib/util/translations-server"
+import { getServiceHighlights } from "@lib/data/service-highlights"
+import { getActiveSpecialOffer } from "@lib/data/special-offers"
 
 export const metadata: Metadata = {
   title: "Bijou Coquettee - Timeless Elegance in Fine Jewelry",
@@ -34,29 +30,21 @@ export default async function Home(props: {
   const region = await getRegion(countryCode)
   const locale = await getServerLocale(countryCode)
 
-  const { collections } = await listCollections({
-    fields: "id, handle, title",
-  })
-
-  if (!collections || !region) {
+  if (!region) {
     return null
   }
+
+  const [highlights, specialOffer] = await Promise.all([
+    getServiceHighlights(),
+    getActiveSpecialOffer(),
+  ])
 
   return (
     <div className="min-h-screen bg-white">
       <Hero locale={locale} />
-      <LookbookCarousel locale={locale} />
-      <EditorialGallery locale={locale} />
-      <SpecialOffer />
-      <ServiceHighlights />
+      <SpecialOffer offer={specialOffer} />
+      <ServiceHighlights highlights={highlights} />
       <NewArrivalsBanner />
-      <div className="bg-white">
-        <ul className="flex flex-col">
-          <FeaturedProducts collections={collections} region={region} />
-        </ul>
-      </div>
-      <FeaturedCategories />
-      <GiftGuide />
       <Testimonials />
       <Certificates />
       <BrandStory />

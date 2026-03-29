@@ -595,7 +595,7 @@ const EditShipmentDrawer = ({
               <Select.Trigger>
                 <Select.Value />
               </Select.Trigger>
-              <Select.Content>
+              <Select.Content className="!z-[9999]">
                 <Select.Item value="office">До офис на Еконт</Select.Item>
                 <Select.Item value="address">До адрес</Select.Item>
               </Select.Content>
@@ -692,7 +692,7 @@ const EditShipmentDrawer = ({
                     <Select.Trigger>
                       <Select.Value placeholder="Изберете офис" />
                     </Select.Trigger>
-                    <Select.Content>
+                    <Select.Content className="!z-[9999]">
                       {offices.map((office) => (
                         <Select.Item key={office.code} value={office.code}>
                           {office.name}
@@ -1124,7 +1124,7 @@ const EcontShipmentsPage = () => {
           <Select.Trigger className="w-full sm:w-48">
             <Select.Value placeholder="Всички статуси" />
           </Select.Trigger>
-          <Select.Content>
+          <Select.Content className="!z-[9999]">
             <Select.Item value="all">Всички статуси</Select.Item>
             {Object.entries(STATUS_CONFIG).map(([key, config]) => (
               <Select.Item key={key} value={key}>

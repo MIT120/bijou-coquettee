@@ -8,6 +8,7 @@ const CarouselSlide = model.define("carousel_slide", {
     image_url: model.text(),
     cta_text: model.text().nullable(),
     cta_link: model.text().nullable(),
+    product_handle: model.text().nullable(),
     overlay_color: model.text().nullable(),
     overlay_opacity: model.number().nullable(),
     sort_order: model.number().default(0),

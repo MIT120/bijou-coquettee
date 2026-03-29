@@ -169,13 +169,18 @@
     "allProducts": "Всички продукти",
     "sortBy": "Сортирай по",
     "filter": "Филтър",
-    "clearFilters": "Изчисти филтрите",
+    "clearFilters": "Изчисти всички",
     "noProducts": "Не са намерени продукти",
+    "noProductsDescription": "Опитайте да промените или изчистите активните филтри, за да видите повече резултати.",
+    "products": "{count} продукта",
     "showMore": "Покажи повече",
     "showLess": "Покажи по-малко",
-    "latestArrivals": "Последни поступления",
-    "priceLowToHigh": "Цена: Ниска -> Висока",
-    "priceHighToLow": "Цена: Висока -> Ниска"
+    "latestArrivals": "Последни постъпления",
+    "priceLowToHigh": "Цена: Ниска към висока",
+    "priceHighToLow": "Цена: Висока към ниска",
+    "metalColor": "Метал / Цвят",
+    "filterActive": "{count} активен филтър",
+    "filtersActive": "{count} активни филтъра"
   },
   "search": {
     "placeholder": "Търси бижута или ключови думи",

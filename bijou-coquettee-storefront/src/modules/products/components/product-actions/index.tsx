@@ -22,6 +22,7 @@ type ProductActionsProps = {
   product: HttpTypes.StoreProduct
   region: HttpTypes.StoreRegion
   disabled?: boolean
+  relatedProducts?: HttpTypes.StoreProduct[]
 }
 
 const optionsAsKeymap = (
@@ -63,6 +64,7 @@ const syncOptionsToUrl = (
 export default function ProductActions({
   product,
   disabled,
+  relatedProducts,
 }: ProductActionsProps) {
   const [options, setOptions] = useState<Record<string, string | undefined>>({})
   const [isAdding, setIsAdding] = useState(false)
@@ -333,7 +335,7 @@ export default function ProductActions({
       <UpsellPopup
         show={showUpsell}
         onClose={() => setShowUpsell(false)}
-        relatedProducts={[]}
+        relatedProducts={relatedProducts || []}
         currentProductTitle={product.title || ""}
       />
     </>

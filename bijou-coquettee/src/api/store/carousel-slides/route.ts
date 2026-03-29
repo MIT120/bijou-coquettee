@@ -7,10 +7,7 @@ import CarouselSlideModuleService from "../../../modules/carousel-slide/service"
  */
 export async function GET(req: MedusaRequest, res: MedusaResponse) {
     try {
-        const carouselService = req.scope.resolve<CarouselSlideModuleService>(
-            "carouselSlideModuleService"
-        )
-
+        const carouselService = req.scope.resolve<CarouselSlideModuleService>("carouselSlideModuleService")
         const slides = await carouselService.listActiveSlides()
 
         res.json({
@@ -22,6 +19,7 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
                 image_url: slide.image_url,
                 cta_text: slide.cta_text,
                 cta_link: slide.cta_link,
+                product_handle: slide.product_handle,
                 overlay_color: slide.overlay_color,
                 overlay_opacity: slide.overlay_opacity,
                 sort_order: slide.sort_order,

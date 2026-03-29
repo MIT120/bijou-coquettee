@@ -1212,7 +1212,7 @@ const FeatureGridBuilder = ({
                                 <Select.Trigger>
                                     <Select.Value />
                                 </Select.Trigger>
-                                <Select.Content>
+                                <Select.Content className="!z-[9999]">
                                     {FEATURE_ICONS.map((icon) => (
                                         <Select.Item key={icon.value} value={icon.value}>
                                             {icon.label}
@@ -1477,7 +1477,7 @@ const ContentFields = ({
                             <Select.Trigger>
                                 <Select.Value />
                             </Select.Trigger>
-                            <Select.Content>
+                            <Select.Content className="!z-[9999]">
                                 <Select.Item value="left">Left</Select.Item>
                                 <Select.Item value="center">Center</Select.Item>
                                 <Select.Item value="right">Right</Select.Item>
@@ -1526,7 +1526,7 @@ const ContentFields = ({
                             <Select.Trigger>
                                 <Select.Value />
                             </Select.Trigger>
-                            <Select.Content>
+                            <Select.Content className="!z-[9999]">
                                 <Select.Item value="image_left">Image Left</Select.Item>
                                 <Select.Item value="image_right">Image Right</Select.Item>
                             </Select.Content>
@@ -1571,7 +1571,7 @@ const ContentFields = ({
                             <Select.Trigger>
                                 <Select.Value />
                             </Select.Trigger>
-                            <Select.Content>
+                            <Select.Content className="!z-[9999]">
                                 <Select.Item value="2">2 Columns</Select.Item>
                                 <Select.Item value="3">3 Columns</Select.Item>
                                 <Select.Item value="4">4 Columns</Select.Item>
@@ -1743,7 +1743,7 @@ const ContentFields = ({
                             <Select.Trigger>
                                 <Select.Value />
                             </Select.Trigger>
-                            <Select.Content>
+                            <Select.Content className="!z-[9999]">
                                 <Select.Item value="16:9">16:9 (Widescreen)</Select.Item>
                                 <Select.Item value="4:3">4:3 (Standard)</Select.Item>
                                 <Select.Item value="1:1">1:1 (Square)</Select.Item>
@@ -1829,7 +1829,7 @@ const ContentFields = ({
                             <Select.Trigger>
                                 <Select.Value />
                             </Select.Trigger>
-                            <Select.Content>
+                            <Select.Content className="!z-[9999]">
                                 <Select.Item value="2">2 Columns</Select.Item>
                                 <Select.Item value="3">3 Columns</Select.Item>
                                 <Select.Item value="4">4 Columns</Select.Item>
@@ -1859,7 +1859,7 @@ const ContentFields = ({
                             <Select.Trigger>
                                 <Select.Value />
                             </Select.Trigger>
-                            <Select.Content>
+                            <Select.Content className="!z-[9999]">
                                 <Select.Item value="line">Line</Select.Item>
                                 <Select.Item value="dots">Dots</Select.Item>
                                 <Select.Item value="space">Space only</Select.Item>
@@ -1875,7 +1875,7 @@ const ContentFields = ({
                             <Select.Trigger>
                                 <Select.Value />
                             </Select.Trigger>
-                            <Select.Content>
+                            <Select.Content className="!z-[9999]">
                                 <Select.Item value="small">Small</Select.Item>
                                 <Select.Item value="medium">Medium</Select.Item>
                                 <Select.Item value="large">Large</Select.Item>
@@ -1906,7 +1906,7 @@ const ContentFields = ({
                             <Select.Trigger>
                                 <Select.Value />
                             </Select.Trigger>
-                            <Select.Content>
+                            <Select.Content className="!z-[9999]">
                                 <Select.Item value="info">Info</Select.Item>
                                 <Select.Item value="promo">Promo</Select.Item>
                                 <Select.Item value="warning">Warning</Select.Item>
@@ -2036,7 +2036,7 @@ const ContentFields = ({
                             <Select.Trigger>
                                 <Select.Value placeholder="3 columns" />
                             </Select.Trigger>
-                            <Select.Content>
+                            <Select.Content className="!z-[9999]">
                                 <Select.Item value="2">2 columns</Select.Item>
                                 <Select.Item value="3">3 columns</Select.Item>
                                 <Select.Item value="4">4 columns</Select.Item>

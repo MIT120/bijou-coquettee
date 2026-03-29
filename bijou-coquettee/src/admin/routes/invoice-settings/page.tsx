@@ -407,7 +407,7 @@ const InvoiceSettingsPage = () => {
               <Select.Trigger>
                 <Select.Value placeholder="Изберете ставка" />
               </Select.Trigger>
-              <Select.Content>
+              <Select.Content className="!z-[9999]">
                 <Select.Item value="20">20% (стандартна)</Select.Item>
                 <Select.Item value="9">9% (намалена)</Select.Item>
                 <Select.Item value="0">0% (освободена)</Select.Item>
@@ -424,7 +424,7 @@ const InvoiceSettingsPage = () => {
               <Select.Trigger>
                 <Select.Value placeholder="Изберете валута" />
               </Select.Trigger>
-              <Select.Content>
+              <Select.Content className="!z-[9999]">
                 <Select.Item value="BGN">BGN (лв.)</Select.Item>
                 <Select.Item value="EUR">EUR (евро)</Select.Item>
               </Select.Content>
