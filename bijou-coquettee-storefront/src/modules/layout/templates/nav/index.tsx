@@ -50,13 +50,13 @@ export default async function Nav() {
               className="relative flex justify-center h-full"
               data-testid="nav-store-link"
             >
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-36 small:w-44 h-[calc(100%+2.5rem)] small:h-[calc(100%+3rem)] bg-cream rounded-b-full overflow-hidden flex items-end justify-center">
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-36 small:w-44 h-[calc(100%+2.5rem)] small:h-[calc(100%+3rem)] bg-cream rounded-b-full overflow-hidden flex items-end justify-center pb-4 small:pb-5">
                 <Image
                   src="/logo.png"
                   alt="Bijou Coquettee"
                   width={200}
                   height={200}
-                  className="h-20 small:h-28 w-auto object-contain"
+                  className="h-16 small:h-22 w-auto object-contain"
                   priority
                 />
               </div>
