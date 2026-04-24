@@ -44,20 +44,24 @@ export default async function Nav() {
             <DesktopNavLinks items={navItems} />
           </div>
 
-          <div className="flex items-center h-full">
+          <div className="flex items-center justify-center h-full">
             <LocalizedClientLink
               href="/"
-              className="flex items-center"
+              className="relative flex justify-center h-full"
               data-testid="nav-store-link"
             >
-              <Image
-                src="/logo.png"
-                alt="Bijou Coquettee"
-                width={140}
-                height={140}
-                className="h-11 small:h-14 w-auto object-contain drop-shadow-sm"
-                priority
-              />
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-36 small:w-44 h-[calc(100%+2.5rem)] small:h-[calc(100%+3rem)] bg-cream rounded-b-full overflow-hidden flex items-end justify-center">
+                <Image
+                  src="/logo.png"
+                  alt="Bijou Coquettee"
+                  width={200}
+                  height={200}
+                  className="h-20 small:h-28 w-auto object-contain"
+                  priority
+                />
+              </div>
+              {/* Invisible spacer to keep link clickable */}
+              <div className="w-36 small:w-44 h-full" />
             </LocalizedClientLink>
           </div>
 
