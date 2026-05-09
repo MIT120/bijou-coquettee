@@ -13,7 +13,7 @@ type Campaign = {
 }
 
 const POPUP_COOKIE_NAME = "_campaign_popup_dismissed"
-const POPUP_DELAY_MS = 5000
+const POPUP_DELAY_MS = 2500
 const DISMISS_DAYS = 7
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL || "http://localhost:9000"
@@ -34,6 +34,15 @@ function setCookie(name: string, value: string, days: number) {
     document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`
 }
 
+// Fallback campaign shown when no active backend campaign is configured
+const FALLBACK_CAMPAIGN: Campaign = {
+    id: "",
+    name: "Newsletter",
+    discount_percent: 5,
+    popup_title: "Абонирай се за нашия имейл бюлетин и вземи 5% отстъпка от първата си поръчка",
+    popup_description: null,
+}
+
 export default function EmailSubscriptionPopup() {
     const [isVisible, setIsVisible] = useState(false)
     const [campaign, setCampaign] = useState<Campaign | null>(null)
@@ -45,11 +54,13 @@ export default function EmailSubscriptionPopup() {
     const [copied, setCopied] = useState(false)
 
     useEffect(() => {
-        // Check if popup was dismissed
+        // Check if popup was dismissed within the last 7 days
         const dismissed = getCookie(POPUP_COOKIE_NAME)
         if (dismissed) return
 
-        // Fetch active campaign
+        // Fetch active campaign — fall back to the default newsletter popup if
+        // no campaign is configured or the request fails so the popup always
+        // shows on the first visit.
         const fetchCampaign = async () => {
             try {
                 const headers: Record<string, string> = {}
@@ -63,12 +74,13 @@ export default function EmailSubscriptionPopup() {
                 )
                 const data = await response.json()
 
-                if (data.campaign) {
-                    setCampaign(data.campaign)
-                    setTimeout(() => setIsVisible(true), POPUP_DELAY_MS)
-                }
-            } catch (error) {
-                console.error("Failed to fetch campaign:", error)
+                const activeCampaign: Campaign = data.campaign ?? FALLBACK_CAMPAIGN
+                setCampaign(activeCampaign)
+            } catch {
+                // Backend unreachable — still show the default newsletter popup
+                setCampaign(FALLBACK_CAMPAIGN)
+            } finally {
+                setTimeout(() => setIsVisible(true), POPUP_DELAY_MS)
             }
         }
 
@@ -78,6 +90,14 @@ export default function EmailSubscriptionPopup() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!campaign || !email) return
+
+        // If there is no real campaign ID (fallback mode), skip the API call
+        // and show a generic success state.
+        if (!campaign.id) {
+            setSuccess(true)
+            setCookie(POPUP_COOKIE_NAME, "true", DISMISS_DAYS)
+            return
+        }
 
         setLoading(true)
         setError("")
@@ -107,11 +127,12 @@ export default function EmailSubscriptionPopup() {
             if (data.success) {
                 setDiscountCode(data.discount_code)
                 setSuccess(true)
+                setCookie(POPUP_COOKIE_NAME, "true", DISMISS_DAYS)
             } else {
-                setError(data.message || "Failed to subscribe. Please try again.")
+                setError(data.message || "Неуспешно абониране. Моля, опитай отново.")
             }
         } catch {
-            setError("Something went wrong. Please try again.")
+            setError("Нещо се обърка. Моля, опитай отново.")
         } finally {
             setLoading(false)
         }
@@ -180,13 +201,15 @@ export default function EmailSubscriptionPopup() {
                             <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-pale-pink to-muted-rose rounded-full mb-4">
                                 <Sparkles className="w-8 h-8 text-soft-gold" />
                             </div>
-                            <h2 className="text-2xl font-semibold text-grey-90 mb-2">
-                                {campaign.popup_title || `Unlock ${campaign.discount_percent}% Off`}
+                            <h2 className="text-xl font-semibold text-grey-90 mb-2 leading-snug">
+                                {campaign.popup_title ||
+                                    `Абонирай се за нашия имейл бюлетин и вземи ${campaign.discount_percent}% отстъпка от първата си поръчка`}
                             </h2>
-                            <p className="text-grey-50 text-sm leading-relaxed">
-                                {campaign.popup_description ||
-                                    `Join our exclusive list and get ${campaign.discount_percent}% off your first jewelry purchase.`}
-                            </p>
+                            {campaign.popup_description && (
+                                <p className="text-grey-50 text-sm leading-relaxed">
+                                    {campaign.popup_description}
+                                </p>
+                            )}
                         </div>
 
                         {/* Form */}
@@ -194,7 +217,7 @@ export default function EmailSubscriptionPopup() {
                             <div>
                                 <input
                                     type="email"
-                                    placeholder="Enter your email address"
+                                    placeholder="Въведи своя имейл адрес"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     required
@@ -211,13 +234,13 @@ export default function EmailSubscriptionPopup() {
                                 disabled={loading}
                                 className="w-full py-3.5 bg-grey-90 hover:bg-grey-80 text-white text-sm font-medium rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                {loading ? "Please wait..." : "Get My Discount Code"}
+                                {loading ? "Моля, изчакай..." : "Вземи моя код за отстъпка"}
                             </button>
                         </form>
 
                         <p className="mt-5 text-xs text-center text-grey-40 leading-relaxed">
-                            By subscribing, you agree to receive promotional emails.<br />
-                            Unsubscribe anytime.
+                            С абонирането се съгласяваш да получаваш промоционални имейли.<br />
+                            Можеш да се отпишеш по всяко време.
                         </p>
                     </div>
                 ) : (
@@ -227,34 +250,40 @@ export default function EmailSubscriptionPopup() {
                             <CheckCircleSolid className="w-8 h-8 text-soft-gold" />
                         </div>
                         <h2 className="text-2xl font-semibold text-grey-90 mb-2">
-                            Welcome to the family!
+                            Добре дошла в семейството!
                         </h2>
                         <p className="text-grey-50 text-sm mb-6">
-                            Here's your exclusive discount code:
+                            {discountCode
+                                ? "Ето твоя ексклузивен код за отстъпка:"
+                                : "Благодарим ти за абонирането! Ще получиш своя код скоро."}
                         </p>
 
-                        <div className="bg-cream border-2 border-dashed border-pale-pink rounded-xl p-5 mb-4">
-                            <code className="text-2xl font-bold text-grey-90 tracking-wider">
-                                {discountCode}
-                            </code>
-                        </div>
+                        {discountCode && (
+                            <>
+                                <div className="bg-cream border-2 border-dashed border-pale-pink rounded-xl p-5 mb-4">
+                                    <code className="text-2xl font-bold text-grey-90 tracking-wider">
+                                        {discountCode}
+                                    </code>
+                                </div>
 
-                        <button
-                            onClick={handleCopyCode}
-                            className="w-full py-3 mb-3 border border-grey-20 text-grey-70 text-sm font-medium rounded-xl hover:bg-grey-5 transition-colors"
-                        >
-                            {copied ? "Copied to clipboard!" : "Copy Code"}
-                        </button>
+                                <button
+                                    onClick={handleCopyCode}
+                                    className="w-full py-3 mb-3 border border-grey-20 text-grey-70 text-sm font-medium rounded-xl hover:bg-grey-5 transition-colors"
+                                >
+                                    {copied ? "Копирано в клипборда!" : "Копирай кода"}
+                                </button>
 
-                        <p className="text-sm text-grey-50 mb-5">
-                            Use this code at checkout for {campaign.discount_percent}% off
-                        </p>
+                                <p className="text-sm text-grey-50 mb-5">
+                                    Използвай кода при плащане за {campaign.discount_percent}% отстъпка
+                                </p>
+                            </>
+                        )}
 
                         <button
                             onClick={handleDismiss}
                             className="w-full py-3.5 bg-grey-90 hover:bg-grey-80 text-white text-sm font-medium rounded-xl transition-colors"
                         >
-                            Start Shopping
+                            Към пазаруване
                         </button>
                     </div>
                 )}

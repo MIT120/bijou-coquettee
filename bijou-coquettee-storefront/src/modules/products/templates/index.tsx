@@ -61,10 +61,12 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
           <ProductTabs product={product} />
         </div>
       </div>
-      <div className="content-container my-16 small:my-24">
-        {/* Product comments & community insights */}
+      {/* Per-product reviews are disabled — backend auto-approves without moderation.
+          Homepage testimonials (modules/home/components/testimonials) remain active.
+          Re-enable by removing this comment block and uncommenting the section below. */}
+      {/* <div className="content-container my-16 small:my-24">
         <ProductCommentsSection productId={product.id} />
-      </div>
+      </div> */}
       <div
         className="content-container my-16 small:my-32"
         data-testid="related-products-container"
