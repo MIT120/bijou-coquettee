@@ -256,26 +256,6 @@ const ColorOptionSelect: React.FC<ColorOptionSelectProps> = ({
                           {value}
                         </span>
                         <span className="flex items-center gap-x-2">
-                          {variants && (
-                            <span
-                              className={clx("text-xs", {
-                                "text-ui-fg-muted": !isOutOfStock,
-                                "text-ui-fg-disabled": isOutOfStock,
-                                "text-green-600":
-                                  stockInfo.quantity !== null &&
-                                  stockInfo.quantity > 0 &&
-                                  stockInfo.quantity <= 5,
-                              })}
-                            >
-                              {isOutOfStock
-                                ? "Out of stock"
-                                : stockInfo.quantity !== null
-                                  ? stockInfo.quantity <= 5
-                                    ? `Only ${stockInfo.quantity} left`
-                                    : `${stockInfo.quantity} in stock`
-                                  : "In stock"}
-                            </span>
-                          )}
                           {selected && (
                             <svg
                               className="w-4 h-4 text-ui-fg-base"

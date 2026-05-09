@@ -86,11 +86,8 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
             </svg>
           </div>
           <div>
-            <p className="font-sans text-xs font-medium text-grey-80 tracking-wide">
-              Ръчна изработка
-            </p>
-            <p className="font-sans text-[0.65rem] text-grey-50 font-light">
-              Сертифицирани материали
+            <p className="font-sans text-xs font-medium text-grey-80 tracking-wide leading-tight">
+              Фирма с удостоверение за работа с благородни метали от Министерството на икономиката и индустрията
             </p>
           </div>
         </div>
@@ -98,7 +95,7 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
         {/* Product Disclaimer */}
         <div className="p-3 border border-grey-10 rounded-lg bg-cream/50">
           <p className="font-sans text-[0.65rem] text-grey-50 font-light leading-relaxed">
-            <span className="font-medium text-grey-60">Важно:</span> Изображението е с илюстративна цел. Видът и цветът може да се различава в зависимост от устройството. Продуктът е ръчна изработка и може да има минимални различия.
+            Нашите бижута са ръчно изработени с внимание към всеки детайл. Всеки артикул носи своята уникалност, поради което са възможни минимални различия спрямо останалите изделия или снимките в сайта.
           </p>
         </div>
       </div>

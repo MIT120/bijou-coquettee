@@ -115,9 +115,10 @@ const ImageGallery = ({ images }: ImageGalleryProps) => {
     return (
         <div className="flex flex-col gap-6 w-full max-w-3xl mx-auto">
             {/* Main Image Container */}
-            <div className="relative shadow-lg rounded-lg overflow-hidden">
+            <div className="relative shadow-lg rounded-lg overflow-hidden" style={{ maxHeight: "560px" }}>
                 <Container
-                    className="relative aspect-[4/5] w-full overflow-hidden bg-ui-bg-subtle group cursor-zoom-in touch-pan-x"
+                    className="relative w-full overflow-hidden bg-ui-bg-subtle group cursor-zoom-in touch-pan-x"
+                    style={{ maxHeight: "560px", aspectRatio: "4/5" }}
                     ref={imageRef}
                     onMouseMove={handleMouseMove}
                     onMouseEnter={handleMouseEnter}
