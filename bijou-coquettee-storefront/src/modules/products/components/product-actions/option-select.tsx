@@ -122,21 +122,6 @@ const OptionSelect: React.FC<OptionSelectProps> = ({
               data-testid="option-button"
             >
               <span>{v}</span>
-              {variants && (
-                <span className={clx("text-xs", {
-                  "text-ui-fg-muted": !isOutOfStock,
-                  "text-ui-fg-disabled": isOutOfStock,
-                  "text-green-600": stockInfo.quantity !== null && stockInfo.quantity > 0 && stockInfo.quantity <= 5,
-                })}>
-                  {isOutOfStock
-                    ? "Out of stock"
-                    : stockInfo.quantity !== null
-                      ? stockInfo.quantity <= 5
-                        ? `Only ${stockInfo.quantity} left`
-                        : `${stockInfo.quantity} in stock`
-                      : "In stock"}
-                </span>
-              )}
             </button>
           )
         })}

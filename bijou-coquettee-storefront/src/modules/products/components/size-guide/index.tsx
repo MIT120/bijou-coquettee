@@ -71,7 +71,7 @@ export default function SizeGuide({ category }: SizeGuideProps) {
                 className="flex items-center gap-2 text-ui-fg-interactive hover:text-ui-fg-interactive-hover text-small-regular underline"
             >
                 <Ruler size={16} />
-                Size Guide
+                Таблица с размери
             </button>
 
             <Transition appear show={isOpen} as={Fragment}>
