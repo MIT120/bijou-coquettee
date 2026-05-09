@@ -52,7 +52,7 @@ export async function getEcontPreference(
         method: "GET",
         headers,
         next: {
-          revalidate: 0, // Don't cache - we need fresh data for checkout validation
+          revalidate: 0, // Don't cache — we need fresh data for checkout validation
         },
       }
     )
@@ -65,50 +65,78 @@ export async function getEcontPreference(
     return data.preference || null
   } catch (error) {
     console.error("[Econt] Failed to fetch preference:", error)
+    // Return null rather than throwing — the caller decides how to handle a missing preference
     return null
   }
 }
 
 /**
  * Validates that an Econt preference is complete and ready for order placement.
- * Returns an object with validation status and any error message.
+ *
+ * Fix 4: Improved validation — returns specific, actionable error messages
+ * so users know exactly what's missing rather than seeing a generic error.
  */
 export async function validateEcontPreference(
   preference: EcontPreference | null
 ): Promise<{ valid: boolean; error?: string }> {
+  // No preference saved at all — user did not fill Econt delivery details
   if (!preference) {
     return {
       valid: false,
-      error: "Моля, попълнете данните за доставка с Econt.",
+      error:
+        'Моля, попълнете и запазете данните за доставка с Econt в стъпка "Delivery".',
     }
   }
 
-  // Check delivery type and required fields
+  // Validate based on delivery type
   if (preference.delivery_type === "office") {
     if (!preference.office_code) {
       return {
         valid: false,
-        error: "Моля, изберете офис на Econt за доставка.",
+        error:
+          'Моля, изберете офис на Econt за доставка и натиснете "Запази".',
       }
     }
   } else if (preference.delivery_type === "address") {
-    if (!preference.address_city || !preference.address_line1) {
+    if (!preference.address_city) {
       return {
         valid: false,
-        error: "Моля, попълнете адрес за доставка.",
+        error:
+          'Моля, въведете град за доставка и натиснете "Запази".',
       }
+    }
+    if (!preference.address_line1) {
+      return {
+        valid: false,
+        error:
+          'Моля, въведете адрес за доставка и натиснете "Запази".',
+      }
+    }
+  } else {
+    return {
+      valid: false,
+      error:
+        'Моля, изберете начин на доставка (офис или адрес) и натиснете "Запази".',
     }
   }
 
-  // Check recipient info
-  if (
-    !preference.recipient_first_name ||
-    !preference.recipient_last_name ||
-    !preference.recipient_phone
-  ) {
+  // Validate recipient name — these come from the shipping address step
+  if (!preference.recipient_first_name || !preference.recipient_last_name) {
     return {
       valid: false,
-      error: "Моля, попълнете данните за получател (име, фамилия, телефон).",
+      error:
+        'Моля, попълнете вашите имена в стъпка "Address" и запазете отново данните за доставка.',
+    }
+  }
+
+  // Validate phone — this is the most common cause of the false-positive error.
+  // The phone is saved from cart.shipping_address.phone at the time the Econt form is saved.
+  // If the user filled their name and address but left the phone empty, they need to go back.
+  if (!preference.recipient_phone) {
+    return {
+      valid: false,
+      error:
+        'Моля, попълнете телефонен номер в стъпка "Address", след което се върнете към стъпка "Delivery" и натиснете "Запази" отново.',
     }
   }
 

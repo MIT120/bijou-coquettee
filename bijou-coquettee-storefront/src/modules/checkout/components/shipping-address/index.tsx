@@ -1,3 +1,5 @@
+"use client"
+
 import { HttpTypes } from "@medusajs/types"
 import { Container } from "@medusajs/ui"
 import Checkbox from "@modules/common/components/checkbox"
@@ -5,7 +7,6 @@ import Input from "@modules/common/components/input"
 import { mapKeys } from "lodash"
 import React, { useEffect, useMemo, useState } from "react"
 import AddressSelect from "../address-select"
-import CountrySelect from "../country-select"
 
 const ShippingAddress = ({
   customer,
@@ -21,17 +22,30 @@ const ShippingAddress = ({
   const isBulgaria =
     cart?.shipping_address?.country_code?.toLowerCase() === "bg" ||
     cart?.region?.countries?.[0]?.iso_2?.toLowerCase() === "bg"
+
   const [formData, setFormData] = useState<Record<string, any>>({
     "shipping_address.first_name": cart?.shipping_address?.first_name || "",
     "shipping_address.last_name": cart?.shipping_address?.last_name || "",
     "shipping_address.address_1": cart?.shipping_address?.address_1 || "",
-    "shipping_address.company": cart?.shipping_address?.company || "",
     "shipping_address.postal_code": cart?.shipping_address?.postal_code || "",
     "shipping_address.city": cart?.shipping_address?.city || "",
-    "shipping_address.country_code": cart?.shipping_address?.country_code || "",
+    // For Bulgaria, country_code is always "bg"; the hidden input guarantees it
+    "shipping_address.country_code":
+      cart?.shipping_address?.country_code ||
+      cart?.region?.countries?.[0]?.iso_2 ||
+      "bg",
     "shipping_address.province": cart?.shipping_address?.province || "",
     "shipping_address.phone": cart?.shipping_address?.phone || "",
     email: cart?.email || "",
+  })
+
+  // Invoice (фактура) state
+  const [wantsInvoice, setWantsInvoice] = useState(false)
+  const [invoiceData, setInvoiceData] = useState({
+    company: "",
+    vat: "",
+    mol: "",
+    companyAddress: "",
   })
 
   const countriesInRegion = useMemo(
@@ -39,7 +53,7 @@ const ShippingAddress = ({
     [cart?.region]
   )
 
-  // check if customer has saved addresses that are in the current region
+  // Check if customer has saved addresses in the current region
   const addressesInRegion = useMemo(
     () =>
       customer?.addresses.filter(
@@ -58,10 +72,9 @@ const ShippingAddress = ({
         "shipping_address.first_name": address?.first_name || "",
         "shipping_address.last_name": address?.last_name || "",
         "shipping_address.address_1": address?.address_1 || "",
-        "shipping_address.company": address?.company || "",
         "shipping_address.postal_code": address?.postal_code || "",
         "shipping_address.city": address?.city || "",
-        "shipping_address.country_code": address?.country_code || "",
+        "shipping_address.country_code": address?.country_code || "bg",
         "shipping_address.province": address?.province || "",
         "shipping_address.phone": address?.phone || "",
       }))
@@ -74,7 +87,6 @@ const ShippingAddress = ({
   }
 
   useEffect(() => {
-    // Ensure cart is not null and has a shipping_address before setting form data
     if (cart && cart.shipping_address) {
       setFormAddress(cart?.shipping_address, cart?.email)
     }
@@ -82,7 +94,7 @@ const ShippingAddress = ({
     if (cart && !cart.email && customer?.email) {
       setFormAddress(undefined, customer.email)
     }
-  }, [cart]) // Add cart as a dependency
+  }, [cart])
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -91,6 +103,13 @@ const ShippingAddress = ({
   ) => {
     setFormData({
       ...formData,
+      [e.target.name]: e.target.value,
+    })
+  }
+
+  const handleInvoiceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInvoiceData({
+      ...invoiceData,
       [e.target.name]: e.target.value,
     })
   }
@@ -115,6 +134,7 @@ const ShippingAddress = ({
           />
         </Container>
       )}
+
       <div className="grid grid-cols-2 gap-4">
         <Input
           label={isBulgaria ? "Име" : "First name"}
@@ -144,14 +164,6 @@ const ShippingAddress = ({
           data-testid="shipping-address-input"
         />
         <Input
-          label={isBulgaria ? "Фирма" : "Company"}
-          name="shipping_address.company"
-          value={formData["shipping_address.company"]}
-          onChange={handleChange}
-          autoComplete="organization"
-          data-testid="shipping-company-input"
-        />
-        <Input
           label={isBulgaria ? "Пощенски код" : "Postal code"}
           name="shipping_address.postal_code"
           autoComplete="postal-code"
@@ -169,15 +181,6 @@ const ShippingAddress = ({
           required
           data-testid="shipping-city-input"
         />
-        <CountrySelect
-          name="shipping_address.country_code"
-          autoComplete="country"
-          region={cart?.region}
-          value={formData["shipping_address.country_code"]}
-          onChange={handleChange}
-          required
-          data-testid="shipping-country-select"
-        />
         <Input
           label={isBulgaria ? "Област" : "State / Province"}
           name="shipping_address.province"
@@ -187,6 +190,31 @@ const ShippingAddress = ({
           data-testid="shipping-province-input"
         />
       </div>
+
+      {/* Fix 1: Country is fixed to Bulgaria — shown as a read-only field.
+          A hidden input ensures the form always submits "bg" as country_code. */}
+      <div className="mt-4">
+        <div className="flex flex-col gap-y-1">
+          <label className="text-ui-fg-subtle text-small-regular">
+            {isBulgaria ? "Държава" : "Country"}
+          </label>
+          <div
+            className="flex items-center w-full h-11 bg-ui-bg-subtle border border-ui-border-base rounded-md px-3 text-small-regular text-ui-fg-base select-none cursor-not-allowed"
+            aria-label={isBulgaria ? "Държава: България" : "Country: Bulgaria"}
+            data-testid="shipping-country-display"
+          >
+            България
+          </div>
+          {/* Hidden input so the form action receives the correct country_code */}
+          <input
+            type="hidden"
+            name="shipping_address.country_code"
+            value="bg"
+            readOnly
+          />
+        </div>
+      </div>
+
       <div className="my-8">
         <Checkbox
           label={
@@ -200,6 +228,7 @@ const ShippingAddress = ({
           data-testid="billing-address-checkbox"
         />
       </div>
+
       <div className="grid grid-cols-2 gap-4 mb-4">
         <Input
           label={isBulgaria ? "Имейл" : "Email"}
@@ -224,6 +253,95 @@ const ShippingAddress = ({
           onChange={handleChange}
           data-testid="shipping-phone-input"
         />
+      </div>
+
+      {/* Fix 2: Invoice (фактура) section */}
+      <div className="mt-2 mb-4">
+        <label className="flex items-center gap-3 cursor-pointer group">
+          <input
+            type="checkbox"
+            checked={wantsInvoice}
+            onChange={(e) => setWantsInvoice(e.target.checked)}
+            className="w-4 h-4 rounded border-ui-border-strong text-ui-fg-base focus:ring-ui-border-interactive cursor-pointer"
+            data-testid="wants-invoice-checkbox"
+            aria-expanded={wantsInvoice}
+            aria-controls="invoice-fields"
+          />
+          <span className="text-small-regular text-ui-fg-base font-medium group-hover:text-ui-fg-interactive transition-colors">
+            {isBulgaria ? "Желая фактура" : "I want an invoice"}
+          </span>
+        </label>
+
+        {/* Invoice fields — revealed when checkbox is checked */}
+        <div
+          id="invoice-fields"
+          className={[
+            "overflow-hidden transition-all duration-300 ease-in-out",
+            wantsInvoice
+              ? "max-h-[500px] opacity-100 mt-4"
+              : "max-h-0 opacity-0",
+          ].join(" ")}
+          aria-hidden={!wantsInvoice}
+        >
+          <div className="border border-ui-border-base rounded-lg p-4 bg-ui-bg-subtle grid grid-cols-2 gap-4">
+            <p className="col-span-2 text-small-regular text-ui-fg-subtle mb-2">
+              {isBulgaria
+                ? "Данни за издаване на фактура"
+                : "Invoice details"}
+            </p>
+
+            {/* Фирма — Company name (required for invoice) */}
+            <div className="col-span-2">
+              <Input
+                label={isBulgaria ? "Фирма *" : "Company name *"}
+                name="invoice_company"
+                autoComplete="organization"
+                value={invoiceData.company}
+                onChange={handleInvoiceChange}
+                required={wantsInvoice}
+                data-testid="invoice-company-input"
+              />
+            </div>
+
+            {/* Булстат — VAT/EIC number (required for invoice) */}
+            <div className="col-span-2 sm:col-span-1">
+              <Input
+                label={isBulgaria ? "Булстат / ДДС номер *" : "VAT / EIC number *"}
+                name="invoice_vat"
+                value={invoiceData.vat}
+                onChange={handleInvoiceChange}
+                required={wantsInvoice}
+                data-testid="invoice-vat-input"
+              />
+            </div>
+
+            {/* МОЛ — Responsible person (optional) */}
+            <div className="col-span-2 sm:col-span-1">
+              <Input
+                label={isBulgaria ? "МОЛ (незадължително)" : "Responsible person (optional)"}
+                name="invoice_mol"
+                value={invoiceData.mol}
+                onChange={handleInvoiceChange}
+                data-testid="invoice-mol-input"
+              />
+            </div>
+
+            {/* Адрес на фирмата — Company address (optional) */}
+            <div className="col-span-2">
+              <Input
+                label={
+                  isBulgaria
+                    ? "Адрес на фирмата (незадължително)"
+                    : "Company address (optional)"
+                }
+                name="invoice_company_address"
+                value={invoiceData.companyAddress}
+                onChange={handleInvoiceChange}
+                data-testid="invoice-company-address-input"
+              />
+            </div>
+          </div>
+        </div>
       </div>
     </>
   )
