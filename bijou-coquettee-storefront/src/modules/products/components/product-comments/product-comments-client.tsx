@@ -3,6 +3,8 @@
 import { useState } from "react"
 import type { ProductComment } from "@lib/data/comments"
 import { clx } from "@medusajs/ui"
+import { getLocale, t } from "@lib/util/translations"
+import { useParams } from "next/navigation"
 
 // Extended type to include formatted date from server
 type CommentWithFormattedDate = ProductComment & {
@@ -54,6 +56,9 @@ const ProductCommentsClient = ({
     initialComments,
     initialCount,
 }: ProductCommentsClientProps) => {
+    const params = useParams()
+    const countryCode = params?.countryCode as string | undefined
+    const locale = getLocale(countryCode)
     const [comments, setComments] =
         useState<CommentWithFormattedDate[]>(initialComments ?? [])
     const [count, setCount] = useState(initialCount ?? 0)
@@ -75,12 +80,12 @@ const ProductCommentsClient = ({
         setSuccess(null)
 
         if (!content.trim()) {
-            setError("Please share a short comment before submitting.")
+            setError(t("product.pleaseAddComment", locale))
             return
         }
 
         if (!name.trim()) {
-            setError("Please add a name so the community knows who shared.")
+            setError(t("product.pleaseAddName", locale))
             return
         }
 
@@ -113,10 +118,10 @@ const ProductCommentsClient = ({
             if (!response.ok) {
                 const details = await response
                     .json()
-                    .catch(() => ({ error: "Unable to share comment." }))
+                    .catch(() => ({ error: t("product.unableToShare", locale) }))
                 throw new Error(
                     (details as { error?: string })?.error ||
-                    "Unable to share comment."
+                    t("product.unableToShare", locale)
                 )
             }
 
@@ -145,14 +150,14 @@ const ProductCommentsClient = ({
                 setContent("")
                 setEmail("")
                 setName("")
-                setSuccess("Thanks for sharing your thoughts!")
+                setSuccess(t("product.thankYouThoughts", locale))
                 setShowForm(false)
             }
         } catch (submissionError) {
             const message =
                 submissionError instanceof Error
                     ? submissionError.message
-                    : "Something went wrong. Please try again."
+                    : t("product.somethingWentWrong", locale)
             setError(message)
         } finally {
             setIsSubmitting(false)
@@ -172,10 +177,10 @@ const ProductCommentsClient = ({
                     </div>
                     <div className="flex flex-col items-start">
                         <span className="text-sm font-medium text-ui-fg-base">
-                            {count} {count === 1 ? "Review" : "Reviews"}
+                            {count} {count === 1 ? t("product.review", locale) : t("product.reviews", locale)}
                         </span>
                         <span className="text-xs text-ui-fg-muted">
-                            {isExpanded ? "Click to collapse" : "Click to view"}
+                            {isExpanded ? t("product.clickToCollapse", locale) : t("product.clickToView", locale)}
                         </span>
                     </div>
                 </div>
@@ -200,7 +205,7 @@ const ProductCommentsClient = ({
                             className="flex items-center justify-center gap-2 w-full py-3 px-4 rounded-xl border border-dashed border-ui-border-base text-sm font-medium text-ui-fg-subtle hover:border-ui-fg-muted hover:text-ui-fg-base hover:bg-ui-bg-subtle transition-all"
                         >
                             <CommentIcon className="w-4 h-4" />
-                            Write a review
+                            {t("product.writeReview", locale)}
                         </button>
                     )}
 
@@ -208,7 +213,7 @@ const ProductCommentsClient = ({
                     {showForm && (
                         <div className="rounded-xl border border-ui-border-base bg-ui-bg-subtle p-4">
                             <div className="flex items-center justify-between mb-4">
-                                <h4 className="text-sm font-medium text-ui-fg-base">Share your thoughts</h4>
+                                <h4 className="text-sm font-medium text-ui-fg-base">{t("product.shareThoughts", locale)}</h4>
                                 <button
                                     onClick={() => {
                                         setShowForm(false)
@@ -217,7 +222,7 @@ const ProductCommentsClient = ({
                                     }}
                                     className="text-ui-fg-muted hover:text-ui-fg-base text-sm"
                                 >
-                                    Cancel
+                                    {t("common.cancel", locale)}
                                 </button>
                             </div>
                             <form className="flex flex-col gap-3" onSubmit={handleSubmit}>
@@ -225,7 +230,7 @@ const ProductCommentsClient = ({
                                     <input
                                         id="comment-name"
                                         name="name"
-                                        placeholder="Your name"
+                                        placeholder={t("product.yourName", locale)}
                                         value={name}
                                         onChange={(event) => setName(event.target.value)}
                                         className="rounded-lg border border-ui-border-base bg-white px-3 py-2.5 text-sm outline-none focus:border-ui-fg-base"
@@ -235,7 +240,7 @@ const ProductCommentsClient = ({
                                         id="comment-email"
                                         name="email"
                                         type="email"
-                                        placeholder="Email (optional)"
+                                        placeholder={t("product.emailOptional", locale)}
                                         value={email}
                                         onChange={(event) => setEmail(event.target.value)}
                                         className="rounded-lg border border-ui-border-base bg-white px-3 py-2.5 text-sm outline-none focus:border-ui-fg-base"
@@ -244,7 +249,7 @@ const ProductCommentsClient = ({
                                 <textarea
                                     id="comment-content"
                                     name="content"
-                                    placeholder="What makes this piece special to you?"
+                                    placeholder={t("product.whatMakesSpecial", locale)}
                                     value={content}
                                     onChange={(event) => setContent(event.target.value)}
                                     rows={3}
@@ -263,14 +268,14 @@ const ProductCommentsClient = ({
                                 )}
                                 <div className="flex items-center justify-between gap-4">
                                     <p className="text-xs text-ui-fg-muted hidden small:block">
-                                        Guest comments may be reviewed.
+                                        {t("product.guestCommentsNote", locale)}
                                     </p>
                                     <button
                                         type="submit"
                                         className="rounded-full bg-ui-fg-base px-5 py-2 text-sm font-medium text-ui-bg-base transition hover:bg-ui-fg-subtle disabled:cursor-not-allowed disabled:opacity-70 ml-auto"
                                         disabled={isSubmitting}
                                     >
-                                        {isSubmitting ? "Posting..." : "Post"}
+                                        {isSubmitting ? t("product.posting", locale) : t("product.post", locale)}
                                     </button>
                                 </div>
                             </form>
@@ -281,7 +286,7 @@ const ProductCommentsClient = ({
                     <div className="flex flex-col gap-3">
                         {comments.length === 0 ? (
                             <p className="text-sm text-ui-fg-muted text-center py-4">
-                                Be the first to share your experience with this piece.
+                                {t("product.firstToShare", locale)}
                             </p>
                         ) : (
                             <ul className="flex flex-col gap-3">
@@ -292,7 +297,7 @@ const ProductCommentsClient = ({
                                     >
                                         <div className="flex items-center justify-between gap-4">
                                             <span className="text-sm font-medium text-ui-fg-base">
-                                                {comment.author_name || "Anonymous"}
+                                                {comment.author_name || t("common.anonymous", locale)}
                                             </span>
                                             <span className="text-xs text-ui-fg-muted">
                                                 {comment.formatted_date || ""}

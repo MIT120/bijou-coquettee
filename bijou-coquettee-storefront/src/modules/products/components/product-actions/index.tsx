@@ -17,6 +17,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import ProductPrice from "../product-price"
 import MobileActions from "./mobile-actions"
 import UpsellPopup from "@modules/products/components/upsell-popup"
+import { getLocale, t } from "@lib/util/translations"
 
 type ProductActionsProps = {
   product: HttpTypes.StoreProduct
@@ -70,6 +71,7 @@ export default function ProductActions({
   const [isAdding, setIsAdding] = useState(false)
   const [showUpsell, setShowUpsell] = useState(false)
   const countryCode = useParams().countryCode as string
+  const locale = getLocale(countryCode)
   const { trackAddToCart } = useAnalytics()
   const { trackAddToCart: trackMetaAddToCart } = useMetaPixel()
 
@@ -307,10 +309,10 @@ export default function ProductActions({
             data-testid="add-product-button"
           >
             {!selectedVariant
-              ? "Select options"
+              ? t("product.selectOptions", locale)
               : !inStock
-                ? "Out of stock"
-                : "Add to cart"}
+                ? t("product.outOfStock", locale)
+                : t("product.addToCart", locale)}
           </Button>
 
           <WishlistButton

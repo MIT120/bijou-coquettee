@@ -7,6 +7,8 @@ import Input from "@modules/common/components/input"
 import { mapKeys } from "lodash"
 import React, { useEffect, useMemo, useState } from "react"
 import AddressSelect from "../address-select"
+import { useParams } from "next/navigation"
+import { getLocale, t } from "@lib/util/translations"
 
 const ShippingAddress = ({
   customer,
@@ -23,6 +25,9 @@ const ShippingAddress = ({
     cart?.shipping_address?.country_code?.toLowerCase() === "bg" ||
     cart?.region?.countries?.[0]?.iso_2?.toLowerCase() === "bg"
 
+  const params = useParams()
+  const countryCode = params?.countryCode as string | undefined
+  const locale = getLocale(countryCode)
   const [formData, setFormData] = useState<Record<string, any>>({
     "shipping_address.first_name": cart?.shipping_address?.first_name || "",
     "shipping_address.last_name": cart?.shipping_address?.last_name || "",
@@ -119,9 +124,7 @@ const ShippingAddress = ({
       {customer && (addressesInRegion?.length || 0) > 0 && (
         <Container className="mb-6 flex flex-col gap-y-4 p-5">
           <p className="text-small-regular">
-            {isBulgaria
-              ? `Здравейте ${customer.first_name}, искате ли да използвате някой от запазените си адреси?`
-              : `Hi ${customer.first_name}, do you want to use one of your saved addresses?`}
+            {t("account.hiUseSavedAddress", locale, { name: customer.first_name })}
           </p>
           <AddressSelect
             addresses={customer.addresses}
@@ -137,7 +140,7 @@ const ShippingAddress = ({
 
       <div className="grid grid-cols-2 gap-4">
         <Input
-          label={isBulgaria ? "Име" : "First name"}
+          label={t("account.firstName", locale)}
           name="shipping_address.first_name"
           autoComplete="given-name"
           value={formData["shipping_address.first_name"]}
@@ -146,7 +149,7 @@ const ShippingAddress = ({
           data-testid="shipping-first-name-input"
         />
         <Input
-          label={isBulgaria ? "Фамилия" : "Last name"}
+          label={t("account.lastName", locale)}
           name="shipping_address.last_name"
           autoComplete="family-name"
           value={formData["shipping_address.last_name"]}
@@ -155,7 +158,7 @@ const ShippingAddress = ({
           data-testid="shipping-last-name-input"
         />
         <Input
-          label={isBulgaria ? "Адрес" : "Address"}
+          label={t("account.address", locale)}
           name="shipping_address.address_1"
           autoComplete="address-line1"
           value={formData["shipping_address.address_1"]}
@@ -164,7 +167,7 @@ const ShippingAddress = ({
           data-testid="shipping-address-input"
         />
         <Input
-          label={isBulgaria ? "Пощенски код" : "Postal code"}
+          label={t("account.postalCode", locale)}
           name="shipping_address.postal_code"
           autoComplete="postal-code"
           value={formData["shipping_address.postal_code"]}
@@ -173,7 +176,7 @@ const ShippingAddress = ({
           data-testid="shipping-postal-code-input"
         />
         <Input
-          label={isBulgaria ? "Град" : "City"}
+          label={t("account.city", locale)}
           name="shipping_address.city"
           autoComplete="address-level2"
           value={formData["shipping_address.city"]}
@@ -182,7 +185,7 @@ const ShippingAddress = ({
           data-testid="shipping-city-input"
         />
         <Input
-          label={isBulgaria ? "Област" : "State / Province"}
+          label={t("account.provinceState", locale)}
           name="shipping_address.province"
           autoComplete="address-level1"
           value={formData["shipping_address.province"]}
@@ -217,11 +220,7 @@ const ShippingAddress = ({
 
       <div className="my-8">
         <Checkbox
-          label={
-            isBulgaria
-              ? "Адресът за фактуриране е същият като адреса за доставка"
-              : "Billing address same as shipping address"
-          }
+          label={t("account.billingAddressSameAsShipping", locale)}
           name="same_as_billing"
           checked={checked}
           onChange={onChange}
@@ -231,14 +230,10 @@ const ShippingAddress = ({
 
       <div className="grid grid-cols-2 gap-4 mb-4">
         <Input
-          label={isBulgaria ? "Имейл" : "Email"}
+          label={t("account.email", locale)}
           name="email"
           type="email"
-          title={
-            isBulgaria
-              ? "Въведете валиден имейл адрес."
-              : "Enter a valid email address."
-          }
+          title={t("auth.enterValidEmail", locale)}
           autoComplete="email"
           value={formData.email}
           onChange={handleChange}
@@ -246,7 +241,7 @@ const ShippingAddress = ({
           data-testid="shipping-email-input"
         />
         <Input
-          label={isBulgaria ? "Телефон" : "Phone"}
+          label={t("account.phone", locale)}
           name="shipping_address.phone"
           autoComplete="tel"
           value={formData["shipping_address.phone"]}

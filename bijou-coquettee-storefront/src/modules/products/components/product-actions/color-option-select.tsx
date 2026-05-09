@@ -5,6 +5,8 @@ import { HttpTypes } from "@medusajs/types"
 import { clx } from "@medusajs/ui"
 import ChevronDown from "@modules/common/icons/chevron-down"
 import { Fragment } from "react"
+import { getLocale, t } from "@lib/util/translations"
+import { useParams } from "next/navigation"
 
 const COLOR_MAP: Record<string, string> = {
   // Metals
@@ -162,6 +164,10 @@ const ColorOptionSelect: React.FC<ColorOptionSelectProps> = ({
   variants,
   selectedOptions,
 }) => {
+  const params = useParams()
+  const countryCode = params?.countryCode as string | undefined
+  const locale = getLocale(countryCode)
+
   const values = (option.values ?? []).map((v) => v.value)
 
   const handleChange = (value: string) => {
@@ -171,7 +177,7 @@ const ColorOptionSelect: React.FC<ColorOptionSelectProps> = ({
   return (
     <div className="flex flex-col gap-y-3">
       <span className="text-sm font-medium text-ui-fg-base">
-        Select {title}
+        {t("product.selectOption", locale)} {title}
       </span>
       <Listbox
         value={current ?? ""}

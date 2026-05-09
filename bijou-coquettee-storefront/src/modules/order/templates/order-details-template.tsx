@@ -9,6 +9,8 @@ import OrderDetails from "@modules/order/components/order-details"
 import OrderSummary from "@modules/order/components/order-summary"
 import ShippingDetails from "@modules/order/components/shipping-details"
 import React from "react"
+import { useParams } from "next/navigation"
+import { getLocale, t } from "@lib/util/translations"
 
 type OrderDetailsTemplateProps = {
   order: HttpTypes.StoreOrder
@@ -17,16 +19,20 @@ type OrderDetailsTemplateProps = {
 const OrderDetailsTemplate: React.FC<OrderDetailsTemplateProps> = ({
   order,
 }) => {
+  const params = useParams()
+  const countryCode = params?.countryCode as string | undefined
+  const locale = getLocale(countryCode)
+
   return (
     <div className="flex flex-col justify-center gap-y-4">
       <div className="flex gap-2 justify-between items-center">
-        <h1 className="text-2xl-semi">Order details</h1>
+        <h1 className="text-2xl-semi">{t("order.orderDetails", locale)}</h1>
         <LocalizedClientLink
           href="/account/orders"
           className="flex gap-2 items-center text-ui-fg-subtle hover:text-ui-fg-base"
           data-testid="back-to-overview-button"
         >
-          <XMark /> Back to overview
+          <XMark /> {t("order.backToOverview", locale)}
         </LocalizedClientLink>
       </div>
       <div

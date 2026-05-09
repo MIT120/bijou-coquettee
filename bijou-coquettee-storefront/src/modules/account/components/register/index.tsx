@@ -8,6 +8,7 @@ import { SubmitButton } from "@modules/checkout/components/submit-button"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { signup } from "@lib/data/customer"
 import { type Locale } from "@/i18n/locale"
+import { t } from "@lib/util/translations"
 
 type Props = {
   setCurrentView: (view: LOGIN_VIEW) => void
@@ -23,30 +24,29 @@ const Register = ({ setCurrentView, locale }: Props) => {
       data-testid="register-page"
     >
       <h1 className="text-large-semi uppercase mb-6">
-        Become a Bijou Coquettee Member
+        {t("auth.becomeMember", locale)}
       </h1>
       <p className="text-center text-base-regular text-ui-fg-base mb-4">
-        Create your Bijou Coquettee Member profile, and get access to an enhanced
-        shopping experience.
+        {t("auth.createProfileDescription", locale)}
       </p>
       <form className="w-full flex flex-col" action={formAction}>
         <div className="flex flex-col w-full gap-y-2">
           <Input
-            label="First name"
+            label={t("account.firstName", locale)}
             name="first_name"
             required
             autoComplete="given-name"
             data-testid="first-name-input"
           />
           <Input
-            label="Last name"
+            label={t("account.lastName", locale)}
             name="last_name"
             required
             autoComplete="family-name"
             data-testid="last-name-input"
           />
           <Input
-            label="Email"
+            label={t("account.email", locale)}
             name="email"
             required
             type="email"
@@ -54,14 +54,14 @@ const Register = ({ setCurrentView, locale }: Props) => {
             data-testid="email-input"
           />
           <Input
-            label="Phone"
+            label={t("account.phone", locale)}
             name="phone"
             type="tel"
             autoComplete="tel"
             data-testid="phone-input"
           />
           <Input
-            label="Password"
+            label={t("auth.password", locale)}
             name="password"
             required
             type="password"
@@ -71,33 +71,33 @@ const Register = ({ setCurrentView, locale }: Props) => {
         </div>
         <ErrorMessage error={message} data-testid="register-error" />
         <span className="text-center text-ui-fg-base text-small-regular mt-6">
-          By creating an account, you agree to Bijou Coquettee&apos;s{" "}
+          {t("auth.byCreatingAccount", locale)}{" "}
           <LocalizedClientLink
             href="/content/privacy-policy"
             className="underline"
           >
-            Privacy Policy
+            {t("auth.privacyPolicy", locale)}
           </LocalizedClientLink>{" "}
-          and{" "}
+          {locale === "bg" ? "и" : "and"}{" "}
           <LocalizedClientLink
             href="/content/terms-of-use"
             className="underline"
           >
-            Terms of Use
+            {t("auth.termsOfUse", locale)}
           </LocalizedClientLink>
           .
         </span>
         <SubmitButton className="w-full mt-6" data-testid="register-button">
-          Join
+          {t("auth.join", locale)}
         </SubmitButton>
       </form>
       <span className="text-center text-ui-fg-base text-small-regular mt-6">
-        Already a member?{" "}
+        {t("auth.alreadyMember", locale)}{" "}
         <button
           onClick={() => setCurrentView(LOGIN_VIEW.SIGN_IN)}
           className="underline"
         >
-          Sign in
+          {t("auth.signIn", locale)}
         </button>
         .
       </span>

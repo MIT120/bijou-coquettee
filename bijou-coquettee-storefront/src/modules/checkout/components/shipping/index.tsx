@@ -11,8 +11,9 @@ import ErrorMessage from "@modules/checkout/components/error-message"
 import Divider from "@modules/common/components/divider"
 import MedusaRadio from "@modules/common/components/radio"
 import EcontShippingForm from "../econt-shipping-form"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useState } from "react"
+import { getLocale, t } from "@lib/util/translations"
 
 // Fixed BGN/EUR exchange rate (Bulgarian currency board peg: 1 EUR = 1.95583 BGN)
 const BGN_TO_EUR = 1.95583
@@ -56,6 +57,9 @@ const Shipping: React.FC<ShippingProps> = ({
   cart,
   availableShippingMethods,
 }) => {
+  const params = useParams()
+  const countryCode = params?.countryCode as string | undefined
+  const locale = getLocale(countryCode)
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingPrices, setIsLoadingPrices] = useState(true)
 
@@ -195,7 +199,7 @@ const Shipping: React.FC<ShippingProps> = ({
             }
           )}
         >
-          Delivery
+          {t("checkout.delivery", locale)}
           {!isOpen && (cart.shipping_methods?.length ?? 0) > 0 && (
             <CheckCircleSolid />
           )}
@@ -210,7 +214,7 @@ const Shipping: React.FC<ShippingProps> = ({
                 className="text-ui-fg-interactive hover:text-ui-fg-interactive-hover"
                 data-testid="edit-delivery-button"
               >
-                Edit
+                {t("checkout.editDelivery", locale)}
               </button>
             </Text>
           )}
@@ -233,7 +237,7 @@ const Shipping: React.FC<ShippingProps> = ({
                 disabled={!cart.shipping_methods?.[0]}
                 data-testid="submit-delivery-option-button"
               >
-                Continue to payment
+                {t("checkout.continueToPayment", locale)}
               </Button>
             </div>
           </>
@@ -242,10 +246,10 @@ const Shipping: React.FC<ShippingProps> = ({
             <div className="grid">
               <div className="flex flex-col">
                 <span className="font-medium txt-medium text-ui-fg-base">
-                  Shipping method
+                  {t("checkout.shippingMethod", locale)}
                 </span>
                 <span className="mb-4 text-ui-fg-muted txt-medium">
-                  How would you like you order delivered
+                  {t("checkout.howWouldYouLike", locale)}
                 </span>
               </div>
               <div data-testid="delivery-options-container">
@@ -279,7 +283,7 @@ const Shipping: React.FC<ShippingProps> = ({
                             checked={showPickupOptions === PICKUP_OPTION_ON}
                           />
                           <span className="text-base-regular">
-                            Pick up your order
+                            {t("checkout.pickUpOrder", locale)}
                           </span>
                         </div>
                         <span className="justify-self-end text-ui-fg-base">
@@ -355,10 +359,10 @@ const Shipping: React.FC<ShippingProps> = ({
               <div className="grid">
                 <div className="flex flex-col">
                   <span className="font-medium txt-medium text-ui-fg-base">
-                    Store
+                    {t("checkout.store", locale)}
                   </span>
                   <span className="mb-4 text-ui-fg-muted txt-medium">
-                    Choose a store near you
+                    {t("checkout.chooseStore", locale)}
                   </span>
                 </div>
                 <div data-testid="delivery-options-container">
@@ -432,7 +436,7 @@ const Shipping: React.FC<ShippingProps> = ({
                 disabled={!cart.shipping_methods?.[0]}
                 data-testid="submit-delivery-option-button"
               >
-                Continue to payment
+                {t("checkout.continueToPayment", locale)}
               </Button>
             </div>
           </>
@@ -443,7 +447,7 @@ const Shipping: React.FC<ShippingProps> = ({
             {cart && (cart.shipping_methods?.length ?? 0) > 0 && (
               <div className="flex flex-col w-1/3">
                 <Text className="txt-medium-plus text-ui-fg-base mb-1">
-                  Method
+                  {t("checkout.method", locale)}
                 </Text>
                 <Text className="txt-medium text-ui-fg-subtle">
                   {isBulgaria

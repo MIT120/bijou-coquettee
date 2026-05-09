@@ -11,6 +11,8 @@ import ColorOptionSelect from "./color-option-select"
 import OptionSelect from "./option-select"
 import { HttpTypes } from "@medusajs/types"
 import { isSimpleProduct } from "@lib/util/product"
+import { getLocale, t } from "@lib/util/translations"
+import { useParams } from "next/navigation"
 
 const isColorOption = (option: HttpTypes.StoreProductOption): boolean => {
   const title = option.title?.toLowerCase().trim() ?? ""
@@ -41,6 +43,9 @@ const MobileActions: React.FC<MobileActionsProps> = ({
   optionsDisabled,
 }) => {
   const { state, open, close } = useToggleState()
+  const params = useParams()
+  const countryCode = params?.countryCode as string | undefined
+  const locale = getLocale(countryCode)
 
   const price = getProductPrice({
     product: product,
@@ -121,7 +126,7 @@ const MobileActions: React.FC<MobileActionsProps> = ({
                     <span className="truncate">
                       {variant
                         ? Object.values(options).join(" / ")
-                        : "Select Options"}
+                        : t("product.selectOptions", locale)}
                     </span>
                     <ChevronDown className="ml-2 flex-shrink-0" />
                   </div>
@@ -135,10 +140,10 @@ const MobileActions: React.FC<MobileActionsProps> = ({
                 data-testid="mobile-cart-button"
               >
                 {!variant
-                  ? "Select options"
+                  ? t("product.selectOptions", locale)
                   : !inStock
-                    ? "Out of stock"
-                    : "Add to cart"}
+                    ? t("product.outOfStock", locale)
+                    : t("product.addToCart", locale)}
               </Button>
             </div>
           </div>
@@ -177,7 +182,7 @@ const MobileActions: React.FC<MobileActionsProps> = ({
                 {/* Modal header */}
                 <div className="flex items-center justify-between p-4 border-b border-gray-100">
                   <Dialog.Title className="text-lg font-semibold text-ui-fg-base">
-                    Select Options
+                    {t("product.selectOptions", locale)}
                   </Dialog.Title>
                   <button
                     onClick={close}

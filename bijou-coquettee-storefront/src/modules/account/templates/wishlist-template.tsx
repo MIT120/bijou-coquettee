@@ -8,6 +8,8 @@ import Thumbnail from "@modules/products/components/thumbnail"
 import { formatAmount } from "@lib/util/prices"
 import { Trash } from "@medusajs/icons"
 import { useState } from "react"
+import { getLocale, t } from "@lib/util/translations"
+import { useParams } from "next/navigation"
 
 type WishlistTemplateProps = {
   wishlist: Wishlist | null
@@ -19,9 +21,12 @@ export default function WishlistTemplate({
   const { items, removeFromWishlist, clearWishlist, refreshWishlist } =
     useWishlist()
   const [isClearing, setIsClearing] = useState(false)
+  const params = useParams()
+  const countryCode = params?.countryCode as string | undefined
+  const locale = getLocale(countryCode)
 
   const handleClearAll = async () => {
-    if (!confirm("Are you sure you want to clear your entire wishlist?")) {
+    if (!confirm(t("account.areYouSureClear", locale))) {
       return
     }
 
@@ -39,16 +44,16 @@ export default function WishlistTemplate({
     return (
       <div className="w-full" data-testid="wishlist-page-wrapper">
         <div className="mb-8 flex flex-col gap-y-4">
-          <h1 className="text-2xl-semi">Wishlist</h1>
+          <h1 className="text-2xl-semi">{t("account.wishlistTitle", locale)}</h1>
           <p className="text-base-regular">
-            Your wishlist is empty. Start adding items you love!
+            {t("account.wishlistEmpty", locale)}
           </p>
         </div>
 
         <div>
           <LocalizedClientLink href="/store">
             <Button variant="secondary" className="w-full lg:w-auto">
-              Continue shopping
+              {t("cart.continueShopping", locale)}
             </Button>
           </LocalizedClientLink>
         </div>
@@ -60,18 +65,20 @@ export default function WishlistTemplate({
     <div className="w-full" data-testid="wishlist-page-wrapper">
       <div className="mb-8 flex flex-col gap-y-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl-semi">Wishlist</h1>
+          <h1 className="text-2xl-semi">{t("account.wishlistTitle", locale)}</h1>
           <Button
             variant="transparent"
             onClick={handleClearAll}
             disabled={isClearing}
             className="text-ui-fg-subtle hover:text-ui-fg-base"
           >
-            Clear all ({items.length})
+            {t("account.clearAll", locale, { count: items.length })}
           </Button>
         </div>
         <p className="text-base-regular">
-          {items.length} {items.length === 1 ? "item" : "items"} saved for later
+          {items.length === 1
+            ? t("account.itemSaved", locale, { count: items.length })
+            : t("account.itemsSaved", locale, { count: items.length })}
         </p>
       </div>
 
@@ -142,7 +149,7 @@ export default function WishlistTemplate({
                     className="flex-1"
                   >
                     <Button variant="secondary" className="w-full">
-                      View Product
+                      {t("account.viewProduct", locale)}
                     </Button>
                   </LocalizedClientLink>
 
@@ -164,7 +171,7 @@ export default function WishlistTemplate({
       <div className="mt-8">
         <LocalizedClientLink href="/store">
           <Button variant="secondary" className="w-full lg:w-auto">
-            Continue shopping
+            {t("cart.continueShopping", locale)}
           </Button>
         </LocalizedClientLink>
       </div>

@@ -15,6 +15,8 @@ import {
   deleteCustomerAddress,
   updateCustomerAddress,
 } from "@lib/data/customer"
+import { useParams } from "next/navigation"
+import { getLocale, t } from "@lib/util/translations"
 
 type EditAddressProps = {
   region: HttpTypes.StoreRegion
@@ -27,6 +29,9 @@ const EditAddress: React.FC<EditAddressProps> = ({
   address,
   isActive = false,
 }) => {
+  const params = useParams()
+  const countryCode = params?.countryCode as string | undefined
+  const locale = getLocale(countryCode)
   const [removing, setRemoving] = useState(false)
   const [successState, setSuccessState] = useState(false)
   const { state, open, close: closeModal } = useToggleState(false)
@@ -108,7 +113,7 @@ const EditAddress: React.FC<EditAddressProps> = ({
             data-testid="address-edit-button"
           >
             <Edit />
-            Edit
+            {t("common.edit", locale)}
           </button>
           <button
             className="text-small-regular text-ui-fg-base flex items-center gap-x-2"
@@ -116,14 +121,14 @@ const EditAddress: React.FC<EditAddressProps> = ({
             data-testid="address-delete-button"
           >
             {removing ? <Spinner /> : <Trash />}
-            Remove
+            {t("account.remove", locale)}
           </button>
         </div>
       </div>
 
       <Modal isOpen={state} close={close} data-testid="edit-address-modal">
         <Modal.Title>
-          <Heading className="mb-2">Edit address</Heading>
+          <Heading className="mb-2">{t("account.editAddress", locale)}</Heading>
         </Modal.Title>
         <form action={formAction}>
           <input type="hidden" name="addressId" value={address.id} />
@@ -131,7 +136,7 @@ const EditAddress: React.FC<EditAddressProps> = ({
             <div className="grid grid-cols-1 gap-y-2">
               <div className="grid grid-cols-2 gap-x-2">
                 <Input
-                  label="First name"
+                  label={t("account.firstName", locale)}
                   name="first_name"
                   required
                   autoComplete="given-name"
@@ -139,7 +144,7 @@ const EditAddress: React.FC<EditAddressProps> = ({
                   data-testid="first-name-input"
                 />
                 <Input
-                  label="Last name"
+                  label={t("account.lastName", locale)}
                   name="last_name"
                   required
                   autoComplete="family-name"
@@ -148,14 +153,14 @@ const EditAddress: React.FC<EditAddressProps> = ({
                 />
               </div>
               <Input
-                label="Company"
+                label={t("account.company", locale)}
                 name="company"
                 autoComplete="organization"
                 defaultValue={address.company || undefined}
                 data-testid="company-input"
               />
               <Input
-                label="Address"
+                label={t("account.address", locale)}
                 name="address_1"
                 required
                 autoComplete="address-line1"
@@ -163,7 +168,7 @@ const EditAddress: React.FC<EditAddressProps> = ({
                 data-testid="address-1-input"
               />
               <Input
-                label="Apartment, suite, etc."
+                label={t("account.apartment", locale)}
                 name="address_2"
                 autoComplete="address-line2"
                 defaultValue={address.address_2 || undefined}
@@ -171,7 +176,7 @@ const EditAddress: React.FC<EditAddressProps> = ({
               />
               <div className="grid grid-cols-[144px_1fr] gap-x-2">
                 <Input
-                  label="Postal code"
+                  label={t("account.postalCode", locale)}
                   name="postal_code"
                   required
                   autoComplete="postal-code"
@@ -179,7 +184,7 @@ const EditAddress: React.FC<EditAddressProps> = ({
                   data-testid="postal-code-input"
                 />
                 <Input
-                  label="City"
+                  label={t("account.city", locale)}
                   name="city"
                   required
                   autoComplete="locality"
@@ -188,7 +193,7 @@ const EditAddress: React.FC<EditAddressProps> = ({
                 />
               </div>
               <Input
-                label="Province / State"
+                label={t("account.provinceState", locale)}
                 name="province"
                 autoComplete="address-level1"
                 defaultValue={address.province || undefined}
@@ -203,7 +208,7 @@ const EditAddress: React.FC<EditAddressProps> = ({
                 data-testid="country-select"
               />
               <Input
-                label="Phone"
+                label={t("account.phone", locale)}
                 name="phone"
                 autoComplete="phone"
                 defaultValue={address.phone || undefined}
@@ -225,9 +230,9 @@ const EditAddress: React.FC<EditAddressProps> = ({
                 className="h-10"
                 data-testid="cancel-button"
               >
-                Cancel
+                {t("account.cancel", locale)}
               </Button>
-              <SubmitButton data-testid="save-button">Save</SubmitButton>
+              <SubmitButton data-testid="save-button">{t("account.save", locale)}</SubmitButton>
             </div>
           </Modal.Footer>
         </form>

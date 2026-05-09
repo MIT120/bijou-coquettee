@@ -7,6 +7,15 @@ import { Button } from "@medusajs/ui"
 import { useElements, useStripe } from "@stripe/react-stripe-js"
 import React, { useState } from "react"
 import ErrorMessage from "../error-message"
+import { getLocale, t } from "@lib/util/translations"
+import { useParams } from "next/navigation"
+
+const SelectPaymentMethodButton = () => {
+  const params = useParams()
+  const countryCode = params?.countryCode as string | undefined
+  const locale = getLocale(countryCode)
+  return <Button disabled>{t("checkout.selectPaymentMethod", locale)}</Button>
+}
 
 type PaymentButtonProps = {
   cart: HttpTypes.StoreCart
@@ -51,7 +60,7 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({
         />
       )
     default:
-      return <Button disabled>Select a payment method</Button>
+      return <SelectPaymentMethodButton />
   }
 }
 
@@ -66,6 +75,9 @@ const StripePaymentButton = ({
   "data-testid"?: string
   isLoadingEcont?: boolean
 }) => {
+  const params = useParams()
+  const countryCode = params?.countryCode as string | undefined
+  const locale = getLocale(countryCode)
   const [submitting, setSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
@@ -154,7 +166,7 @@ const StripePaymentButton = ({
         isLoading={submitting}
         data-testid={dataTestId}
       >
-        Place order
+        {t("checkout.placeOrder", locale)}
       </Button>
       <ErrorMessage
         error={errorMessage}

@@ -1,27 +1,27 @@
 import { Button } from "@medusajs/ui"
-import { useMemo } from "react"
 
 import Thumbnail from "@modules/products/components/thumbnail"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { convertToLocale } from "@lib/util/money"
 import { HttpTypes } from "@medusajs/types"
+import { t } from "@lib/util/translations-server"
 
 type OrderCardProps = {
   order: HttpTypes.StoreOrder
 }
 
-const OrderCard = ({ order }: OrderCardProps) => {
-  const numberOfLines = useMemo(() => {
-    return (
-      order.items?.reduce((acc, item) => {
-        return acc + item.quantity
-      }, 0) ?? 0
-    )
-  }, [order])
+const OrderCard = async ({ order }: OrderCardProps) => {
+  const itemsLabel = await t("order.items")
+  const itemLabel = await t("order.item")
+  const moreLabel = await t("order.more")
+  const seeDetails = await t("order.seeDetails")
 
-  const numberOfProducts = useMemo(() => {
-    return order.items?.length ?? 0
-  }, [order])
+  const numberOfLines =
+    order.items?.reduce((acc, item) => {
+      return acc + item.quantity
+    }, 0) ?? 0
+
+  const numberOfProducts = order.items?.length ?? 0
 
   return (
     <div className="bg-white flex flex-col" data-testid="order-card">
@@ -39,7 +39,7 @@ const OrderCard = ({ order }: OrderCardProps) => {
           })}
         </span>
         <span className="pl-2">{`${numberOfLines} ${
-          numberOfLines > 1 ? "items" : "item"
+          numberOfLines > 1 ? itemsLabel : itemLabel
         }`}</span>
       </div>
       <div className="grid grid-cols-2 small:grid-cols-4 gap-4 my-4">
@@ -69,14 +69,14 @@ const OrderCard = ({ order }: OrderCardProps) => {
             <span className="text-small-regular text-ui-fg-base">
               + {numberOfLines - 4}
             </span>
-            <span className="text-small-regular text-ui-fg-base">more</span>
+            <span className="text-small-regular text-ui-fg-base">{moreLabel}</span>
           </div>
         )}
       </div>
       <div className="flex justify-end">
         <LocalizedClientLink href={`/account/orders/details/${order.id}`}>
           <Button data-testid="order-details-link" variant="secondary">
-            See details
+            {seeDetails}
           </Button>
         </LocalizedClientLink>
       </div>

@@ -1,6 +1,8 @@
 import { HttpTypes } from "@medusajs/types"
 import { clx } from "@medusajs/ui"
 import React from "react"
+import { getLocale, t } from "@lib/util/translations"
+import { useParams } from "next/navigation"
 
 type OptionSelectProps = {
   option: HttpTypes.StoreProductOption
@@ -86,11 +88,15 @@ const OptionSelect: React.FC<OptionSelectProps> = ({
   variants,
   selectedOptions,
 }) => {
+  const params = useParams()
+  const countryCode = params?.countryCode as string | undefined
+  const locale = getLocale(countryCode)
+
   const filteredOptions = (option.values ?? []).map((v) => v.value)
 
   return (
     <div className="flex flex-col gap-y-3">
-      <span className="text-sm font-medium text-ui-fg-base">Select {title}</span>
+      <span className="text-sm font-medium text-ui-fg-base">{t("product.selectOption", locale)} {title}</span>
       <div
         className="grid grid-cols-2 sm:grid-cols-3 gap-2"
         data-testid={dataTestId}
