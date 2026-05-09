@@ -1,6 +1,8 @@
 import { Metadata } from "next"
 import { Heading, Text } from "@medusajs/ui"
 import Instagram from "@modules/common/icons/instagram"
+import Facebook from "@modules/common/icons/facebook"
+import TikTok from "@modules/common/icons/tiktok"
 
 export const metadata: Metadata = {
   title: "Контакти | Bijou Coquettee",
@@ -56,18 +58,6 @@ export default function ContactsPage() {
               info@bijoucoquettee.com
             </a>
           </div>
-
-          <div className="space-y-2 p-6 border border-grey-20 bg-cream-100">
-            <span className="font-sans text-xs tracking-[0.14em] uppercase text-grey-60 font-medium block mb-3">
-              Телефон
-            </span>
-            <a
-              href="tel:+35900000000"
-              className="font-sans text-sm text-grey-90 hover:text-gold-500 transition-colors duration-200"
-            >
-              +359 XX XXX XXXX
-            </a>
-          </div>
         </div>
 
         {/* Address */}
@@ -85,15 +75,38 @@ export default function ContactsPage() {
           <span className="font-sans text-xs tracking-[0.14em] uppercase text-grey-60 font-medium block">
             Последвай ни
           </span>
-          <a
-            href="https://instagram.com/bijoucoquettee"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 font-sans text-sm text-grey-90 hover:text-gold-500 transition-colors duration-200"
-          >
-            <Instagram size="16" />
-            @bijoucoquettee
-          </a>
+          <div className="flex flex-col gap-3">
+            {/* TODO: Update with final Instagram URL */}
+            <a
+              href="https://www.instagram.com/bijoucoquettee"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 font-sans text-sm text-grey-90 hover:text-gold-500 transition-colors duration-200"
+            >
+              <Instagram size="16" />
+              Instagram
+            </a>
+            {/* TODO: Update with final Facebook URL */}
+            <a
+              href="https://www.facebook.com/bijoucoquettee"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 font-sans text-sm text-grey-90 hover:text-gold-500 transition-colors duration-200"
+            >
+              <Facebook size="16" />
+              Facebook
+            </a>
+            {/* TODO: Update with final TikTok URL */}
+            <a
+              href="https://www.tiktok.com/@bijoucoquettee"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 font-sans text-sm text-grey-90 hover:text-gold-500 transition-colors duration-200"
+            >
+              <TikTok size="16" />
+              TikTok
+            </a>
+          </div>
         </div>
 
         <Text className="font-sans text-xs text-grey-40 font-light border-t border-grey-20 pt-8">

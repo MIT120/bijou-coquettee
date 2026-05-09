@@ -5,6 +5,8 @@ import { Text } from "@medusajs/ui"
 
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import Instagram from "@modules/common/icons/instagram"
+import Facebook from "@modules/common/icons/facebook"
+import TikTok from "@modules/common/icons/tiktok"
 import { t } from "@lib/util/translations-server"
 
 export default async function Footer() {
@@ -33,14 +35,35 @@ export default async function Footer() {
               {await t("footer.tagline")}
             </p>
             <div className="flex items-center gap-3">
+              {/* TODO: Update with final Instagram URL */}
               <a
-                href="https://instagram.com/bijoucoquettee"
+                href="https://www.instagram.com/bijoucoquettee"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Instagram"
                 className="text-grey-40 hover:text-grey-90 transition-colors duration-200"
               >
                 <Instagram size="18" />
+              </a>
+              {/* TODO: Update with final Facebook URL */}
+              <a
+                href="https://www.facebook.com/bijoucoquettee"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Facebook"
+                className="text-grey-40 hover:text-grey-90 transition-colors duration-200"
+              >
+                <Facebook size="18" />
+              </a>
+              {/* TODO: Update with final TikTok URL */}
+              <a
+                href="https://www.tiktok.com/@bijoucoquettee"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="TikTok"
+                className="text-grey-40 hover:text-grey-90 transition-colors duration-200"
+              >
+                <TikTok size="18" />
               </a>
             </div>
           </div>
@@ -108,14 +131,6 @@ export default async function Footer() {
                   className="font-sans text-xs text-grey-50 hover:text-grey-90 transition-colors duration-200"
                 >
                   info@bijoucoquettee.com
-                </a>
-              </li>
-              <li>
-                <a
-                  href="tel:+35900000000"
-                  className="font-sans text-xs text-grey-50 hover:text-grey-90 transition-colors duration-200"
-                >
-                  +359 XX XXX XXXX
                 </a>
               </li>
               <li>
