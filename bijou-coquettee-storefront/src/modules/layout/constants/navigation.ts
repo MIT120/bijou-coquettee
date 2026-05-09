@@ -46,6 +46,21 @@ export const NAV_ITEMS: NavItem[] = [
                 href: "/categories/necklaces",
                 translationKey: "navigation.jewelry_necklaces",
             },
+            {
+                key: "jewelry-ankle-bracelets",
+                href: "/categories/ankle-bracelets",
+                translationKey: "navigation.jewelry_ankle_bracelets",
+            },
+            {
+                key: "jewelry-children",
+                href: "/categories/children-jewelry",
+                translationKey: "navigation.jewelry_children",
+            },
+            {
+                key: "jewelry-men",
+                href: "/categories/men-jewelry",
+                translationKey: "navigation.jewelry_men",
+            },
         ],
     },
     {
