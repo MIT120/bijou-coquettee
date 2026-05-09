@@ -3,16 +3,20 @@
 import { Heading, Text, clx } from "@medusajs/ui"
 
 import PaymentButton from "../payment-button"
-import { useSearchParams } from "next/navigation"
+import { useParams, useSearchParams } from "next/navigation"
 import { useEffect, useState } from "react"
 import {
   getEcontPreference,
   validateEcontPreference,
   type EcontPreference,
 } from "@lib/data/econt"
+import { getLocale, t } from "@lib/util/translations"
 
 const Review = ({ cart }: { cart: any }) => {
   const searchParams = useSearchParams()
+  const params = useParams()
+  const countryCode = params?.countryCode as string | undefined
+  const locale = getLocale(countryCode)
   const [econtPreference, setEcontPreference] =
     useState<EcontPreference | null>(null)
   const [econtValidation, setEcontValidation] = useState<{
@@ -72,7 +76,7 @@ const Review = ({ cart }: { cart: any }) => {
             }
           )}
         >
-          Review
+          {t("checkout.review", locale)}
         </Heading>
       </div>
       {isOpen && previousStepsCompleted && (
@@ -80,10 +84,7 @@ const Review = ({ cart }: { cart: any }) => {
           <div className="flex items-start gap-x-1 w-full mb-6">
             <div className="w-full">
               <Text className="txt-medium-plus text-ui-fg-base mb-1">
-                By clicking the Place Order button, you confirm that you have
-                read, understand and accept our Terms of Use, Terms of Sale and
-                Returns Policy and acknowledge that you have read Medusa
-                Store&apos;s Privacy Policy.
+                {t("checkout.reviewConfirmText", locale)}
               </Text>
             </div>
           </div>
@@ -110,7 +111,7 @@ const Review = ({ cart }: { cart: any }) => {
                   {econtValidation.error}
                 </Text>
                 <Text className="text-red-600 text-small-regular mt-2">
-                  Моля, върнете се към стъпка &quot;Delivery&quot; и попълнете
+                  Моля, върнете се към стъпка &quot;{t("checkout.delivery", locale)}&quot; и попълнете
                   данните за Econt доставка.
                 </Text>
               </div>

@@ -5,8 +5,14 @@ import { Button } from "@medusajs/ui"
 import OrderCard from "../order-card"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { HttpTypes } from "@medusajs/types"
+import { useParams } from "next/navigation"
+import { getLocale, t } from "@lib/util/translations"
 
 const OrderOverview = ({ orders }: { orders: HttpTypes.StoreOrder[] }) => {
+  const params = useParams()
+  const countryCode = params?.countryCode as string | undefined
+  const locale = getLocale(countryCode)
+
   if (orders?.length) {
     return (
       <div className="flex flex-col gap-y-8 w-full">
@@ -27,14 +33,14 @@ const OrderOverview = ({ orders }: { orders: HttpTypes.StoreOrder[] }) => {
       className="w-full flex flex-col items-center gap-y-4"
       data-testid="no-orders-container"
     >
-      <h2 className="text-large-semi">Nothing to see here</h2>
+      <h2 className="text-large-semi">{t("order.nothingToSee", locale)}</h2>
       <p className="text-base-regular">
-        You don&apos;t have any orders yet, let us change that {":)"}
+        {t("order.noOrdersYet", locale)} {":)"}
       </p>
       <div className="mt-4">
         <LocalizedClientLink href="/" passHref>
           <Button data-testid="continue-shopping-button">
-            Continue shopping
+            {t("order.continueShopping", locale)}
           </Button>
         </LocalizedClientLink>
       </div>

@@ -1,19 +1,25 @@
 "use client"
 
 import { clx } from "@medusajs/ui"
+import { getLocale, t } from "@lib/util/translations"
+import { useParams } from "next/navigation"
 
 type CheckoutProgressProps = {
   currentStep: "address" | "delivery" | "payment" | "review"
 }
 
-const steps = [
-  { id: "address", label: "Address", number: 1 },
-  { id: "delivery", label: "Delivery", number: 2 },
-  { id: "payment", label: "Payment", number: 3 },
-  { id: "review", label: "Review", number: 4 },
-] as const
-
 const CheckoutProgress = ({ currentStep }: CheckoutProgressProps) => {
+  const params = useParams()
+  const countryCode = params?.countryCode as string | undefined
+  const locale = getLocale(countryCode)
+
+  const steps = [
+    { id: "address", label: t("checkout.address", locale), number: 1 },
+    { id: "delivery", label: t("checkout.delivery", locale), number: 2 },
+    { id: "payment", label: t("checkout.payment", locale), number: 3 },
+    { id: "review", label: t("checkout.review", locale), number: 4 },
+  ] as const
+
   const currentStepIndex = steps.findIndex((step) => step.id === currentStep)
 
   return (

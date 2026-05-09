@@ -4,6 +4,8 @@ import { useEffect } from "react"
 
 import useToggleState from "@lib/hooks/use-toggle-state"
 import { useFormStatus } from "react-dom"
+import { getLocale, t } from "@lib/util/translations"
+import { useParams } from "next/navigation"
 
 type AccountInfoProps = {
   label: string
@@ -22,11 +24,16 @@ const AccountInfo = ({
   isSuccess,
   isError,
   clearState,
-  errorMessage = "An error occurred, please try again",
+  errorMessage,
   children,
   'data-testid': dataTestid
 }: AccountInfoProps) => {
   const { state, close, toggle } = useToggleState()
+  const params = useParams()
+  const countryCode = params?.countryCode as string | undefined
+  const locale = getLocale(countryCode)
+  const defaultErrorMessage = t("account.errorOccurred", locale)
+  const resolvedErrorMessage = errorMessage ?? defaultErrorMessage
 
   const { pending } = useFormStatus()
 
@@ -63,7 +70,7 @@ const AccountInfo = ({
             data-testid="edit-button"
             data-active={state}
           >
-            {state ? "Cancel" : "Edit"}
+            {state ? t("account.cancel", locale) : t("account.edit", locale)}
           </Button>
         </div>
       </div>
@@ -82,7 +89,7 @@ const AccountInfo = ({
           data-testid="success-message"
         >
           <Badge className="p-2 my-4" color="green">
-            <span>{label} updated succesfully</span>
+            <span>{t("account.updatedSuccessfully", locale, { label })}</span>
           </Badge>
         </Disclosure.Panel>
       </Disclosure>
@@ -101,7 +108,7 @@ const AccountInfo = ({
           data-testid="error-message"
         >
           <Badge className="p-2 my-4" color="red">
-            <span>{errorMessage}</span>
+            <span>{resolvedErrorMessage}</span>
           </Badge>
         </Disclosure.Panel>
       </Disclosure>
@@ -126,7 +133,7 @@ const AccountInfo = ({
                 type="submit"
                 data-testid="save-button"
               >
-                Save changes
+                {t("account.saveChanges", locale)}
               </Button>
             </div>
           </div>

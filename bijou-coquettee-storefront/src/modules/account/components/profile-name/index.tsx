@@ -7,6 +7,8 @@ import Input from "@modules/common/components/input"
 import AccountInfo from "../account-info"
 import { HttpTypes } from "@medusajs/types"
 import { updateCustomer } from "@lib/data/customer"
+import { getLocale, t } from "@lib/util/translations"
+import { useParams } from "next/navigation"
 
 type MyInformationProps = {
   customer: HttpTypes.StoreCustomer
@@ -37,6 +39,10 @@ const ProfileName: React.FC<MyInformationProps> = ({ customer }) => {
     success: false,
   })
 
+  const params = useParams()
+  const countryCode = params?.countryCode as string | undefined
+  const locale = getLocale(countryCode)
+
   const clearState = () => {
     setSuccessState(false)
   }
@@ -48,7 +54,7 @@ const ProfileName: React.FC<MyInformationProps> = ({ customer }) => {
   return (
     <form action={formAction} className="w-full overflow-visible">
       <AccountInfo
-        label="Name"
+        label={t("account.name", locale)}
         currentInfo={`${customer.first_name} ${customer.last_name}`}
         isSuccess={successState}
         isError={!!state?.error}
@@ -57,14 +63,14 @@ const ProfileName: React.FC<MyInformationProps> = ({ customer }) => {
       >
         <div className="grid grid-cols-2 gap-x-4">
           <Input
-            label="First name"
+            label={t("account.firstName", locale)}
             name="first_name"
             required
             defaultValue={customer.first_name ?? ""}
             data-testid="first-name-input"
           />
           <Input
-            label="Last name"
+            label={t("account.lastName", locale)}
             name="last_name"
             required
             defaultValue={customer.last_name ?? ""}

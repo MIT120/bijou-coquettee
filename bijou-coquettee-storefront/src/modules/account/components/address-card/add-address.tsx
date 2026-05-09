@@ -11,6 +11,8 @@ import Modal from "@modules/common/components/modal"
 import { SubmitButton } from "@modules/checkout/components/submit-button"
 import { HttpTypes } from "@medusajs/types"
 import { addCustomerAddress } from "@lib/data/customer"
+import { useParams } from "next/navigation"
+import { getLocale, t } from "@lib/util/translations"
 
 const AddAddress = ({
   region,
@@ -19,6 +21,9 @@ const AddAddress = ({
   region: HttpTypes.StoreRegion
   addresses: HttpTypes.StoreCustomerAddress[]
 }) => {
+  const params = useParams()
+  const countryCode = params?.countryCode as string | undefined
+  const locale = getLocale(countryCode)
   const [successState, setSuccessState] = useState(false)
   const { state, open, close: closeModal } = useToggleState(false)
 
@@ -53,27 +58,27 @@ const AddAddress = ({
         onClick={open}
         data-testid="add-address-button"
       >
-        <span className="text-base-semi">New address</span>
+        <span className="text-base-semi">{t("account.newAddress", locale)}</span>
         <Plus />
       </button>
 
       <Modal isOpen={state} close={close} data-testid="add-address-modal">
         <Modal.Title>
-          <Heading className="mb-2">Add address</Heading>
+          <Heading className="mb-2">{t("account.addAddress", locale)}</Heading>
         </Modal.Title>
         <form action={formAction}>
           <Modal.Body>
             <div className="flex flex-col gap-y-2">
               <div className="grid grid-cols-2 gap-x-2">
                 <Input
-                  label="First name"
+                  label={t("account.firstName", locale)}
                   name="first_name"
                   required
                   autoComplete="given-name"
                   data-testid="first-name-input"
                 />
                 <Input
-                  label="Last name"
+                  label={t("account.lastName", locale)}
                   name="last_name"
                   required
                   autoComplete="family-name"
@@ -81,34 +86,34 @@ const AddAddress = ({
                 />
               </div>
               <Input
-                label="Company"
+                label={t("account.company", locale)}
                 name="company"
                 autoComplete="organization"
                 data-testid="company-input"
               />
               <Input
-                label="Address"
+                label={t("account.address", locale)}
                 name="address_1"
                 required
                 autoComplete="address-line1"
                 data-testid="address-1-input"
               />
               <Input
-                label="Apartment, suite, etc."
+                label={t("account.apartment", locale)}
                 name="address_2"
                 autoComplete="address-line2"
                 data-testid="address-2-input"
               />
               <div className="grid grid-cols-[144px_1fr] gap-x-2">
                 <Input
-                  label="Postal code"
+                  label={t("account.postalCode", locale)}
                   name="postal_code"
                   required
                   autoComplete="postal-code"
                   data-testid="postal-code-input"
                 />
                 <Input
-                  label="City"
+                  label={t("account.city", locale)}
                   name="city"
                   required
                   autoComplete="locality"
@@ -116,7 +121,7 @@ const AddAddress = ({
                 />
               </div>
               <Input
-                label="Province / State"
+                label={t("account.provinceState", locale)}
                 name="province"
                 autoComplete="address-level1"
                 data-testid="state-input"
@@ -129,7 +134,7 @@ const AddAddress = ({
                 data-testid="country-select"
               />
               <Input
-                label="Phone"
+                label={t("account.phone", locale)}
                 name="phone"
                 autoComplete="phone"
                 data-testid="phone-input"
@@ -153,9 +158,9 @@ const AddAddress = ({
                 className="h-10"
                 data-testid="cancel-button"
               >
-                Cancel
+                {t("account.cancel", locale)}
               </Button>
-              <SubmitButton data-testid="save-button">Save</SubmitButton>
+              <SubmitButton data-testid="save-button">{t("account.save", locale)}</SubmitButton>
             </div>
           </Modal.Footer>
         </form>

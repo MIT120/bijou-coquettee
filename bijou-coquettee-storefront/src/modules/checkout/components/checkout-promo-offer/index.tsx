@@ -6,6 +6,7 @@ import { addPromoToCart } from "@lib/data/cart"
 import { convertToLocale } from "@lib/util/money"
 import Thumbnail from "@modules/products/components/thumbnail"
 import type { CheckoutPromo } from "@/types/checkout-promo"
+import { getLocale, t } from "@lib/util/translations"
 
 type Props = {
     promo: CheckoutPromo
@@ -20,6 +21,7 @@ export default function CheckoutPromoOffer({
     cart,
     countryCode,
 }: Props) {
+    const locale = getLocale(countryCode)
     const [adding, setAdding] = useState(false)
     const [added, setAdded] = useState(false)
 
@@ -166,7 +168,7 @@ export default function CheckoutPromoOffer({
                         disabled={adding}
                         className="flex-shrink-0 text-xs font-semibold px-4 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-700 active:bg-gray-800 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                     >
-                        {adding ? "Adding..." : "Add to cart"}
+                        {adding ? t("common.loading", locale) : t("common.addToCart", locale)}
                     </button>
                 </div>
             </div>

@@ -7,6 +7,8 @@ import Input from "@modules/common/components/input"
 import AccountInfo from "../account-info"
 import { HttpTypes } from "@medusajs/types"
 // import { updateCustomer } from "@lib/data/customer"
+import { getLocale, t } from "@lib/util/translations"
+import { useParams } from "next/navigation"
 
 type MyInformationProps = {
   customer: HttpTypes.StoreCustomer
@@ -37,6 +39,10 @@ const ProfileEmail: React.FC<MyInformationProps> = ({ customer }) => {
     success: false,
   })
 
+  const params = useParams()
+  const countryCode = params?.countryCode as string | undefined
+  const locale = getLocale(countryCode)
+
   const clearState = () => {
     setSuccessState(false)
   }
@@ -48,7 +54,7 @@ const ProfileEmail: React.FC<MyInformationProps> = ({ customer }) => {
   return (
     <form action={formAction} className="w-full">
       <AccountInfo
-        label="Email"
+        label={t("account.email", locale)}
         currentInfo={`${customer.email}`}
         isSuccess={successState}
         isError={!!state.error}
@@ -58,7 +64,7 @@ const ProfileEmail: React.FC<MyInformationProps> = ({ customer }) => {
       >
         <div className="grid grid-cols-1 gap-y-2">
           <Input
-            label="Email"
+            label={t("account.email", locale)}
             name="email"
             type="email"
             autoComplete="email"

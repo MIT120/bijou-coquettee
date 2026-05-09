@@ -1,6 +1,8 @@
 import { HttpTypes } from "@medusajs/types"
 import { clx } from "@medusajs/ui"
 import React from "react"
+import { getLocale, t } from "@lib/util/translations"
+import { useParams } from "next/navigation"
 
 type OptionSelectProps = {
   option: HttpTypes.StoreProductOption
@@ -86,11 +88,15 @@ const OptionSelect: React.FC<OptionSelectProps> = ({
   variants,
   selectedOptions,
 }) => {
+  const params = useParams()
+  const countryCode = params?.countryCode as string | undefined
+  const locale = getLocale(countryCode)
+
   const filteredOptions = (option.values ?? []).map((v) => v.value)
 
   return (
     <div className="flex flex-col gap-y-3">
-      <span className="text-sm font-medium text-ui-fg-base">Select {title}</span>
+      <span className="text-sm font-medium text-ui-fg-base">{t("product.selectOption", locale)} {title}</span>
       <div
         className="grid grid-cols-2 sm:grid-cols-3 gap-2"
         data-testid={dataTestId}
@@ -129,12 +135,12 @@ const OptionSelect: React.FC<OptionSelectProps> = ({
                   "text-green-600": stockInfo.quantity !== null && stockInfo.quantity > 0 && stockInfo.quantity <= 5,
                 })}>
                   {isOutOfStock
-                    ? "Out of stock"
+                    ? t("product.outOfStock", locale)
                     : stockInfo.quantity !== null
                       ? stockInfo.quantity <= 5
-                        ? `Only ${stockInfo.quantity} left`
-                        : `${stockInfo.quantity} in stock`
-                      : "In stock"}
+                        ? t("product.onlyLeft", locale, { count: stockInfo.quantity })
+                        : t("product.countInStock", locale, { count: stockInfo.quantity })
+                      : t("product.inStock", locale)}
                 </span>
               )}
             </button>

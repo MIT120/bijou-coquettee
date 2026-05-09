@@ -10,8 +10,9 @@ import PaymentContainer, {
   StripeCardContainer,
 } from "@modules/checkout/components/payment-container"
 import Divider from "@modules/common/components/divider"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useCallback, useEffect, useState } from "react"
+import { getLocale, t } from "@lib/util/translations"
 
 const Payment = ({
   cart,
@@ -24,6 +25,9 @@ const Payment = ({
     (paymentSession: any) => paymentSession.status === "pending"
   )
 
+  const params = useParams()
+  const countryCode = params?.countryCode as string | undefined
+  const locale = getLocale(countryCode)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [cardBrand, setCardBrand] = useState<string | null>(null)
@@ -119,7 +123,7 @@ const Payment = ({
             }
           )}
         >
-          Payment
+          {t("checkout.payment", locale)}
           {!isOpen && paymentReady && <CheckCircleSolid />}
         </Heading>
         {!isOpen && paymentReady && (
@@ -129,7 +133,7 @@ const Payment = ({
               className="text-ui-fg-interactive hover:text-ui-fg-interactive-hover"
               data-testid="edit-payment-button"
             >
-              Edit
+              {t("checkout.editPayment", locale)}
             </button>
           </Text>
         )}
@@ -169,13 +173,13 @@ const Payment = ({
           {paidByGiftcard && (
             <div className="flex flex-col w-1/3">
               <Text className="txt-medium-plus text-ui-fg-base mb-1">
-                Payment method
+                {t("checkout.paymentMethod", locale)}
               </Text>
               <Text
                 className="txt-medium text-ui-fg-subtle"
                 data-testid="payment-method-summary"
               >
-                Gift card
+                {t("checkout.giftCard", locale)}
               </Text>
             </div>
           )}
@@ -201,8 +205,8 @@ const Payment = ({
               data-testid="submit-payment-button"
             >
               {!activeSession && isStripeFunc(selectedPaymentMethod)
-                ? "Enter card details"
-                : "Continue to review"}
+                ? t("checkout.enterCardDetails", locale)
+                : t("checkout.continueToReview", locale)}
             </Button>
           </div>
         </div>
@@ -212,7 +216,7 @@ const Payment = ({
             <div className="flex items-start gap-x-1 w-full">
               <div className="flex flex-col w-1/3">
                 <Text className="txt-medium-plus text-ui-fg-base mb-1">
-                  Payment method
+                  {t("checkout.paymentMethod", locale)}
                 </Text>
                 <Text
                   className="txt-medium text-ui-fg-subtle"
@@ -224,7 +228,7 @@ const Payment = ({
               </div>
               <div className="flex flex-col w-1/3">
                 <Text className="txt-medium-plus text-ui-fg-base mb-1">
-                  Payment details
+                  {t("checkout.paymentDetails", locale)}
                 </Text>
                 <div
                   className="flex gap-2 txt-medium text-ui-fg-subtle items-center"
@@ -238,7 +242,7 @@ const Payment = ({
                   <Text>
                     {isStripeFunc(selectedPaymentMethod) && cardBrand
                       ? cardBrand
-                      : "Another step will appear"}
+                      : t("checkout.anotherStep", locale)}
                   </Text>
                 </div>
               </div>
@@ -252,7 +256,7 @@ const Payment = ({
                 className="txt-medium text-ui-fg-subtle"
                 data-testid="payment-method-summary"
               >
-                Gift card
+                {t("checkout.giftCard", locale)}
               </Text>
             </div>
           ) : null}
