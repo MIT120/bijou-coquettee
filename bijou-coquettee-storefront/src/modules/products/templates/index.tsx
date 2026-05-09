@@ -10,7 +10,6 @@ import SkeletonRelatedProducts from "@modules/skeletons/templates/skeleton-relat
 import { notFound } from "next/navigation"
 import ProductActionsWrapper from "./product-actions-wrapper"
 import { HttpTypes } from "@medusajs/types"
-import ProductCommentsSection from "@modules/products/components/product-comments"
 import ProductViewTracker from "@modules/products/components/product-view-tracker"
 
 type ProductTemplateProps = {

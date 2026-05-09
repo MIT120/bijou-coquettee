@@ -61,6 +61,7 @@ const HeroCarousel = ({ locale: initialLocale, slides }: HeroCarouselProps) => {
   )
 
   const goToNext = useCallback(() => {
+    if (totalPages === 0) return
     goToPage((activePage + 1) % totalPages)
   }, [activePage, totalPages, goToPage])
 
