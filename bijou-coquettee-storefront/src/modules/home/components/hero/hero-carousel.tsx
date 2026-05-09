@@ -22,14 +22,16 @@ const CATEGORIES = [
   { label: "Всички", href: "/store" },
 ]
 
-// How far each card is pushed down from the top (cascading staircase effect)
-const CARD_TOP_OFFSETS = [0, 60, 110]
-const CARD_TOP_OFFSETS_MOBILE = [0, 30, 55]
+/** Duration (ms) each card holds the active spotlight before rotating */
+const SPOTLIGHT_INTERVAL = 4500
+
+/** Duration (ms) before auto-advancing to the next page of 3 slides */
+const PAGE_INTERVAL = SPOTLIGHT_INTERVAL * 3 + 200
 
 const HeroCarousel = ({ locale: initialLocale, slides }: HeroCarouselProps) => {
   const locale = useSyncedLocale(initialLocale)
   const [activePage, setActivePage] = useState(0)
-  const [activeProduct, setActiveProduct] = useState(0)
+  const [activeCard, setActiveCard] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
   const [mounted, setMounted] = useState(false)
 
@@ -47,32 +49,43 @@ const HeroCarousel = ({ locale: initialLocale, slides }: HeroCarouselProps) => {
     pages.push(slides.slice(i, i + 3))
   }
   const totalPages = pages.length
-  const currentPage = pages[activePage] || []
+  const currentPage = pages[activePage] ?? []
   const collectionName = currentPage[0]?.subtitle ?? t("hero.curatedTagline", locale)
 
+  const goToPage = useCallback(
+    (index: number) => {
+      setActivePage(index)
+      setActiveCard(0)
+    },
+    []
+  )
+
   const goToNext = useCallback(() => {
-    setActivePage((prev) => (prev + 1) % totalPages)
-    setActiveProduct(0)
-  }, [totalPages])
+    goToPage((activePage + 1) % totalPages)
+  }, [activePage, totalPages, goToPage])
 
   const goToPrev = useCallback(() => {
-    setActivePage((prev) => (prev - 1 + totalPages) % totalPages)
-    setActiveProduct(0)
-  }, [totalPages])
+    goToPage((activePage - 1 + totalPages) % totalPages)
+  }, [activePage, totalPages, goToPage])
 
-  useEffect(() => {
-    if (isPaused || totalPages <= 1) return
-    const timer = window.setInterval(goToNext, 7000)
-    return () => window.clearInterval(timer)
-  }, [isPaused, goToNext, totalPages])
-
+  // Spotlight rotation — cycles through the 3 cards on the current page
   useEffect(() => {
     if (isPaused || currentPage.length <= 1) return
     const timer = window.setInterval(() => {
-      setActiveProduct((prev) => (prev + 1) % currentPage.length)
-    }, 2400)
+      setActiveCard((prev) => {
+        const next = (prev + 1) % currentPage.length
+        return next
+      })
+    }, SPOTLIGHT_INTERVAL)
     return () => window.clearInterval(timer)
   }, [isPaused, activePage, currentPage.length])
+
+  // Page rotation — advances to the next group of 3 after all cards are shown
+  useEffect(() => {
+    if (isPaused || totalPages <= 1) return
+    const timer = window.setInterval(goToNext, PAGE_INTERVAL)
+    return () => window.clearInterval(timer)
+  }, [isPaused, goToNext, totalPages])
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     touchStartX.current = e.changedTouches[0].clientX
@@ -112,10 +125,10 @@ const HeroCarousel = ({ locale: initialLocale, slides }: HeroCarouselProps) => {
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      {/* ── HERO CONTAINER ──────────────────────────────────────── */}
+      {/* ── HERO CONTAINER ──────────────────────────────────────────────── */}
       <div className="relative w-full bg-[#120f0c] h-[460px] small:h-[560px] large:h-[660px]">
 
-        {/* ── COLLECTION LABEL ────────────────────────────────── */}
+        {/* ── COLLECTION LABEL ──────────────────────────────────────────── */}
         <div
           className="absolute top-7 small:top-9 left-6 small:left-10 z-20 pointer-events-none"
           style={{
@@ -136,7 +149,7 @@ const HeroCarousel = ({ locale: initialLocale, slides }: HeroCarouselProps) => {
           </span>
         </div>
 
-        {/* ── BROWSE LINK ─────────────────────────────────────── */}
+        {/* ── BROWSE LINK ───────────────────────────────────────────────── */}
         <div className="absolute bottom-6 small:bottom-8 right-6 small:right-10 z-20">
           <LocalizedClientLink
             href="/categories/bracelets"
@@ -159,66 +172,81 @@ const HeroCarousel = ({ locale: initialLocale, slides }: HeroCarouselProps) => {
           </LocalizedClientLink>
         </div>
 
-        {/* ── 3 PRODUCT CARDS — flex, bottom-aligned ──────────── */}
-        <div className="absolute inset-0 flex items-end">
+        {/* ── IMAGE BELT — 3 panels, flat baseline, gap borders ─────────── */}
+        {/*
+          The belt shows all 3 images simultaneously in a horizontal strip.
+          A 2px gap between panels acts as the divider border the client requested.
+          The active card expands slightly and brightens; the others recede.
+          On mobile the belt is swipeable and shows one card at a time in the
+          active-card logic while keeping the strip visible.
+        */}
+        <div
+          className="absolute inset-0 flex items-stretch"
+          style={{ gap: "2px" }}
+        >
           {currentPage.map((slide, index) => {
-            const isActive = index === activeProduct
-            const desktopOffset = CARD_TOP_OFFSETS[index] ?? 0
-            const mobileOffset = CARD_TOP_OFFSETS_MOBILE[index] ?? 0
+            const isActive = index === activeCard
             const productHref = slide.product_handle
               ? `/products/${slide.product_handle}`
               : (slide.cta_link ?? null)
 
-            const cardStyle = {
-              paddingTop: `clamp(${mobileOffset}px, 5vw, ${desktopOffset}px)`,
-              opacity: mounted ? (isActive ? 1 : 0.38) : 0,
-              transform: mounted ? `scale(${isActive ? 1 : 0.988})` : "scale(0.96)",
+            /*
+             * Each card occupies a flex share of the strip.
+             * Active card gets a slightly larger flex-grow so it expands into
+             * the strip without breaking the 3-panel layout.
+             */
+            const cardStyle: React.CSSProperties = {
+              flexGrow: isActive ? 1.35 : 1,
+              flexShrink: 1,
+              flexBasis: 0,
+              opacity: mounted ? 1 : 0,
               transition: [
-                "opacity 700ms cubic-bezier(0.4,0,0.2,1)",
-                "transform 700ms cubic-bezier(0.4,0,0.2,1)",
+                "flex-grow 700ms cubic-bezier(0.4,0,0.2,1)",
+                "opacity 700ms ease",
               ].join(", "),
               transitionDelay: mounted ? "0ms" : `${index * 90}ms`,
             }
-            const cardClass = "relative flex-1 h-full overflow-hidden cursor-pointer group/card focus-visible:outline-none"
+
+            const cardClass =
+              "relative overflow-hidden cursor-pointer group/card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c9a96e]/60"
 
             const cardInner = (
               <>
-                {/* Image */}
-                <div className="absolute inset-0" style={{ top: `clamp(${mobileOffset}px, 5vw, ${desktopOffset}px)` }}>
-                  <Image
-                    src={slide.image_url}
-                    alt={slide.title}
-                    fill
-                    priority={index === 0}
-                    sizes="33vw"
-                    className="object-cover"
-                    style={{
-                      transform: isActive ? "scale(1)" : "scale(1.04)",
-                      transition: "transform 1100ms cubic-bezier(0.4,0,0.2,1)",
-                    }}
-                  />
-                  {/* Gradient overlay */}
-                  <div
-                    className="absolute inset-0"
-                    style={{
-                      background: isActive
-                        ? "linear-gradient(to top, rgba(0,0,0,0.62) 0%, rgba(0,0,0,0.05) 45%, rgba(0,0,0,0.15) 100%)"
-                        : "linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.22) 45%, rgba(0,0,0,0.32) 100%)",
-                      transition: "background 700ms ease",
-                    }}
-                  />
-                </div>
-                {/* Thin right-edge divider */}
-                {index < currentPage.length - 1 && (
-                  <div
-                    className="absolute right-0 z-10 w-px bg-white/6"
-                    style={{
-                      top: `clamp(${mobileOffset + 20}px, 6vw, ${desktopOffset + 20}px)`,
-                      bottom: "20%",
-                    }}
-                  />
-                )}
-                {/* Product label – slides up when active */}
+                {/* Product image */}
+                <Image
+                  src={slide.image_url}
+                  alt={slide.title}
+                  fill
+                  priority={index === 0}
+                  sizes="(max-width: 1024px) 50vw, 33vw"
+                  className="object-cover"
+                  style={{
+                    transform: isActive ? "scale(1)" : "scale(1.04)",
+                    transition: "transform 1100ms cubic-bezier(0.4,0,0.2,1)",
+                  }}
+                />
+
+                {/* Gradient overlay — lighter when active */}
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background: isActive
+                      ? "linear-gradient(to top, rgba(0,0,0,0.58) 0%, rgba(0,0,0,0.02) 50%, rgba(0,0,0,0.10) 100%)"
+                      : "linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.28) 50%, rgba(0,0,0,0.38) 100%)",
+                    transition: "background 700ms ease",
+                  }}
+                />
+
+                {/* Active spotlight ring — thin gold top border */}
+                <div
+                  className="absolute top-0 inset-x-0 h-0.5 bg-[#c9a96e]"
+                  style={{
+                    opacity: isActive ? 0.7 : 0,
+                    transition: "opacity 500ms ease",
+                  }}
+                />
+
+                {/* Product label — slides up when active */}
                 <div
                   className="absolute bottom-0 inset-x-0 z-10 px-4 small:px-6 py-5 small:py-7"
                   style={{
@@ -227,19 +255,29 @@ const HeroCarousel = ({ locale: initialLocale, slides }: HeroCarouselProps) => {
                     transition: "opacity 500ms ease, transform 500ms ease",
                   }}
                 >
-                  <p className="text-white/88 text-xs small:text-sm font-display font-light leading-snug">
+                  <p className="text-white/90 text-xs small:text-sm font-display font-light leading-snug">
                     {slide.title}
                   </p>
-                  {productHref && isActive && (
+                  {productHref && (
                     <span className="inline-flex items-center gap-1 mt-1.5 font-sans text-[0.58rem] tracking-[0.18em] uppercase text-[#c9a96e]/70">
                       View product
-                      <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-2.5 h-2.5">
-                        <polyline points="2 6 10 6" /><polyline points="7 3 10 6 7 9" />
+                      <svg
+                        viewBox="0 0 12 12"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="w-2.5 h-2.5"
+                      >
+                        <polyline points="2 6 10 6" />
+                        <polyline points="7 3 10 6 7 9" />
                       </svg>
                     </span>
                   )}
                 </div>
-                {/* Hover label on inactive */}
+
+                {/* Hover label on inactive cards */}
                 {!isActive && (
                   <div className="absolute bottom-0 inset-x-0 z-10 px-4 small:px-6 py-5 small:py-7 opacity-0 group-hover/card:opacity-100 transition-opacity duration-400">
                     <p className="text-white/55 text-xs small:text-sm font-display font-light leading-snug">
@@ -247,6 +285,25 @@ const HeroCarousel = ({ locale: initialLocale, slides }: HeroCarouselProps) => {
                     </p>
                   </div>
                 )}
+
+                {/* Card index indicator (bottom-left dot) */}
+                <div className="absolute bottom-4 left-4 small:bottom-6 small:left-6 z-10 flex items-center gap-1">
+                  {currentPage.map((_, dotIndex) => (
+                    <div
+                      key={dotIndex}
+                      style={{
+                        width: dotIndex === index ? "16px" : "4px",
+                        height: "2px",
+                        borderRadius: "999px",
+                        background:
+                          dotIndex === index
+                            ? "rgba(201,169,110,0.80)"
+                            : "rgba(255,255,255,0.20)",
+                        transition: "width 400ms ease, background 300ms ease",
+                      }}
+                    />
+                  ))}
+                </div>
               </>
             )
 
@@ -254,7 +311,7 @@ const HeroCarousel = ({ locale: initialLocale, slides }: HeroCarouselProps) => {
               <LocalizedClientLink
                 key={slide.id}
                 href={productHref}
-                onClick={() => setActiveProduct(index)}
+                onClick={() => setActiveCard(index)}
                 className={cardClass}
                 style={cardStyle}
                 aria-label={`View ${slide.title}`}
@@ -264,7 +321,7 @@ const HeroCarousel = ({ locale: initialLocale, slides }: HeroCarouselProps) => {
             ) : (
               <button
                 key={slide.id}
-                onClick={() => setActiveProduct(index)}
+                onClick={() => setActiveCard(index)}
                 className={cardClass}
                 style={cardStyle}
                 aria-label={`View ${slide.title}`}
@@ -275,16 +332,13 @@ const HeroCarousel = ({ locale: initialLocale, slides }: HeroCarouselProps) => {
           })}
         </div>
 
-        {/* ── PAGE DOTS (only if > 1 page) ────────────────────── */}
+        {/* ── PAGE DOTS (only if more than one group of 3) ──────────────── */}
         {totalPages > 1 && (
           <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
             {pages.map((_, i) => (
               <button
                 key={i}
-                onClick={() => {
-                  setActivePage(i)
-                  setActiveProduct(0)
-                }}
+                onClick={() => goToPage(i)}
                 className="p-1.5 focus-visible:outline-none group/dot"
                 aria-label={`Collection ${i + 1}`}
               >
@@ -293,7 +347,10 @@ const HeroCarousel = ({ locale: initialLocale, slides }: HeroCarouselProps) => {
                     height: "2px",
                     borderRadius: "999px",
                     width: i === activePage ? "28px" : "8px",
-                    background: i === activePage ? "rgba(201,169,110,0.75)" : "rgba(255,255,255,0.18)",
+                    background:
+                      i === activePage
+                        ? "rgba(201,169,110,0.75)"
+                        : "rgba(255,255,255,0.18)",
                     transition: "width 500ms ease, background 400ms ease",
                   }}
                 />
@@ -303,7 +360,7 @@ const HeroCarousel = ({ locale: initialLocale, slides }: HeroCarouselProps) => {
         )}
       </div>
 
-      {/* ── CATEGORY PILLS ───────────────────────────────────── */}
+      {/* ── CATEGORY PILLS ────────────────────────────────────────────── */}
       <div className="bg-cream-200 border-t border-grey-10">
         <div className="content-container py-4 small:py-5">
           <div className="flex items-center justify-center gap-2 small:gap-3 flex-wrap">
