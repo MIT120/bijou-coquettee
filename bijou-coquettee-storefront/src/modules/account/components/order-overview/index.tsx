@@ -21,7 +21,7 @@ const OrderOverview = ({ orders }: { orders: HttpTypes.StoreOrder[] }) => {
             key={o.id}
             className="border-b border-gray-200 pb-6 last:pb-0 last:border-none"
           >
-            <OrderCard order={o} />
+            <OrderCard order={o} locale={locale} />
           </div>
         ))}
       </div>

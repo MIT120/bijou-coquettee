@@ -1,20 +1,24 @@
+"use client"
+
 import { Button } from "@medusajs/ui"
 
 import Thumbnail from "@modules/products/components/thumbnail"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { convertToLocale } from "@lib/util/money"
 import { HttpTypes } from "@medusajs/types"
-import { t } from "@lib/util/translations-server"
+import { t } from "@lib/util/translations"
+import type { Locale } from "@/i18n/locale"
 
 type OrderCardProps = {
   order: HttpTypes.StoreOrder
+  locale?: Locale
 }
 
-const OrderCard = async ({ order }: OrderCardProps) => {
-  const itemsLabel = await t("order.items")
-  const itemLabel = await t("order.item")
-  const moreLabel = await t("order.more")
-  const seeDetails = await t("order.seeDetails")
+const OrderCard = ({ order, locale }: OrderCardProps) => {
+  const itemsLabel = t("order.items", locale)
+  const itemLabel = t("order.item", locale)
+  const moreLabel = t("order.more", locale)
+  const seeDetails = t("order.seeDetails", locale)
 
   const numberOfLines =
     order.items?.reduce((acc, item) => {
