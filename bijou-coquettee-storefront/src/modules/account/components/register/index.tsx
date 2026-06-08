@@ -1,6 +1,7 @@
 "use client"
 
 import { useActionState } from "react"
+import { useParams } from "next/navigation"
 import Input from "@modules/common/components/input"
 import { LOGIN_VIEW } from "@modules/account/templates/login-template"
 import ErrorMessage from "@modules/checkout/components/error-message"
@@ -17,6 +18,8 @@ type Props = {
 
 const Register = ({ setCurrentView, locale }: Props) => {
   const [message, formAction] = useActionState(signup, null)
+  const params = useParams()
+  const countryCode = params?.countryCode as string | undefined
 
   return (
     <div
@@ -30,6 +33,7 @@ const Register = ({ setCurrentView, locale }: Props) => {
         {t("auth.createProfileDescription", locale)}
       </p>
       <form className="w-full flex flex-col" action={formAction}>
+        <input type="hidden" name="countryCode" value={countryCode ?? "bg"} />
         <div className="flex flex-col w-full gap-y-2">
           <Input
             label={t("account.firstName", locale)}

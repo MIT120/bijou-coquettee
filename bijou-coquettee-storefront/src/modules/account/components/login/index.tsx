@@ -40,6 +40,7 @@ const Login = ({ setCurrentView, locale: initialLocale }: Props) => {
         {t("auth.signInDescription", locale)}
       </p>
       <form className="w-full" action={formAction}>
+        <input type="hidden" name="countryCode" value={countryCode ?? "bg"} />
         <div className="flex flex-col w-full gap-y-2">
           <Input
             label={t("auth.email", locale)}

@@ -82,6 +82,18 @@ export const NAV_ITEMS: NavItem[] = [
         key: "about",
         href: "/about",
         translationKey: "navigation.about",
+        children: [
+            {
+                key: "about-us",
+                href: "/about",
+                translationKey: "navigation.about",
+            },
+            {
+                key: "certificate",
+                href: "/certificate",
+                translationKey: "navigation.certificate",
+            },
+        ],
     },
 ]
 
