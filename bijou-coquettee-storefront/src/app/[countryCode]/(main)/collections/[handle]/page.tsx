@@ -80,9 +80,13 @@ export default async function CollectionPage(props: Props) {
   const params = await props.params
   const { sortBy, page, color } = searchParams
 
-  const collection = await getCollectionByHandle(params.handle).then(
-    (collection: StoreCollection) => collection
-  )
+  let collection
+  try {
+    collection = await getCollectionByHandle(params.handle)
+  } catch (error) {
+    console.error("[CollectionPage] Failed to load collection:", error)
+    notFound()
+  }
 
   if (!collection) {
     notFound()

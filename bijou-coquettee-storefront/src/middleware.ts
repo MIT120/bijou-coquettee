@@ -2,7 +2,9 @@ import { HttpTypes } from "@medusajs/types"
 import { NextRequest, NextResponse } from "next/server"
 import { getLocaleFromCountryCode, getLocaleFromHeaders, defaultLocale } from "./i18n/locale"
 
-const BACKEND_URL = process.env.MEDUSA_BACKEND_URL
+const BACKEND_URL =
+  process.env.MEDUSA_BACKEND_URL ||
+  process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL
 const PUBLISHABLE_API_KEY = process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
 const DEFAULT_REGION = process.env.NEXT_PUBLIC_DEFAULT_REGION || "us"
 
@@ -192,12 +194,20 @@ export async function middleware(request: NextRequest) {
     return response
   }
 
-  // if one of the country codes is in the url and the cache id is not set, set the cache id and redirect
+  // if one of the country codes is in the url and the cache id is not set, set the cache id and continue
   if (urlHasCountryCode && !cacheIdCookie) {
+    response = NextResponse.next()
     response.cookies.set("_medusa_cache_id", cacheId, {
       maxAge: 60 * 60 * 24,
     })
-
+    if (existingLocaleCookie && (existingLocaleCookie === "en" || existingLocaleCookie === "bg")) {
+      // preserve user locale
+    } else {
+      response.cookies.set("NEXT_LOCALE", locale, {
+        maxAge: 60 * 60 * 24 * 365,
+        path: "/",
+      })
+    }
     return response
   }
 

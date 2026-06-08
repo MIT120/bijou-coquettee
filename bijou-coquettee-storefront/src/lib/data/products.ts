@@ -7,6 +7,34 @@ import { SortOptions } from "@modules/store/components/refinement-list/sort-prod
 import { getAuthHeaders, getCacheOptions } from "./cookies-server"
 import { getRegion, retrieveRegion } from "./regions"
 
+const PRODUCT_FIELDS =
+  "*variants.calculated_price,+variants.inventory_quantity,+variants.manage_inventory,+variants.allow_backorder,+metadata,+tags"
+
+/**
+ * Fetch a single product by handle. Falls back to listing products and
+ * filtering in memory when the handle query fails (some deployments return
+ * 500 for filtered /store/products requests).
+ */
+export const getProductByHandle = async (
+  countryCode: string,
+  handle: string
+): Promise<HttpTypes.StoreProduct | null> => {
+  try {
+    const { response } = await listProducts({
+      countryCode,
+      queryParams: { handle, limit: 1 },
+    })
+
+    return response.products[0] ?? null
+  } catch (error) {
+    console.error(
+      `[getProductByHandle] Failed for "${handle}":`,
+      error instanceof Error ? error.message : error
+    )
+    return null
+  }
+}
+
 export const listProducts = async ({
   pageParam = 1,
   queryParams,
@@ -53,36 +81,142 @@ export const listProducts = async ({
     ...(await getCacheOptions("products")),
   }
 
-  return sdk.client
-    .fetch<{ products: HttpTypes.StoreProduct[]; count: number }>(
+  const fetchProducts = (query: Record<string, unknown>) =>
+    sdk.client.fetch<{ products: HttpTypes.StoreProduct[]; count: number }>(
       `/store/products`,
       {
         method: "GET",
-        query: {
-          limit,
-          offset,
-          region_id: region?.id,
-          fields:
-            "*variants.calculated_price,+variants.inventory_quantity,+variants.manage_inventory,+variants.allow_backorder,+metadata,+tags",
-          ...queryParams,
-        },
+        query,
         headers,
         next,
         cache: "force-cache",
       }
     )
-    .then(({ products, count }) => {
-      const nextPage = count > offset + limit ? pageParam + 1 : null
 
-      return {
-        response: {
-          products,
-          count,
-        },
-        nextPage: nextPage,
-        queryParams,
-      }
-    })
+  const buildResponse = (
+    products: HttpTypes.StoreProduct[],
+    count: number
+  ) => {
+    const nextPage = count > offset + limit ? pageParam + 1 : null
+
+    return {
+      response: {
+        products,
+        count,
+      },
+      nextPage,
+      queryParams,
+    }
+  }
+
+  const query = {
+    limit,
+    offset,
+    region_id: region?.id,
+    fields: PRODUCT_FIELDS,
+    ...queryParams,
+  }
+
+  try {
+    const { products, count } = await fetchProducts(query)
+    return buildResponse(products, count)
+  } catch (error) {
+    const hasFilter =
+      queryParams?.handle ||
+      queryParams?.collection_id ||
+      queryParams?.category_id ||
+      queryParams?.id ||
+      queryParams?.q
+
+    if (!hasFilter) {
+      throw error
+    }
+
+    console.error(
+      "[listProducts] Filtered query failed, falling back to in-memory filter:",
+      error instanceof Error ? error.message : error
+    )
+
+    let allProducts: HttpTypes.StoreProduct[] = []
+
+    try {
+      const result = await fetchProducts({
+        limit: 100,
+        offset: 0,
+        region_id: region?.id,
+        fields: PRODUCT_FIELDS,
+      })
+      allProducts = result.products
+    } catch (fallbackError) {
+      console.error(
+        "[listProducts] Unfiltered fallback also failed:",
+        fallbackError instanceof Error ? fallbackError.message : fallbackError
+      )
+      return buildResponse([], 0)
+    }
+
+    let filtered = allProducts
+
+    if (queryParams?.handle) {
+      const handles = Array.isArray(queryParams.handle)
+        ? queryParams.handle
+        : [queryParams.handle]
+      filtered = filtered.filter(
+        (product) => product.handle && handles.includes(product.handle)
+      )
+    }
+
+    if (queryParams?.collection_id) {
+      const collectionIds = Array.isArray(queryParams.collection_id)
+        ? queryParams.collection_id
+        : [queryParams.collection_id]
+      filtered = filtered.filter(
+        (product) =>
+          product.collection_id &&
+          collectionIds.includes(product.collection_id)
+      )
+    }
+
+    if (queryParams?.category_id) {
+      const categoryIds = Array.isArray(queryParams.category_id)
+        ? queryParams.category_id
+        : [queryParams.category_id]
+      filtered = filtered.filter((product) =>
+        product.categories?.some(
+          (category) => category.id && categoryIds.includes(category.id)
+        )
+      )
+    }
+
+    if (queryParams?.id) {
+      const ids = Array.isArray(queryParams.id)
+        ? queryParams.id
+        : [queryParams.id]
+      filtered = filtered.filter(
+        (product) => product.id && ids.includes(product.id)
+      )
+    }
+
+    if (queryParams?.q) {
+      const term = String(queryParams.q).toLowerCase().trim()
+      filtered = filtered.filter((product) => {
+        const haystack = [
+          product.title,
+          product.description,
+          product.handle,
+          ...(product.tags?.map((tag) => tag.value) ?? []),
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase()
+
+        return haystack.includes(term)
+      })
+    }
+
+    const paginated = filtered.slice(offset, offset + limit)
+    return buildResponse(paginated, filtered.length)
+  }
 }
 
 /**
@@ -106,32 +240,13 @@ export const getProductsByIds = async ({
     return []
   }
 
-  const headers = {
-    ...(await getAuthHeaders()),
-  }
-
-  const next = {
-    ...(await getCacheOptions("products")),
-  }
-
   try {
-    const { products } = await sdk.client.fetch<{
-      products: HttpTypes.StoreProduct[]
-    }>(`/store/products`, {
-      method: "GET",
-      query: {
-        id: ids,
-        region_id: region.id,
-        fields:
-          "*variants.calculated_price,+variants.inventory_quantity,+variants.manage_inventory,+variants.allow_backorder,+metadata,+tags",
-        limit: ids.length,
-      },
-      headers,
-      next,
-      cache: "force-cache",
+    const { response } = await listProducts({
+      countryCode,
+      queryParams: { id: ids, limit: ids.length },
     })
 
-    return products
+    return response.products
   } catch (error) {
     console.error("Error fetching products by IDs:", error)
     return []

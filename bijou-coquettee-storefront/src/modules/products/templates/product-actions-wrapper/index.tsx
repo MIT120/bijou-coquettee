@@ -3,25 +3,16 @@ import { HttpTypes } from "@medusajs/types"
 import ProductActions from "@modules/products/components/product-actions"
 
 /**
- * Fetches real time pricing for a product and renders the product actions component.
+ * Renders product actions. Uses the product already fetched on the page
+ * instead of re-querying by id (avoids duplicate API calls that can 500).
  */
 export default async function ProductActionsWrapper({
-  id,
+  product,
   region,
 }: {
-  id: string
+  product: HttpTypes.StoreProduct
   region: HttpTypes.StoreRegion
 }) {
-  const product = await listProducts({
-    queryParams: { id: [id] },
-    regionId: region.id,
-  }).then(({ response }) => response.products[0])
-
-  if (!product) {
-    return null
-  }
-
-  // Fetch related products for upsell popup
   const relatedQueryParams: HttpTypes.StoreProductListParams = {
     limit: 5,
     is_giftcard: false,
@@ -43,7 +34,7 @@ export default async function ProductActionsWrapper({
       .filter((p) => p.id !== product.id)
       .slice(0, 4)
   } catch {
-    // silently fail - upsell is not critical
+    // Upsell is optional — collection filter may fail on some backends
   }
 
   return (

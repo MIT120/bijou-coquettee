@@ -26,21 +26,23 @@ export default async function RelatedProducts({
   if (product.collection_id) {
     queryParams.collection_id = [product.collection_id]
   }
-  if (product.tags) {
-    queryParams.tag_id = product.tags
-      .map((t) => t.id)
-      .filter(Boolean) as string[]
-  }
+
   queryParams.is_giftcard = false
 
-  const products = await listProducts({
-    queryParams,
-    countryCode,
-  }).then(({ response }) => {
-    return response.products.filter(
-      (responseProduct) => responseProduct.id !== product.id
-    )
-  })
+  let products: HttpTypes.StoreProduct[] = []
+  try {
+    products = await listProducts({
+      queryParams,
+      countryCode,
+    }).then(({ response }) => {
+      return response.products.filter(
+        (responseProduct) => responseProduct.id !== product.id
+      )
+    })
+  } catch (error) {
+    console.error("[RelatedProducts] Failed to fetch related products:", error)
+    return null
+  }
 
   if (!products.length) {
     return null

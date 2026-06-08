@@ -44,16 +44,34 @@ export const listCollections = async (
 
 export const getCollectionByHandle = async (
   handle: string
-): Promise<HttpTypes.StoreCollection> => {
+): Promise<HttpTypes.StoreCollection | undefined> => {
   const next = {
     ...(await getCacheOptions("collections")),
   }
 
-  return sdk.client
-    .fetch<HttpTypes.StoreCollectionListResponse>(`/store/collections`, {
-      query: { handle, fields: "*products" },
-      next,
-      cache: "force-cache",
-    })
-    .then(({ collections }) => collections[0])
+  try {
+    return await sdk.client
+      .fetch<HttpTypes.StoreCollectionListResponse>(`/store/collections`, {
+        query: { handle, fields: "*products" },
+        next,
+        cache: "force-cache",
+      })
+      .then(({ collections }) => collections[0])
+  } catch (error) {
+    console.error(
+      `[getCollectionByHandle] handle query failed for "${handle}":`,
+      error instanceof Error ? error.message : error
+    )
+
+    try {
+      const { collections } = await listCollections()
+      return collections.find((collection) => collection.handle === handle)
+    } catch (fallbackError) {
+      console.error(
+        `[getCollectionByHandle] fallback failed for "${handle}":`,
+        fallbackError instanceof Error ? fallbackError.message : fallbackError
+      )
+      return undefined
+    }
+  }
 }

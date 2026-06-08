@@ -12,17 +12,26 @@ export default async function ProductRail({
   collection: HttpTypes.StoreCollection
   region: HttpTypes.StoreRegion
 }) {
-  const {
-    response: { products: pricedProducts },
-  } = await listProducts({
-    regionId: region.id,
-    queryParams: {
-      collection_id: collection.id,
-      fields: "*variants.calculated_price",
-    },
-  })
+  let pricedProducts: HttpTypes.StoreProduct[] = []
 
-  if (!pricedProducts) {
+  try {
+    const { response } = await listProducts({
+      regionId: region.id,
+      queryParams: {
+        collection_id: [collection.id],
+        limit: 12,
+      },
+    })
+    pricedProducts = response.products
+  } catch (error) {
+    console.error(
+      `[ProductRail] Failed for collection "${collection.handle}":`,
+      error instanceof Error ? error.message : error
+    )
+    return null
+  }
+
+  if (!pricedProducts.length) {
     return null
   }
 
@@ -34,7 +43,7 @@ export default async function ProductRail({
             {collection.title}
           </Text>
         </div>
-        <InteractiveLink 
+        <InteractiveLink
           href={`/collections/${collection.handle}`}
           className="font-sans text-sm uppercase tracking-[0.12em] text-grey-60 hover:text-grey-90 transition-colors duration-200 font-medium border-b border-transparent hover:border-grey-50 pb-1 mt-8 small:mt-0"
         >
@@ -42,12 +51,11 @@ export default async function ProductRail({
         </InteractiveLink>
       </div>
       <ul className="grid grid-cols-2 small:grid-cols-3 large:grid-cols-4 gap-x-4 small:gap-x-8 gap-y-8 small:gap-y-24">
-        {pricedProducts &&
-          pricedProducts.map((product) => (
-            <li key={product.id} className="group">
-              <ProductPreview product={product} region={region} isFeatured />
-            </li>
-          ))}
+        {pricedProducts.map((product) => (
+          <li key={product.id} className="group">
+            <ProductPreview product={product} region={region} isFeatured />
+          </li>
+        ))}
       </ul>
     </div>
   )

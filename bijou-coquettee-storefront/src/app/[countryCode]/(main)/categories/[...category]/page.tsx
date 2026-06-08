@@ -77,7 +77,13 @@ export default async function CategoryPage(props: Props) {
   const params = await props.params
   const { sortBy, page, color } = searchParams
 
-  const productCategory = await getCategoryByHandle(params.category)
+  let productCategory
+  try {
+    productCategory = await getCategoryByHandle(params.category)
+  } catch (error) {
+    console.error("[CategoryPage] Failed to load category:", error)
+    notFound()
+  }
 
   if (!productCategory) {
     notFound()

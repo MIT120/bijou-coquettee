@@ -6,6 +6,7 @@ import { SortOptions } from "@modules/store/components/refinement-list/sort-prod
 import { OPTION_TITLES } from "@modules/store/components/refinement-list/color-filter"
 import EmptyFilterState from "@modules/store/components/empty-filter-state"
 import AnimatedProductGrid from "@modules/store/components/product-grid-animated"
+import { HttpTypes } from "@medusajs/types"
 
 const PRODUCT_LIMIT = 12
 
@@ -85,14 +86,22 @@ export default async function PaginatedProducts({
     return null
   }
 
-  let {
-    response: { products, count },
-  } = await listProductsWithSort({
-    page,
-    queryParams,
-    sortBy,
-    countryCode,
-  })
+  let products: HttpTypes.StoreProduct[] = []
+  let count = 0
+
+  try {
+    const result = await listProductsWithSort({
+      page,
+      queryParams,
+      sortBy,
+      countryCode,
+    })
+    products = result.response.products
+    count = result.response.count
+  } catch (error) {
+    console.error("[PaginatedProducts] Failed to fetch products:", error)
+    return <EmptyFilterState />
+  }
 
   // Apply client-side color/metal filter when one or more colors are selected.
   // Medusa's store API does not expose option-value filtering natively, so we
@@ -200,28 +209,33 @@ export async function PaginatedProductsCount({
   const region = await getRegion(countryCode)
   if (!region) return 0
 
-  let {
-    response: { products, count },
-  } = await listProductsWithSort({
-    page: 1,
-    queryParams,
-    sortBy,
-    countryCode,
-  })
-
-  if (colorFilter && colorFilter.length > 0) {
-    const normalizedFilter = colorFilter.map((c) => c.toLowerCase().trim())
-    products = products.filter((product) => {
-      for (const option of product.options ?? []) {
-        if (!COLOR_OPTION_TITLES.includes(option.title?.toLowerCase().trim() ?? "")) continue
-        for (const v of option.values ?? []) {
-          if (v.value && normalizedFilter.includes(v.value.toLowerCase().trim())) return true
-        }
-      }
-      return false
+  try {
+    let {
+      response: { products, count },
+    } = await listProductsWithSort({
+      page: 1,
+      queryParams,
+      sortBy,
+      countryCode,
     })
-    count = products.length
-  }
 
-  return count
+    if (colorFilter && colorFilter.length > 0) {
+      const normalizedFilter = colorFilter.map((c) => c.toLowerCase().trim())
+      products = products.filter((product) => {
+        for (const option of product.options ?? []) {
+          if (!COLOR_OPTION_TITLES.includes(option.title?.toLowerCase().trim() ?? "")) continue
+          for (const v of option.values ?? []) {
+            if (v.value && normalizedFilter.includes(v.value.toLowerCase().trim())) return true
+          }
+        }
+        return false
+      })
+      count = products.length
+    }
+
+    return count
+  } catch (error) {
+    console.error("[PaginatedProductsCount] Failed:", error)
+    return 0
+  }
 }

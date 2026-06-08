@@ -39,24 +39,35 @@ const SearchTemplate = async ({
   let count = 0
 
   if (searchTerm) {
-    const {
-      response: { products: responseProducts, count: responseCount },
-    } = await listProducts({
-      pageParam: pageNumber,
-      queryParams: {
-        limit: PRODUCT_LIMIT,
-        q: searchTerm,
-      },
-      countryCode,
-    })
+    try {
+      const {
+        response: { products: responseProducts, count: responseCount },
+      } = await listProducts({
+        pageParam: pageNumber,
+        queryParams: {
+          limit: PRODUCT_LIMIT,
+          q: searchTerm,
+        },
+        countryCode,
+      })
 
-    products = responseProducts
-    count = responseCount
+      products = responseProducts
+      count = responseCount
+    } catch (error) {
+      console.error("[SearchTemplate] Search query failed:", error)
+    }
   }
 
-  const {
-    response: { products: featuredProducts },
-  } = await featuredProductsPromise
+  let featuredProducts: Awaited<
+    ReturnType<typeof listProducts>
+  >["response"]["products"] = []
+
+  try {
+    const { response } = await featuredProductsPromise
+    featuredProducts = response.products
+  } catch (error) {
+    console.error("[SearchTemplate] Featured products failed:", error)
+  }
 
   const totalPages = count > 0 ? Math.ceil(count / PRODUCT_LIMIT) : 0
 
