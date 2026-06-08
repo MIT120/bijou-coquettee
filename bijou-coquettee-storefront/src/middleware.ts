@@ -225,6 +225,9 @@ export async function middleware(request: NextRequest) {
   if (!urlHasCountryCode && countryCode) {
     redirectUrl = `${request.nextUrl.origin}/${countryCode}${redirectPath}${queryString}`
     response = NextResponse.redirect(`${redirectUrl}`, 307)
+    response.cookies.set("_medusa_cache_id", cacheId, {
+      maxAge: 60 * 60 * 24,
+    })
     // Always preserve user's cookie preference, or set initial locale if no preference exists
     if (existingLocaleCookie && (existingLocaleCookie === "en" || existingLocaleCookie === "bg")) {
       // User has a preference - preserve it (don't overwrite)

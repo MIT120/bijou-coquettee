@@ -4,6 +4,9 @@ import { sdk } from "@lib/config"
 import { HttpTypes } from "@medusajs/types"
 import { getCacheOptions } from "./cookies-server"
 
+const COLLECTION_PAGE_SIZE = 100
+const COLLECTION_MAX = 500
+
 export const retrieveCollection = async (id: string) => {
   const next = {
     ...(await getCacheOptions("collections")),
@@ -27,19 +30,42 @@ export const listCollections = async (
     ...(await getCacheOptions("collections")),
   }
 
-  queryParams.limit = queryParams.limit || "100"
-  queryParams.offset = queryParams.offset || "0"
+  const allCollections: HttpTypes.StoreCollection[] = []
+  let offset = 0
+  let totalCount = 0
 
-  return sdk.client
-    .fetch<{ collections: HttpTypes.StoreCollection[]; count: number }>(
-      "/store/collections",
-      {
-        query: queryParams,
-        next,
-        cache: "force-cache",
-      }
-    )
-    .then(({ collections }) => ({ collections, count: collections.length }))
+  while (allCollections.length < COLLECTION_MAX) {
+    const { collections, count } = await sdk.client.fetch<{
+      collections: HttpTypes.StoreCollection[]
+      count: number
+    }>("/store/collections", {
+      query: {
+        ...queryParams,
+        limit: String(COLLECTION_PAGE_SIZE),
+        offset: String(offset),
+      },
+      next,
+      cache: "force-cache",
+    })
+
+    totalCount = count
+    allCollections.push(...collections)
+
+    if (
+      collections.length < COLLECTION_PAGE_SIZE ||
+      allCollections.length >= count ||
+      allCollections.length >= COLLECTION_MAX
+    ) {
+      break
+    }
+
+    offset += COLLECTION_PAGE_SIZE
+  }
+
+  return {
+    collections: allCollections,
+    count: totalCount || allCollections.length,
+  }
 }
 
 export const getCollectionByHandle = async (

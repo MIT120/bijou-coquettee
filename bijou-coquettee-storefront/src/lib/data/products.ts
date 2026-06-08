@@ -2,37 +2,85 @@
 
 import { sdk } from "@lib/config"
 import { sortProducts } from "@lib/util/sort-products"
+import {
+  applyProductFilters,
+  hasProductFilter,
+  type ProductFilterParams,
+} from "@lib/util/product-filters"
+import { logProductFilterFallback } from "@lib/util/product-fetch-log"
 import { HttpTypes } from "@medusajs/types"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
+import { cache } from "react"
 import { getAuthHeaders, getCacheOptions } from "./cookies-server"
 import { getRegion, retrieveRegion } from "./regions"
 
 const PRODUCT_FIELDS =
   "*variants.calculated_price,+variants.inventory_quantity,+variants.manage_inventory,+variants.allow_backorder,+metadata,+tags"
 
+const FALLBACK_PAGE_SIZE = 100
+const FALLBACK_MAX_PRODUCTS = 500
+const SORT_FETCH_LIMIT = 500
+
+type ProductQuery = Record<string, unknown>
+
 /**
- * Fetch a single product by handle. Falls back to listing products and
- * filtering in memory when the handle query fails (some deployments return
- * 500 for filtered /store/products requests).
+ * Fetch a single product by handle. Cached per request so generateMetadata
+ * and the page component share one fetch.
  */
-export const getProductByHandle = async (
-  countryCode: string,
-  handle: string
-): Promise<HttpTypes.StoreProduct | null> => {
-  try {
-    const { response } = await listProducts({
-      countryCode,
-      queryParams: { handle, limit: 1 },
+export const getProductByHandle = cache(
+  async (
+    countryCode: string,
+    handle: string
+  ): Promise<HttpTypes.StoreProduct | null> => {
+    try {
+      const { response } = await listProducts({
+        countryCode,
+        queryParams: { handle, limit: 1 },
+      })
+
+      return response.products[0] ?? null
+    } catch (error) {
+      console.error(
+        `[getProductByHandle] Failed for "${handle}":`,
+        error instanceof Error ? error.message : error
+      )
+      return null
+    }
+  }
+)
+
+async function fetchAllProductsUnfiltered(
+  fetchProducts: (query: ProductQuery) => Promise<{
+    products: HttpTypes.StoreProduct[]
+    count: number
+  }>,
+  regionId: string
+): Promise<HttpTypes.StoreProduct[]> {
+  const allProducts: HttpTypes.StoreProduct[] = []
+  let offset = 0
+
+  while (allProducts.length < FALLBACK_MAX_PRODUCTS) {
+    const { products, count } = await fetchProducts({
+      limit: FALLBACK_PAGE_SIZE,
+      offset,
+      region_id: regionId,
+      fields: PRODUCT_FIELDS,
     })
 
-    return response.products[0] ?? null
-  } catch (error) {
-    console.error(
-      `[getProductByHandle] Failed for "${handle}":`,
-      error instanceof Error ? error.message : error
-    )
-    return null
+    allProducts.push(...products)
+
+    if (
+      products.length < FALLBACK_PAGE_SIZE ||
+      allProducts.length >= count ||
+      allProducts.length >= FALLBACK_MAX_PRODUCTS
+    ) {
+      break
+    }
+
+    offset += FALLBACK_PAGE_SIZE
   }
+
+  return allProducts
 }
 
 export const listProducts = async ({
@@ -81,7 +129,7 @@ export const listProducts = async ({
     ...(await getCacheOptions("products")),
   }
 
-  const fetchProducts = (query: Record<string, unknown>) =>
+  const fetchProducts = (query: ProductQuery) =>
     sdk.client.fetch<{ products: HttpTypes.StoreProduct[]; count: number }>(
       `/store/products`,
       {
@@ -97,7 +145,7 @@ export const listProducts = async ({
     products: HttpTypes.StoreProduct[],
     count: number
   ) => {
-    const nextPage = count > offset + limit ? pageParam + 1 : null
+    const nextPage = count > offset + limit ? _pageParam + 1 : null
 
     return {
       response: {
@@ -112,41 +160,37 @@ export const listProducts = async ({
   const query = {
     limit,
     offset,
-    region_id: region?.id,
+    region_id: region.id,
     fields: PRODUCT_FIELDS,
     ...queryParams,
+  }
+
+  const filterParams: ProductFilterParams = {
+    handle: queryParams?.handle,
+    collection_id: queryParams?.collection_id,
+    category_id: queryParams?.category_id,
+    id: queryParams?.id,
+    tag_id: queryParams?.tag_id,
+    q: queryParams?.q,
   }
 
   try {
     const { products, count } = await fetchProducts(query)
     return buildResponse(products, count)
   } catch (error) {
-    const hasFilter =
-      queryParams?.handle ||
-      queryParams?.collection_id ||
-      queryParams?.category_id ||
-      queryParams?.id ||
-      queryParams?.q
-
-    if (!hasFilter) {
+    if (!hasProductFilter(filterParams)) {
       throw error
     }
 
-    console.error(
-      "[listProducts] Filtered query failed, falling back to in-memory filter:",
-      error instanceof Error ? error.message : error
-    )
+    logProductFilterFallback("listProducts", error)
 
     let allProducts: HttpTypes.StoreProduct[] = []
 
     try {
-      const result = await fetchProducts({
-        limit: 100,
-        offset: 0,
-        region_id: region?.id,
-        fields: PRODUCT_FIELDS,
-      })
-      allProducts = result.products
+      allProducts = await fetchAllProductsUnfiltered(
+        fetchProducts,
+        region.id
+      )
     } catch (fallbackError) {
       console.error(
         "[listProducts] Unfiltered fallback also failed:",
@@ -155,74 +199,13 @@ export const listProducts = async ({
       return buildResponse([], 0)
     }
 
-    let filtered = allProducts
-
-    if (queryParams?.handle) {
-      const handles = Array.isArray(queryParams.handle)
-        ? queryParams.handle
-        : [queryParams.handle]
-      filtered = filtered.filter(
-        (product) => product.handle && handles.includes(product.handle)
-      )
-    }
-
-    if (queryParams?.collection_id) {
-      const collectionIds = Array.isArray(queryParams.collection_id)
-        ? queryParams.collection_id
-        : [queryParams.collection_id]
-      filtered = filtered.filter(
-        (product) =>
-          product.collection_id &&
-          collectionIds.includes(product.collection_id)
-      )
-    }
-
-    if (queryParams?.category_id) {
-      const categoryIds = Array.isArray(queryParams.category_id)
-        ? queryParams.category_id
-        : [queryParams.category_id]
-      filtered = filtered.filter((product) =>
-        product.categories?.some(
-          (category) => category.id && categoryIds.includes(category.id)
-        )
-      )
-    }
-
-    if (queryParams?.id) {
-      const ids = Array.isArray(queryParams.id)
-        ? queryParams.id
-        : [queryParams.id]
-      filtered = filtered.filter(
-        (product) => product.id && ids.includes(product.id)
-      )
-    }
-
-    if (queryParams?.q) {
-      const term = String(queryParams.q).toLowerCase().trim()
-      filtered = filtered.filter((product) => {
-        const haystack = [
-          product.title,
-          product.description,
-          product.handle,
-          ...(product.tags?.map((tag) => tag.value) ?? []),
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase()
-
-        return haystack.includes(term)
-      })
-    }
-
+    const filtered = applyProductFilters(allProducts, filterParams)
     const paginated = filtered.slice(offset, offset + limit)
+
     return buildResponse(paginated, filtered.length)
   }
 }
 
-/**
- * This will fetch 100 products to the Next.js cache and sort them based on the sortBy parameter.
- * It will then return the paginated products based on the page and limit parameters.
- */
 export const getProductsByIds = async ({
   ids,
   countryCode,
@@ -230,7 +213,7 @@ export const getProductsByIds = async ({
   ids: string[]
   countryCode: string
 }): Promise<HttpTypes.StoreProduct[]> => {
-  if (!ids || ids.length === 0) {
+  if (!ids?.length) {
     return []
   }
 
@@ -246,19 +229,21 @@ export const getProductsByIds = async ({
       queryParams: { id: ids, limit: ids.length },
     })
 
-    return response.products
+    const byId = new Map(
+      response.products.map((product) => [product.id, product])
+    )
+
+    return ids
+      .map((id) => byId.get(id))
+      .filter((product): product is HttpTypes.StoreProduct => !!product)
   } catch (error) {
     console.error("Error fetching products by IDs:", error)
     return []
   }
 }
 
-/**
- * This will fetch 100 products to the Next.js cache and sort them based on the sortBy parameter.
- * It will then return the paginated products based on the page and limit parameters.
- */
 export const listProductsWithSort = async ({
-  page = 0,
+  page = 1,
   queryParams,
   sortBy = "created_at",
   countryCode,
@@ -272,26 +257,24 @@ export const listProductsWithSort = async ({
   nextPage: number | null
   queryParams?: HttpTypes.FindParams & HttpTypes.StoreProductParams
 }> => {
-  const limit = queryParams?.limit || 12
+  const displayLimit = queryParams?.limit || 12
+  const safePage = Math.max(page, 1)
 
   const {
     response: { products, count },
   } = await listProducts({
-    pageParam: 0,
+    pageParam: 1,
     queryParams: {
       ...queryParams,
-      limit: 100,
+      limit: SORT_FETCH_LIMIT,
     },
     countryCode,
   })
 
   const sortedProducts = sortProducts(products, sortBy)
-
-  const pageParam = (page - 1) * limit
-
-  const nextPage = count > pageParam + limit ? pageParam + limit : null
-
-  const paginatedProducts = sortedProducts.slice(pageParam, pageParam + limit)
+  const offset = (safePage - 1) * displayLimit
+  const paginatedProducts = sortedProducts.slice(offset, offset + displayLimit)
+  const nextPage = count > offset + displayLimit ? safePage + 1 : null
 
   return {
     response: {

@@ -8,6 +8,53 @@ type RelatedProductsProps = {
   countryCode: string
 }
 
+async function fetchRelatedProducts(
+  product: HttpTypes.StoreProduct,
+  countryCode: string
+): Promise<HttpTypes.StoreProduct[]> {
+  const baseParams: HttpTypes.StoreProductListParams = {
+    is_giftcard: false,
+    limit: 12,
+  }
+
+  if (product.collection_id) {
+    const { response } = await listProducts({
+      queryParams: {
+        ...baseParams,
+        collection_id: [product.collection_id],
+      },
+      countryCode,
+    })
+
+    const collectionMatches = response.products.filter(
+      (responseProduct) => responseProduct.id !== product.id
+    )
+
+    if (collectionMatches.length) {
+      return collectionMatches
+    }
+  }
+
+  const tagIds =
+    product.tags?.map((tag) => tag.id).filter((id): id is string => !!id) ?? []
+
+  if (tagIds.length) {
+    const { response } = await listProducts({
+      queryParams: {
+        ...baseParams,
+        tag_id: tagIds,
+      },
+      countryCode,
+    })
+
+    return response.products.filter(
+      (responseProduct) => responseProduct.id !== product.id
+    )
+  }
+
+  return []
+}
+
 export default async function RelatedProducts({
   product,
   countryCode,
@@ -18,27 +65,10 @@ export default async function RelatedProducts({
     return null
   }
 
-  // edit this function to define your related products logic
-  const queryParams: HttpTypes.StoreProductListParams = {}
-  if (region?.id) {
-    queryParams.region_id = region.id
-  }
-  if (product.collection_id) {
-    queryParams.collection_id = [product.collection_id]
-  }
-
-  queryParams.is_giftcard = false
-
   let products: HttpTypes.StoreProduct[] = []
+
   try {
-    products = await listProducts({
-      queryParams,
-      countryCode,
-    }).then(({ response }) => {
-      return response.products.filter(
-        (responseProduct) => responseProduct.id !== product.id
-      )
-    })
+    products = await fetchRelatedProducts(product, countryCode)
   } catch (error) {
     console.error("[RelatedProducts] Failed to fetch related products:", error)
     return null
@@ -60,9 +90,9 @@ export default async function RelatedProducts({
       </div>
 
       <ul className="grid grid-cols-2 small:grid-cols-3 medium:grid-cols-4 gap-x-6 gap-y-8">
-        {products.map((product) => (
-          <li key={product.id}>
-            <Product region={region} product={product} />
+        {products.map((relatedProduct) => (
+          <li key={relatedProduct.id}>
+            <Product region={region} product={relatedProduct} />
           </li>
         ))}
       </ul>

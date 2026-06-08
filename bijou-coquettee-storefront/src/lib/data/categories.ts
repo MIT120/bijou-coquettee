@@ -2,6 +2,9 @@ import { sdk } from "@lib/config"
 import { HttpTypes } from "@medusajs/types"
 import { getCacheOptions } from "./cookies-server"
 
+const CATEGORY_PAGE_SIZE = 100
+const CATEGORY_MAX = 500
+
 function flattenCategories(
   categories: HttpTypes.StoreProductCategory[]
 ): HttpTypes.StoreProductCategory[] {
@@ -18,24 +21,40 @@ export const listCategories = async (query?: Record<string, any>) => {
     ...(await getCacheOptions("categories")),
   }
 
-  const limit = query?.limit || 100
+  const allCategories: HttpTypes.StoreProductCategory[] = []
+  let offset = 0
 
   try {
-    return await sdk.client
-      .fetch<{ product_categories: HttpTypes.StoreProductCategory[] }>(
-        "/store/product-categories",
-        {
-          query: {
-            fields:
-              "*category_children, *products, *parent_category, *parent_category.parent_category",
-            limit,
-            ...query,
-          },
-          next,
-          cache: "force-cache",
-        }
-      )
-      .then(({ product_categories }) => product_categories)
+    while (allCategories.length < CATEGORY_MAX) {
+      const { product_categories, count } = await sdk.client.fetch<{
+        product_categories: HttpTypes.StoreProductCategory[]
+        count: number
+      }>("/store/product-categories", {
+        query: {
+          fields:
+            "*category_children, *products, *parent_category, *parent_category.parent_category",
+          limit: CATEGORY_PAGE_SIZE,
+          offset,
+          ...query,
+        },
+        next,
+        cache: "force-cache",
+      })
+
+      allCategories.push(...product_categories)
+
+      if (
+        product_categories.length < CATEGORY_PAGE_SIZE ||
+        allCategories.length >= count ||
+        allCategories.length >= CATEGORY_MAX
+      ) {
+        break
+      }
+
+      offset += CATEGORY_PAGE_SIZE
+    }
+
+    return allCategories
   } catch (error) {
     console.error(
       "[listCategories] Failed:",

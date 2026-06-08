@@ -33,8 +33,7 @@ export default async function CollectionTemplate({
     .map((c) => c.trim())
     .filter(Boolean)
 
-  // Fetch the full (unfiltered) product list for this collection so we can
-  // extract which color/metal values are actually available as filter options.
+  // Fetch products for this collection to build color filter swatches.
   let availableColors: string[] = []
   try {
     const {
@@ -51,22 +50,7 @@ export default async function CollectionTemplate({
 
     availableColors = extractAvailableColors(allProducts)
   } catch {
-    try {
-      const {
-        response: { products: allProducts },
-      } = await listProductsWithSort({
-        page: 1,
-        queryParams: { limit: 100 },
-        sortBy: sort,
-        countryCode,
-      })
-
-      availableColors = extractAvailableColors(
-        allProducts.filter((p) => p.collection_id === collection.id)
-      )
-    } catch {
-      // Render without color filters if product fetch fails
-    }
+    // Render without color filters if product fetch fails
   }
 
   return (

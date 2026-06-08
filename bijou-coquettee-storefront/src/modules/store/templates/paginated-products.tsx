@@ -5,6 +5,7 @@ import { Pagination } from "@modules/store/components/pagination"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 import { OPTION_TITLES } from "@modules/store/components/refinement-list/color-filter"
 import EmptyFilterState from "@modules/store/components/empty-filter-state"
+import ProductFetchError from "@modules/store/components/product-fetch-error"
 import AnimatedProductGrid from "@modules/store/components/product-grid-animated"
 import { HttpTypes } from "@medusajs/types"
 
@@ -100,7 +101,7 @@ export default async function PaginatedProducts({
     count = result.response.count
   } catch (error) {
     console.error("[PaginatedProducts] Failed to fetch products:", error)
-    return <EmptyFilterState />
+    return <ProductFetchError />
   }
 
   // Apply client-side color/metal filter when one or more colors are selected.
